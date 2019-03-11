@@ -231,9 +231,11 @@ object Dispatcher {
     private class DispatchData(val queueId: Int,
                                val isIntervalDispatch: Boolean = false) {
 
-        @Volatile var isCancelled: Boolean = false
+        var isCancelled: Boolean = false
 
-        @Volatile var completedDispatch: Boolean = false
+        var autoCancel = true
+
+        var completedDispatch: Boolean = false
 
         lateinit var rootDispatch: DispatchInfo<*, *>
 
@@ -328,6 +330,9 @@ object Dispatcher {
                         }
                     } else {
                         dispatchData.completedDispatch = true
+                        if (dispatchData.autoCancel) {
+                            cancel()
+                        }
                     }
                 }
             }
@@ -552,6 +557,16 @@ object Dispatcher {
                 doOnErrorWorker = doOnErrorWorker)
             dispatch.dispatchSources.addAll(dispatchSources)
             return dispatch
+        }
+
+        override fun autoCancel(autoCancel: Boolean): Dispatch<R> {
+            synchronized(dispatchData) {
+                dispatchData.autoCancel = autoCancel
+                if (dispatchData.completedDispatch) {
+                    cancel()
+                }
+            }
+            return this
         }
 
     }
