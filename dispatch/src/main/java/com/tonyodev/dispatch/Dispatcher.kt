@@ -16,11 +16,29 @@ import kotlin.collections.ArrayList
 object Dispatcher {
 
     private val uiHandler = Handler(Looper.getMainLooper())
-    private val defaultHandler: Handler = {
-        val handlerThread = HandlerThread("dispatcher0")
+    private val backgroundHandler: Handler = {
+        val handlerThread = HandlerThread("dispatcherBackground")
         handlerThread.start()
         Handler(handlerThread.looper)
     }()
+    private var networkHandler: Handler? = null
+        get() {
+            if (field == null) {
+                val handlerThread = HandlerThread("dispatcherNetwork")
+                handlerThread.start()
+                field = Handler(handlerThread.looper)
+            }
+            return field
+        }
+    private var ioHandler: Handler? = null
+        get() {
+            if (field == null) {
+                val handlerThread = HandlerThread("dispatcherIO")
+                handlerThread.start()
+                field = Handler(handlerThread.looper)
+            }
+            return field
+        }
     private var globalErrorHandler: ((dispatch: Dispatch<*>, throwable: Throwable) -> Unit)? = null
     @Volatile
     private var newThreadCount = 0
@@ -43,7 +61,7 @@ object Dispatcher {
     @JvmStatic
     fun createDispatch(): Dispatch<Unit> {
         return createFreshDispatch(
-            handler = defaultHandler,
+            handler = backgroundHandler,
             delayInMillis = 0,
             closeHandler = false,
             isIntervalDispatch = false)
@@ -62,6 +80,22 @@ object Dispatcher {
             handler = backgroundHandler ?: getNewDispatchHandler(),
             delayInMillis = 0,
             closeHandler = backgroundHandler == null,
+            isIntervalDispatch = false)
+    }
+
+    /**
+     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * The returned dispatch will have a handler of the thread type
+     * @param threadType the default threadType to use.
+     * handler is used.
+     * @return new dispatch.
+     * */
+    @JvmStatic
+    fun createDispatch(threadType: ThreadType): Dispatch<Unit> {
+        return createFreshDispatch(
+            handler = getHandlerForThreadType(threadType),
+            delayInMillis = 0,
+            closeHandler = true,
             isIntervalDispatch = false)
     }
 
@@ -147,11 +181,19 @@ object Dispatcher {
             isIntervalDispatch = true)
     }
 
-    private  fun getNewDispatchHandler(name: String? = null): Handler {
+    private fun getNewDispatchHandler(name: String? = null): Handler {
         val threadName = name ?: "dispatch${++newThreadCount}"
         val handlerThread = HandlerThread(threadName)
         handlerThread.start()
         return Handler(handlerThread.looper)
+    }
+
+    private fun getHandlerForThreadType(threadType: ThreadType): Handler {
+        return when(threadType) {
+            ThreadType.BACKGROUND -> backgroundHandler
+            ThreadType.IO -> ioHandler!!
+            ThreadType.NETWORK -> networkHandler!!
+        }
     }
 
     private fun getNewQueueId(): Int {
