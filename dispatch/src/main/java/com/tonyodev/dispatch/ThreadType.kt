@@ -6,7 +6,7 @@ package com.tonyodev.dispatch
  * */
 enum class ThreadType {
 
-    /* Use Default IO thread.*/
+    /** Use Default IO thread.*/
     IO,
 
     /** Use default Network thread.*/
