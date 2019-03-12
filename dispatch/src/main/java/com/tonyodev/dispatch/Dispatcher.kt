@@ -194,6 +194,7 @@ object Dispatcher {
             ThreadType.BACKGROUND -> backgroundHandler
             ThreadType.IO -> ioHandler!!
             ThreadType.NETWORK -> networkHandler!!
+            ThreadType.NEW -> getNewDispatchHandler()
         }
     }
 
@@ -460,16 +461,29 @@ object Dispatcher {
         }
 
         override fun <U> doWork(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            return doWork(null, delayInMillis, func)
-        }
-
-        override fun <U> doWork(backgroundHandler: Handler?, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
             val workHandler = when {
-                backgroundHandler != null -> backgroundHandler
-                handler.looper.thread.name == uiHandler.looper.thread.name -> getNewDispatchHandler()
+                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
                 else -> handler
             }
+            return getNewDispatch(func, workHandler, delayInMillis)
+        }
+
+        override fun <U> doWork(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
+            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
+            val workHandler = when {
+                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
+                else -> handler
+            }
+            return getNewDispatch(func, workHandler, delayInMillis)
+        }
+
+        override fun <U> doWork(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
+            val workHandler = getHandlerForThreadType(threadType)
+            return getNewDispatch(func, workHandler, 0)
+        }
+
+        override fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
+            val workHandler = getHandlerForThreadType(threadType)
             return getNewDispatch(func, workHandler, delayInMillis)
         }
 
@@ -498,7 +512,7 @@ object Dispatcher {
             return synchronized(dispatchData) {
                 appendDispatchToThis(dispatch)
                 val workHandler = when {
-                    handler.looper.thread.name == uiHandler.looper.thread.name -> getNewDispatchHandler()
+                    handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
                     else -> handler
                 }
                 val newDispatch = DispatchInfo<Pair<R, U>, Pair<R, U>>(
@@ -526,7 +540,7 @@ object Dispatcher {
                 appendDispatchToThis(dispatch2)
                 val dispatchSource2 = dispatchData.dispatchQueue.last()
                 val workHandler = when {
-                    handler.looper.thread.name == uiHandler.looper.thread.name -> getNewDispatchHandler()
+                    handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
                     else -> handler
                 }
                 val newDispatch = DispatchInfo<Triple<R, U, T>, Triple<R, U, T>>(

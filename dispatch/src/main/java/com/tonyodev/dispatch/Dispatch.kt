@@ -72,6 +72,15 @@ interface Dispatch<R> {
 
     /**
      * Perform work on the background thread.
+     * @param threadType the threadType.
+     * @param func the function.
+     * @throws IllegalArgumentException if the handler passed in uses the main thread.
+     * @return the dispatch.
+     * */
+    fun <U> doWork(threadType: ThreadType, func: (R) -> U): Dispatch<U>
+
+    /**
+     * Perform work on the background thread.
      * @param delayInMillis the delay in milliseconds before the handler runs the func.
      * Values under 1 indicates that there are no delays.
      * @param func the function.
@@ -87,7 +96,17 @@ interface Dispatch<R> {
      * @param func the function.
      * @return the dispatch.
      * */
-    fun <U> doWork(backgroundHandler: Handler?, delayInMillis: Long, func: (R) -> U): Dispatch<U>
+    fun <U> doWork(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U>
+
+    /**
+     * Perform work on the background thread.
+     * @param threadType the threadType.
+     * @param delayInMillis the delay in milliseconds before the handler runs the func.
+     * Values under 1 indicates that there are no delays.
+     * @param func the function.
+     * @return the dispatch.
+     * */
+    fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
      * Triggers the dispatch to perform work. The dispatch do not perform work until run is called.

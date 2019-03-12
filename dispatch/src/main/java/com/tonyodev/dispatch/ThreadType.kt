@@ -13,6 +13,9 @@ enum class ThreadType {
     NETWORK,
 
     /** Use default Background thread.*/
-    BACKGROUND;
+    BACKGROUND,
+
+    /** Use a new background thread.*/
+    NEW;
 
 }
