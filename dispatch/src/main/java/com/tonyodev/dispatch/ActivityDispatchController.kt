@@ -5,7 +5,7 @@ import android.app.Application
 import android.os.Bundle
 
 /**
- * A Dispatch Controller that used an activity's lifecycle to manage
+ * A Dispatch Controller that uses an activity's lifecycle to manage
  * Dispatch objects.
  * */
 open class ActivityDispatchController(private val activity: Activity): DispatchController() {
@@ -89,9 +89,13 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
     }
 
     private fun release() {
-        synchronized(map) {
-            activity.application.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
-            map.remove(activity)
+        activity.application.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
+        val iterator = map.iterator()
+        while (iterator.hasNext()) {
+            if (iterator.next().key == activity) {
+                iterator.remove()
+                break
+            }
         }
     }
 
@@ -101,14 +105,14 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
         while (iterator.hasNext()) {
             if (iterator.next() == dispatch.rootDispatch) {
                 iterator.remove()
-                break
+                return
             }
         }
         iterator = stoppedSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next() == dispatch.rootDispatch) {
                 iterator.remove()
-                break
+                return
             }
         }
         iterator = destroySet.iterator()
@@ -163,14 +167,14 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
         while (iterator.hasNext()) {
             if (iterator.next().queueId == queueId) {
                 iterator.remove()
-                break
+                return
             }
         }
         iterator = stoppedSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next().queueId == queueId) {
                 iterator.remove()
-                break
+                return
             }
         }
         iterator = destroySet.iterator()
@@ -194,11 +198,9 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
          * @return return instance.
          * */
         fun getInstance(activity: Activity): ActivityDispatchController {
-            return synchronized(map) {
-                val controller = map[activity] ?: ActivityDispatchController(activity)
-                map[activity] = controller
-                controller
-            }
+            val controller = map[activity] ?: ActivityDispatchController(activity)
+            map[activity] = controller
+            return controller
         }
 
     }
