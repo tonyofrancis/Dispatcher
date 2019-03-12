@@ -5,15 +5,14 @@ import android.util.Log;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import com.tonyodev.dispatch.CancelType;
 import com.tonyodev.dispatch.Dispatcher;
-import com.tonyodev.dispatch.DispatchController;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
 
 
 public class ActivityTwo extends AppCompatActivity {
 
-    private final DispatchController dispatchController = DispatchController.create();
     private TextView textView;
 
     @Override
@@ -21,12 +20,17 @@ public class ActivityTwo extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_two);
         textView = findViewById(R.id.text_view);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         runIntervalTask();
     }
 
     private void runIntervalTask() {
         Dispatcher.createIntervalDispatch(10000)
-                .managedBy(dispatchController)
+                .managedBy(this, CancelType.PAUSED)
                 .doWork(new Function1<Unit, Integer>() {
                     @Override
                     public Integer invoke(Unit unit) {
@@ -53,12 +57,6 @@ public class ActivityTwo extends AppCompatActivity {
                 return null;
             }
         }).run();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        dispatchController.cancelAllDispatch();
     }
 
 }

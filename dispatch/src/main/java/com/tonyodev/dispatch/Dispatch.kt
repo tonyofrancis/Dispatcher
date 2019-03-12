@@ -1,5 +1,6 @@
 package com.tonyodev.dispatch
 
+import android.app.Activity
 import android.os.Handler
 import java.lang.IllegalArgumentException
 
@@ -124,6 +125,25 @@ interface Dispatch<R> {
      * @return dispatch.
      * */
     fun managedBy(dispatchController: DispatchController): Dispatch<R>
+
+    /**
+     * Set's this dispatch to be managed by an Activity. The activity is wrapped in an instance
+     * of ActivityDispatchController. This dispatch controller is controlled by the activity's lifecycle.
+     * Managed dispatch objects can be cancelled by the DispatchController if the dispatch is not already cancelled.
+     * @param activity the activity that will manage the dispatch. The cancel type is Destroyed.
+     * @return dispatch.
+     * */
+    fun managedBy(activity: Activity): Dispatch<R>
+
+    /**
+     * Set's this dispatch to be managed by an Activity. The activity is wrapped in an instance
+     * of ActivityDispatchController. This dispatch controller is controlled by the activity's lifecycle.
+     * Managed dispatch objects can be cancelled by the DispatchController if the dispatch is not already cancelled.
+     * @param activity the activity that will manage the dispatch.
+     * @param cancelType the cancel type
+     * @return dispatch.
+     * */
+    fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R>
 
     /**
      * Clones the passed in dispatch and combines it to this dispatch.

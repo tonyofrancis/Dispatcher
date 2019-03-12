@@ -6,7 +6,6 @@ import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.tonyodev.dispatch.Dispatcher
-import com.tonyodev.dispatch.DispatchController
 import com.tonyodev.dispatchretrofit.DispatchCallAdapterFactory
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -15,7 +14,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var retrofit: Retrofit
     private lateinit var service: TestService
-    private val dispatchController = DispatchController.create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,13 +34,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestService() {
        service.getSampleJson()
-           .managedBy(dispatchController)
+           .managedBy(this)
             .doWork { data ->
                 Log.d("dispatcherTest", "data size is:${data.size}")
             }
            .run()
         //or
         Dispatcher.createTimerDispatch(2000)
+            .managedBy(this)
             .doWork { 124 }
             .combine(service.getSampleJson().doOnError { emptyList() })
             .doWork {
@@ -53,16 +52,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestTimer() {
         Dispatcher.createTimerDispatch(5000)
-            .managedBy(dispatchController)
+            .managedBy(this)
             .postMain {
                 Log.d("dispatcherTest","Test timer after 5000 millis. data is $it")
             }
             .run()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        dispatchController.cancelAllDispatch()
     }
 
 }

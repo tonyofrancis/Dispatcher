@@ -1,5 +1,6 @@
 package com.tonyodev.dispatch
 
+import android.app.Activity
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -389,12 +390,17 @@ object Dispatcher {
             synchronized(dispatchData) {
                 if (!isCancelled) {
                     dispatchData.isCancelled = true
+                    val dispatchController = dispatchData.dispatchController
+                    dispatchData.dispatchController = null
+                    if (dispatchController is ActivityDispatchController) {
+                        dispatchController.unmanage(this)
+                    } else {
+                        dispatchController?.unmanage(this)
+                    }
                     val iterator = dispatchData.dispatchQueue.iterator()
                     while (iterator.hasNext()) {
                         val dispatch = iterator.next()
                         dispatch.removeDispatcher()
-                        dispatchData.dispatchController?.unmanage(this)
-                        dispatchData.dispatchController = null
                         iterator.remove()
                     }
                 }
@@ -422,6 +428,18 @@ object Dispatcher {
             this.dispatchData.dispatchController?.unmanage(this)
             this.dispatchData.dispatchController = dispatchController
             dispatchController.manage(this)
+            return this
+        }
+
+        override fun managedBy(activity: Activity): Dispatch<R> {
+          return managedBy(activity, CancelType.DESTROYED)
+        }
+
+        override fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R> {
+            this.dispatchData.dispatchController?.unmanage(this)
+            val dispatchController = ActivityDispatchController.getInstance(activity)
+            this.dispatchData.dispatchController = dispatchController
+            dispatchController.manage(this, cancelType)
             return this
         }
 
