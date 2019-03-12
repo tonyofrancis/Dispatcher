@@ -13,7 +13,7 @@ import java.lang.reflect.Type
 /**
  * Dispatch Call Adapter Factory for Retrofit.
  * */
-class DispatchCallAdapterFactory @JvmOverloads constructor(
+class DispatchCallAdapterFactory private constructor(
     /** Optional handler used by the Dispatch objects created by this Factory.*/
     private val handler: Handler? = null): CallAdapter.Factory() {
 
