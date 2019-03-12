@@ -273,7 +273,7 @@ object Dispatcher {
 
     private class DispatchData(val queueId: Int,
                                val isIntervalDispatch: Boolean = false) {
-
+        @Volatile
         var isCancelled: Boolean = false
 
         var autoCancel = true
@@ -397,12 +397,10 @@ object Dispatcher {
         }
 
         override fun run(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?): Dispatch<R> {
-            synchronized(dispatchData) {
-                dispatchData.errorHandler = errorHandler
-                if (!isCancelled) {
-                    dispatchData.completedDispatch = false
-                    dispatchData.rootDispatch.runDispatcher()
-                }
+            dispatchData.errorHandler = errorHandler
+            if (!isCancelled) {
+                dispatchData.completedDispatch = false
+                dispatchData.rootDispatch.runDispatcher()
             }
             return this
         }
@@ -467,9 +465,11 @@ object Dispatcher {
         }
 
         override fun managedBy(dispatchController: DispatchController): Dispatch<R> {
-            this.dispatchData.dispatchController?.unmanage(this)
-            this.dispatchData.dispatchController = dispatchController
-            dispatchController.manage(this)
+            synchronized(dispatchData) {
+                this.dispatchData.dispatchController?.unmanage(this)
+                this.dispatchData.dispatchController = dispatchController
+                dispatchController.manage(this)
+            }
             return this
         }
 
@@ -478,10 +478,12 @@ object Dispatcher {
         }
 
         override fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R> {
-            this.dispatchData.dispatchController?.unmanage(this)
-            val dispatchController = ActivityDispatchController.getInstance(activity)
-            this.dispatchData.dispatchController = dispatchController
-            dispatchController.manage(this, cancelType)
+            synchronized(dispatchData) {
+                this.dispatchData.dispatchController?.unmanage(this)
+                val dispatchController = ActivityDispatchController.getInstance(activity)
+                this.dispatchData.dispatchController = dispatchController
+                dispatchController.manage(this, cancelType)
+            }
             return this
         }
 
