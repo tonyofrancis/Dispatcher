@@ -70,7 +70,7 @@ object Dispatcher {
 
     /**
      * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
-     * @param backgroundHandler the background handler used to schedule work in the background. If null, a new backgroundHandler is created.
+     * @param backgroundHandler the background handler used to schedule work in the background. If null, the default background handler is used.
      * @throws Exception throws exception if backgroundHandler thread passed in uses the ui thread.
      * @return new dispatch.
      * */
@@ -78,9 +78,9 @@ object Dispatcher {
     fun createDispatch(backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
-            handler = backgroundHandler ?: getNewDispatchHandler(),
+            handler = backgroundHandler ?: this.backgroundHandler,
             delayInMillis = 0,
-            closeHandler = backgroundHandler == null,
+            closeHandler = false,
             isIntervalDispatch = false)
     }
 
@@ -93,10 +93,11 @@ object Dispatcher {
      * */
     @JvmStatic
     fun createDispatch(threadType: ThreadType): Dispatch<Unit> {
+        val handlerPair = getHandlerForThreadType(threadType)
         return createFreshDispatch(
-            handler = getHandlerForThreadType(threadType),
+            handler = handlerPair.first,
             delayInMillis = 0,
-            closeHandler = true,
+            closeHandler = handlerPair.second,
             isIntervalDispatch = false)
     }
 
@@ -150,6 +151,24 @@ object Dispatcher {
     }
 
     /**
+     * Creates a new timer dispatch.
+     * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
+     * Values under 1 indicates that there are no delays.
+     * @param threadType the thread type.
+     * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+     * @return new dispatch.
+     * */
+    @JvmStatic
+    fun createTimerDispatch(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
+        val handlerPair = getHandlerForThreadType(threadType)
+        return createFreshDispatch(
+            handler = handlerPair.first,
+            delayInMillis = delayInMillis,
+            closeHandler = handlerPair.second,
+            isIntervalDispatch = false)
+    }
+
+    /**
      * Creates a new interval dispatch that fires every x time. A new handler thread is created to run the interval dispatch.
      * @param delayInMillis the delay in milliseconds before the handler runs the worker.
      * Values under 1 indicates that there are no delays.
@@ -182,19 +201,41 @@ object Dispatcher {
             isIntervalDispatch = true)
     }
 
+    /**
+     * Creates a new interval dispatch that fires every x time.
+     * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
+     * Values under 1 indicates that there are no delays.
+     * @param threadType the thread type.
+     * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+     * @return new dispatch.
+     * */
+    @JvmStatic
+    fun createIntervalDispatch(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
+        val handlerPair = getHandlerForThreadType(threadType)
+        return createFreshDispatch(
+            handler = handlerPair.first,
+            delayInMillis = delayInMillis,
+            closeHandler = handlerPair.second,
+            isIntervalDispatch = true)
+    }
+
     private fun getNewDispatchHandler(name: String? = null): Handler {
-        val threadName = name ?: "dispatch${++newThreadCount}"
+        val threadName = if (name == null || name.isEmpty()) {
+            "dispatch${++newThreadCount}"
+        } else {
+            name
+        }
         val handlerThread = HandlerThread(threadName)
         handlerThread.start()
         return Handler(handlerThread.looper)
     }
 
-    private fun getHandlerForThreadType(threadType: ThreadType): Handler {
+    private fun getHandlerForThreadType(threadType: ThreadType): Pair<Handler, Boolean> {
         return when(threadType) {
-            ThreadType.BACKGROUND -> backgroundHandler
-            ThreadType.IO -> ioHandler!!
-            ThreadType.NETWORK -> networkHandler!!
-            ThreadType.NEW -> getNewDispatchHandler()
+            ThreadType.BACKGROUND -> Pair(backgroundHandler, false)
+            ThreadType.IO -> Pair(ioHandler!!, false)
+            ThreadType.NETWORK -> Pair(networkHandler!!, false)
+            ThreadType.NEW -> Pair(getNewDispatchHandler(), true)
         }
     }
 
@@ -449,7 +490,7 @@ object Dispatcher {
         }
 
         override fun <U> postMain(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            return getNewDispatch(func, uiHandler, delayInMillis)
+            return getNewDispatch(func, uiHandler, delayInMillis, false)
         }
 
         override fun <U> doWork(func: (R) -> U): Dispatch<U> {
@@ -465,7 +506,7 @@ object Dispatcher {
                 handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
                 else -> handler
             }
-            return getNewDispatch(func, workHandler, delayInMillis)
+            return getNewDispatch(func, workHandler, delayInMillis, workHandler == handler && closeHandler)
         }
 
         override fun <U> doWork(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
@@ -474,26 +515,26 @@ object Dispatcher {
                 handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
                 else -> handler
             }
-            return getNewDispatch(func, workHandler, delayInMillis)
+            return getNewDispatch(func, workHandler, delayInMillis, workHandler == handler && closeHandler)
         }
 
         override fun <U> doWork(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
-            val workHandler = getHandlerForThreadType(threadType)
-            return getNewDispatch(func, workHandler, 0)
+            val handlerPair = getHandlerForThreadType(threadType)
+            return getNewDispatch(func, handlerPair.first, 0, handlerPair.second)
         }
 
         override fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            val workHandler = getHandlerForThreadType(threadType)
-            return getNewDispatch(func, workHandler, delayInMillis)
+            val handlerPair = getHandlerForThreadType(threadType)
+            return getNewDispatch(func, handlerPair.first, delayInMillis, handlerPair.second)
         }
 
-        private fun <T, R> getNewDispatch(worker: (T) -> R, handler: Handler, delayInMillis: Long): Dispatch<R> {
+        private fun <T, R> getNewDispatch(worker: (T) -> R, handler: Handler, delayInMillis: Long, closeHandler: Boolean): Dispatch<R> {
             val newDispatch = DispatchInfo(
                 dispatchId = getNewDispatchId(),
                 handler = handler,
                 delayInMillis = delayInMillis,
                 worker = worker,
-                closeHandler = (handler == this.handler) && closeHandler,
+                closeHandler = closeHandler,
                 dispatchData = dispatchData)
             newDispatch.dispatchSources.add(this)
             synchronized(dispatchData) {
