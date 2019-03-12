@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import com.tonyodev.dispatch.Dispatch
 import com.tonyodev.dispatch.Dispatcher
+import com.tonyodev.dispatch.ThreadType
 import retrofit2.*
 import java.lang.IllegalArgumentException
 import java.lang.reflect.ParameterizedType
@@ -51,16 +52,19 @@ class DispatchCallAdapterFactory @JvmOverloads constructor(
                                  private val handler: Handler?): CallAdapter<R, Dispatch<*>> {
 
         override fun adapt(call: Call<R>): Dispatch<*> {
-            return Dispatcher.createDispatch(handler)
-                .doWork {
-                    val callClone = call.clone()
-                    val response = callClone.execute()
-                    if (response.isSuccessful) {
-                        response.body()
-                    } else {
-                        throw HttpException(response)
-                    }
+            return if (handler == null) {
+                Dispatcher.createDispatch(ThreadType.NETWORK)
+            } else {
+                Dispatcher.createDispatch(handler)
+            }.doWork {
+                val callClone = call.clone()
+                val response = callClone.execute()
+                if (response.isSuccessful) {
+                    response.body()
+                } else {
+                    throw HttpException(response)
                 }
+            }
         }
 
         override fun responseType(): Type {
