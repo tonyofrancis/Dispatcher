@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.util.Log
 import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.collections.ArrayList
@@ -43,6 +44,8 @@ object Dispatcher {
     private var globalErrorHandler: ((dispatch: Dispatch<*>, throwable: Throwable) -> Unit)? = null
     @Volatile
     private var newThreadCount = 0
+    private var enableWarnings = true
+    private const val TAG = "com.tonyodev.dispatch"
 
     /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
@@ -52,6 +55,15 @@ object Dispatcher {
     @JvmStatic
     fun setGlobalErrorHandler(errorHandler: ((dispatch: Dispatch<*>, throwable: Throwable) -> Unit)?) {
         this.globalErrorHandler = errorHandler
+    }
+
+    /**
+     * Enable or disable log warnings by the library.
+     * @param enabled value. Enabled by default
+     * */
+    @JvmStatic
+    fun setEnableLogWarnings(enabled: Boolean) {
+        this.enableWarnings = enabled
     }
 
     /**
@@ -395,6 +407,10 @@ object Dispatcher {
             if (!isCancelled) {
                 dispatchData.completedDispatchQueue = false
                 dispatchData.rootDispatch.runDispatcher()
+                if (dispatchData.dispatchController == null && enableWarnings) {
+                    Log.w(TAG, "No DispatchController set for dispatch queue with id: $queueId. " +
+                            "Not setting a dispatch controller can cause memory leaks.")
+                }
             }
             return this
         }
