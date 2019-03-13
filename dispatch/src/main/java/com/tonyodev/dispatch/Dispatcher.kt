@@ -273,21 +273,14 @@ object Dispatcher {
 
     private class DispatchData(val queueId: Int,
                                val isIntervalDispatch: Boolean = false) {
-
-        var isCancelled: Boolean = false
-
-        var autoCancel = true
-
-        var completedDispatch: Boolean = false
-
+        @Volatile
+        var isCancelled = false
+        @Volatile
+        var completedDispatchQueue = false
         lateinit var rootDispatch: DispatchInfo<*, *>
-
-        val dispatchQueue: MutableList<DispatchInfo<*, *>> = mutableListOf()
-
+        val dispatchQueue = LinkedList<DispatchInfo<*, *>>()
         var errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
-
         var dispatchController: DispatchController? = null
-
     }
 
     private class DispatchInfo<T, R>(override val dispatchId: String,
@@ -295,9 +288,11 @@ object Dispatcher {
                                      private val delayInMillis: Long = -1,
                                      private val worker: ((T) -> R)?,
                                      private val closeHandler: Boolean,
-                                     private val dispatchData: DispatchData,
-                                     private val dispatchSources: ArrayList<Dispatch<*>> = ArrayList(3),
-                                     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null): Dispatch<R> {
+                                     private val dispatchData: DispatchData): Dispatch<R> {
+
+        private val dispatchSources: ArrayList<Dispatch<*>> = ArrayList(3)
+
+        private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
         override val queueId: Int
             get() {
@@ -357,26 +352,25 @@ object Dispatcher {
         }
 
         private fun processNextDispatch() {
-            synchronized(dispatchData) {
-                if (!isCancelled) {
-                    val dispatchQueue = dispatchData.dispatchQueue
-                    val nextDispatchIndex = dispatchQueue.indexOf(this) + 1
-                    if (nextDispatchIndex < dispatchQueue.size) {
-                        val nextDispatch = dispatchQueue.elementAt(nextDispatchIndex) as DispatchInfo
-                        nextDispatch.runDispatcher()
-                    } else if (nextDispatchIndex >= dispatchQueue.size) {
-                        if (dispatchData.isIntervalDispatch) {
-                            dispatchData.completedDispatch = false
-                            dispatchData.rootDispatch.runDispatcher()
-                        } else {
-                            dispatchData.completedDispatch = true
-                        }
-                    } else {
-                        dispatchData.completedDispatch = true
-                        if (dispatchData.autoCancel) {
-                            cancel()
-                        }
+            if (!isCancelled) {
+                val iterator = dispatchData.dispatchQueue.iterator()
+                var self: DispatchInfo<*, *>? = null
+                var nextDispatch: DispatchInfo<*, *>? = null
+                var dispatch: DispatchInfo<*, *>
+                while (iterator.hasNext() && !isCancelled) {
+                    dispatch = iterator.next()
+                    if (self != null) {
+                        nextDispatch = dispatch
+                        break
                     }
+                    if (dispatch == this) {
+                        self = dispatch
+                    }
+                }
+                when {
+                    nextDispatch != null -> nextDispatch.runDispatcher()
+                    dispatchData.isIntervalDispatch -> dispatchData.rootDispatch.runDispatcher()
+                    else -> dispatchData.completedDispatchQueue = true
                 }
             }
         }
@@ -397,12 +391,10 @@ object Dispatcher {
         }
 
         override fun run(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?): Dispatch<R> {
-            synchronized(dispatchData) {
-                dispatchData.errorHandler = errorHandler
-                if (!isCancelled) {
-                    dispatchData.completedDispatch = false
-                    dispatchData.rootDispatch.runDispatcher()
-                }
+            dispatchData.errorHandler = errorHandler
+            if (!isCancelled) {
+                dispatchData.completedDispatchQueue = false
+                dispatchData.rootDispatch.runDispatcher()
             }
             return this
         }
@@ -429,22 +421,22 @@ object Dispatcher {
         }
 
         override fun cancel(): Dispatch<R> {
-            synchronized(dispatchData) {
-                if (!isCancelled) {
-                    dispatchData.isCancelled = true
-                    val dispatchController = dispatchData.dispatchController
-                    dispatchData.dispatchController = null
-                    if (dispatchController is ActivityDispatchController) {
-                        dispatchController.unmanage(this)
-                    } else {
-                        dispatchController?.unmanage(this)
-                    }
-                    val iterator = dispatchData.dispatchQueue.iterator()
-                    while (iterator.hasNext()) {
-                        val dispatch = iterator.next()
-                        dispatch.removeDispatcher()
-                        iterator.remove()
-                    }
+            if (!isCancelled) {
+                dispatchData.isCancelled = true
+                val dispatchController = dispatchData.dispatchController
+                dispatchData.dispatchController = null
+                if (dispatchController is ActivityDispatchController) {
+                    dispatchController.unmanage(this)
+                } else {
+                    dispatchController?.unmanage(this)
+                }
+                val iterator = dispatchData.dispatchQueue.iterator()
+                var dispatch: DispatchInfo<*, *>?
+                while (iterator.hasNext()) {
+                    dispatch = iterator.next()
+                    dispatch.removeDispatcher()
+                    dispatch.dispatchSources.clear()
+                    iterator.remove()
                 }
             }
             return this
@@ -467,7 +459,9 @@ object Dispatcher {
         }
 
         override fun managedBy(dispatchController: DispatchController): Dispatch<R> {
-            this.dispatchData.dispatchController?.unmanage(this)
+            val oldDispatchController = this.dispatchData.dispatchController
+            this.dispatchData.dispatchController = null
+            oldDispatchController?.unmanage(this)
             this.dispatchData.dispatchController = dispatchController
             dispatchController.manage(this)
             return this
@@ -478,7 +472,9 @@ object Dispatcher {
         }
 
         override fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R> {
-            this.dispatchData.dispatchController?.unmanage(this)
+            val oldDispatchController = this.dispatchData.dispatchController
+            this.dispatchData.dispatchController = null
+            oldDispatchController?.unmanage(this)
             val dispatchController = ActivityDispatchController.getInstance(activity)
             this.dispatchData.dispatchController = dispatchController
             dispatchController.manage(this, cancelType)
@@ -511,11 +507,7 @@ object Dispatcher {
 
         override fun <U> doWork(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
             throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
-            val workHandler = when {
-                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> handler
-            }
-            return getNewDispatch(func, workHandler, delayInMillis, workHandler == handler && closeHandler)
+            return getNewDispatch(func, backgroundHandler, delayInMillis, backgroundHandler == handler && closeHandler)
         }
 
         override fun <U> doWork(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
@@ -537,13 +529,11 @@ object Dispatcher {
                 closeHandler = closeHandler,
                 dispatchData = dispatchData)
             newDispatch.dispatchSources.add(this)
-            synchronized(dispatchData) {
-                if (!isCancelled) {
-                    dispatchData.dispatchQueue.add(newDispatch)
-                    if (dispatchData.completedDispatch) {
-                        dispatchData.completedDispatch = false
-                        dispatchData.rootDispatch.runDispatcher()
-                    }
+            if (!isCancelled) {
+                dispatchData.dispatchQueue.add(newDispatch)
+                if (dispatchData.completedDispatchQueue) {
+                    dispatchData.completedDispatchQueue = false
+                    dispatchData.rootDispatch.runDispatcher()
                 }
             }
             return newDispatch
@@ -566,8 +556,8 @@ object Dispatcher {
                 newDispatch.dispatchSources.add(this)
                 newDispatch.dispatchSources.add(dispatchData.dispatchQueue.last())
                 dispatchData.dispatchQueue.add(newDispatch)
-                if (dispatchData.completedDispatch) {
-                    dispatchData.completedDispatch = false
+                if (dispatchData.completedDispatchQueue) {
+                    dispatchData.completedDispatchQueue = false
                     dispatchData.rootDispatch.runDispatcher()
                 }
                 newDispatch
@@ -595,8 +585,8 @@ object Dispatcher {
                 newDispatch.dispatchSources.add(dispatchSource1)
                 newDispatch.dispatchSources.add(dispatchSource2)
                 dispatchData.dispatchQueue.add(newDispatch)
-                if (dispatchData.completedDispatch) {
-                    dispatchData.completedDispatch = false
+                if (dispatchData.completedDispatchQueue) {
+                    dispatchData.completedDispatchQueue = false
                     dispatchData.rootDispatch.runDispatcher()
                 }
                 newDispatch
@@ -626,20 +616,10 @@ object Dispatcher {
                 delayInMillis = delayInMillis,
                 worker = worker,
                 closeHandler = closeHandler,
-                dispatchData = dispatchData,
-                doOnErrorWorker = doOnErrorWorker)
+                dispatchData = dispatchData)
+            dispatch.doOnErrorWorker = doOnErrorWorker
             dispatch.dispatchSources.addAll(dispatchSources)
             return dispatch
-        }
-
-        override fun autoCancel(autoCancel: Boolean): Dispatch<R> {
-            synchronized(dispatchData) {
-                dispatchData.autoCancel = autoCancel
-                if (dispatchData.completedDispatch) {
-                    cancel()
-                }
-            }
-            return this
         }
 
     }

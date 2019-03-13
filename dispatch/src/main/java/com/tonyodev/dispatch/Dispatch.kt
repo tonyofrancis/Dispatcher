@@ -179,11 +179,4 @@ interface Dispatch<R> {
      * */
     fun <U, T> combine(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
 
-    /**
-     * Sets if the dispatch should auto cancel when completed. True by default.
-     * @param autoCancel value
-     * @return dispatch
-     * */
-    fun autoCancel(autoCancel: Boolean): Dispatch<R>
-
 }
