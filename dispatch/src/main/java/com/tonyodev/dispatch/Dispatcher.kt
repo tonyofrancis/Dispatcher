@@ -46,6 +46,7 @@ object Dispatcher {
     private var newThreadCount = 0
     private var enableWarnings = true
     private const val TAG = "com.tonyodev.dispatch"
+    private val INVALID_RESULT = InvalidResult()
 
     /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
@@ -321,32 +322,53 @@ object Dispatcher {
                 return dispatchData.rootDispatch
             }
 
-        var results: Any? = null
+        var results: Any? = INVALID_RESULT
 
         @Suppress("UNCHECKED_CAST")
         private val dispatcher = Runnable {
             try {
                 if (!isCancelled) {
                     if (worker != null && dispatchSources.isNotEmpty()) {
+                        val result1: Any?
+                        val result2: Any?
+                        val result3: Any?
                         val data = when(dispatchSources.size) {
                             3 -> {
-                                Triple((dispatchSources[0] as DispatchInfo<*, *>).results,
-                                    (dispatchSources[1] as DispatchInfo<*, *>).results,
-                                    (dispatchSources[2] as DispatchInfo<*, *>).results)
+                                result1 = (dispatchSources[0] as DispatchInfo<*, *>).results
+                                result2 = (dispatchSources[1] as DispatchInfo<*, *>).results
+                                result3 = (dispatchSources[2] as DispatchInfo<*, *>).results
+                                if (hasInvalidResult(result1, result2, result3)) {
+                                    INVALID_RESULT
+                                } else {
+                                    Triple(result1, result2, result3)
+                                }
                             }
                             2 -> {
-                                Pair((dispatchSources[0] as DispatchInfo<*, *>).results,
-                                    (dispatchSources[1] as DispatchInfo<*, *>).results)
+                                result1 = (dispatchSources[0] as DispatchInfo<*, *>).results
+                                result2 = (dispatchSources[1] as DispatchInfo<*, *>).results
+                                if (hasInvalidResult(result1, result2)) {
+                                    INVALID_RESULT
+                                } else {
+                                    Pair(result1, result2)
+                                }
                             }
                             else -> {
-                                (dispatchSources[0] as DispatchInfo<*, *>).results
+                                result1 = (dispatchSources[0] as DispatchInfo<*, *>).results
+                                if (hasInvalidResult(result1)) {
+                                    INVALID_RESULT
+                                } else {
+                                    result1
+                                }
                             }
                         }
-                        results = worker.invoke(data as T)
+                        if (data != INVALID_RESULT) {
+                            results = worker.invoke(data as T)
+                            processNextDispatch()
+                        }
                     } else {
                         results = Unit
+                        processNextDispatch()
                     }
-                    processNextDispatch()
                 }
             } catch (err: Exception) {
                 val doOnErrorWorker = doOnErrorWorker
@@ -361,6 +383,15 @@ object Dispatcher {
                     handleException(err)
                 }
             }
+        }
+
+        private fun hasInvalidResult(vararg results: Any?): Boolean {
+            for (result in results) {
+                if (result == INVALID_RESULT) {
+                    return true
+                }
+            }
+            return false
         }
 
         private fun processNextDispatch() {
@@ -639,5 +670,7 @@ object Dispatcher {
         }
 
     }
+
+    private class InvalidResult
 
 }
