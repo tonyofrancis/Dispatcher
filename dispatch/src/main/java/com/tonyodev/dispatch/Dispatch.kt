@@ -179,4 +179,13 @@ interface Dispatch<R> {
      * */
     fun <U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
 
+    /**
+     * Zips this dispatch with the passed in dispatches and returns a triple result. A triple
+     * result is returned when all or any of the dispatches gets processed.
+     * @param dispatch dispatch to zip with.
+     * @param dispatch2 dispatch to zip with.
+     * @return dispatch with result triple.
+     * */
+    fun <U, T> zipWithAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>>
+
 }

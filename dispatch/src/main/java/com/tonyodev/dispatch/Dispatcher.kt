@@ -278,7 +278,8 @@ object Dispatcher {
             delayInMillis = delayInMillis,
             worker = null,
             closeHandler = closeHandler,
-            dispatchData = dispatchData)
+            dispatchData = dispatchData,
+            isAnyResultDispatch = false)
         dispatchData.rootDispatch = newDispatch
         dispatchData.dispatchQueue.add(newDispatch)
         return newDispatch
@@ -301,7 +302,8 @@ object Dispatcher {
                                      private val delayInMillis: Long = -1,
                                      private val worker: ((T) -> R)?,
                                      private val closeHandler: Boolean,
-                                     private val dispatchData: DispatchData): Dispatch<R> {
+                                     private val dispatchData: DispatchData,
+                                     private val isAnyResultDispatch: Boolean): Dispatch<R> {
 
         private val dispatchSources: ArrayList<Dispatch<*>> = ArrayList(3)
 
@@ -334,9 +336,9 @@ object Dispatcher {
                         val result3: Any?
                         val data = when(dispatchSources.size) {
                             3 -> {
-                                result1 = (dispatchSources[0] as DispatchInfo<*, *>).results
-                                result2 = (dispatchSources[1] as DispatchInfo<*, *>).results
-                                result3 = (dispatchSources[2] as DispatchInfo<*, *>).results
+                                result1 = getSourceResult((dispatchSources[0] as DispatchInfo<*, *>))
+                                result2 = getSourceResult((dispatchSources[1] as DispatchInfo<*, *>))
+                                result3 = getSourceResult((dispatchSources[2] as DispatchInfo<*, *>))
                                 if (hasInvalidResult(result1, result2, result3)) {
                                     INVALID_RESULT
                                 } else {
@@ -344,8 +346,8 @@ object Dispatcher {
                                 }
                             }
                             2 -> {
-                                result1 = (dispatchSources[0] as DispatchInfo<*, *>).results
-                                result2 = (dispatchSources[1] as DispatchInfo<*, *>).results
+                                result1 = getSourceResult((dispatchSources[0] as DispatchInfo<*, *>))
+                                result2 = getSourceResult((dispatchSources[1] as DispatchInfo<*, *>))
                                 if (hasInvalidResult(result1, result2)) {
                                     INVALID_RESULT
                                 } else {
@@ -353,7 +355,7 @@ object Dispatcher {
                                 }
                             }
                             else -> {
-                                result1 = (dispatchSources[0] as DispatchInfo<*, *>).results
+                                result1 = getSourceResult((dispatchSources[0] as DispatchInfo<*, *>))
                                 if (hasInvalidResult(result1)) {
                                     INVALID_RESULT
                                 } else {
@@ -385,7 +387,18 @@ object Dispatcher {
             }
         }
 
+        private fun getSourceResult(sourceDispatchInfo: DispatchInfo<*, *>): Any? {
+            var result = sourceDispatchInfo.results
+            if (isAnyResultDispatch && result == INVALID_RESULT) {
+              result = null
+            }
+            return result
+        }
+
         private fun hasInvalidResult(vararg results: Any?): Boolean {
+            if (isAnyResultDispatch) {
+                return false
+            }
             for (result in results) {
                 if (result == INVALID_RESULT) {
                     return true
@@ -592,7 +605,8 @@ object Dispatcher {
                 delayInMillis = delayInMillis,
                 worker = worker,
                 closeHandler = closeHandler,
-                dispatchData = dispatchData)
+                dispatchData = dispatchData,
+                isAnyResultDispatch = false)
             newDispatch.dispatchSources.add(this)
             if (!isCancelled) {
                 dispatchData.dispatchQueue.add(newDispatch)
@@ -615,7 +629,8 @@ object Dispatcher {
                 delayInMillis = 0,
                 worker = { it },
                 closeHandler = (workHandler == handler) && closeHandler,
-                dispatchData = dispatchData)
+                dispatchData = dispatchData,
+                isAnyResultDispatch = false)
             newDispatch.dispatchSources.add(this)
             newDispatch.dispatchSources.add(dispatch)
             val rootDispatch = dispatch.rootDispatch as DispatchInfo<*, *>
@@ -625,7 +640,6 @@ object Dispatcher {
             if (rootDispatchController == null && dispatchController != null) {
                 rootDispatch.managedBy(dispatchController)
             }
-            dispatchData.dispatchQueue.add(newDispatch)
             rootDispatch.dispatchData.dispatchQueue.add(newDispatch)
             if (dispatchData.completedDispatchQueue) {
                 dispatchData.completedDispatchQueue = false
@@ -645,7 +659,8 @@ object Dispatcher {
                 delayInMillis = 0,
                 worker = { it },
                 closeHandler = (workHandler == handler) && closeHandler,
-                dispatchData = dispatchData)
+                dispatchData = dispatchData,
+                isAnyResultDispatch = false)
             newDispatch.dispatchSources.add(this)
             newDispatch.dispatchSources.add(dispatch)
             newDispatch.dispatchSources.add(dispatch2)
@@ -662,7 +677,6 @@ object Dispatcher {
             if (rootDispatchController2 == null && dispatchController != null) {
                 rootDispatch2.managedBy(dispatchController)
             }
-            dispatchData.dispatchQueue.add(newDispatch)
             rootDispatch2.dispatchData.dispatchQueue.add(newDispatch)
             if (dispatchData.completedDispatchQueue) {
                 dispatchData.completedDispatchQueue = false
@@ -671,6 +685,57 @@ object Dispatcher {
             return newDispatch
         }
 
+        override fun <U, T> zipWithAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>> {
+            val rootDispatch1 = dispatch.rootDispatch as DispatchInfo<*, *>
+            val rootDispatch2 = dispatch2.rootDispatch as DispatchInfo<*, *>
+            val dispatchController = dispatchData.dispatchController
+            val rootDispatchController1 = rootDispatch1.dispatchData.dispatchController
+            if (rootDispatchController1 == null && dispatchController != null) {
+                rootDispatch1.managedBy(dispatchController)
+            }
+            val rootDispatchController2 = rootDispatch2.dispatchData.dispatchController
+            if (rootDispatchController2 == null && dispatchController != null) {
+                rootDispatch2.managedBy(dispatchController)
+            }
+            val workHandler = when {
+                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
+                else -> handler
+            }
+            val runnerDispatch = DispatchInfo<R, R>(
+                dispatchId = getNewDispatchId(),
+                handler = workHandler,
+                delayInMillis = 0,
+                worker = {
+                    rootDispatch1.dispatchData.completedDispatchQueue = false
+                    rootDispatch1.dispatchData.rootDispatch.runDispatcher()
+                    rootDispatch2.dispatchData.completedDispatchQueue = false
+                    rootDispatch2.dispatchData.rootDispatch.runDispatcher()
+                    it
+                },
+                closeHandler = (workHandler == handler) && closeHandler,
+                dispatchData = dispatchData,
+                isAnyResultDispatch = false)
+            runnerDispatch.dispatchSources.add(this)
+            val newDispatch = DispatchInfo<Triple<R?, U?, T?>, Triple<R?, U?, T?>>(
+                dispatchId = getNewDispatchId(),
+                handler = workHandler,
+                delayInMillis = 0,
+                worker = { it },
+                closeHandler = (workHandler == handler) && closeHandler,
+                dispatchData = dispatchData,
+                isAnyResultDispatch = true)
+            newDispatch.dispatchSources.add(runnerDispatch)
+            newDispatch.dispatchSources.add(dispatch)
+            newDispatch.dispatchSources.add(dispatch2)
+            dispatchData.dispatchQueue.add(runnerDispatch)
+            rootDispatch1.dispatchData.dispatchQueue.add(newDispatch)
+            rootDispatch2.dispatchData.dispatchQueue.add(newDispatch)
+            if (dispatchData.completedDispatchQueue) {
+                dispatchData.completedDispatchQueue = false
+                dispatchData.rootDispatch.runDispatcher()
+            }
+            return newDispatch
+        }
     }
 
     private class InvalidResult
