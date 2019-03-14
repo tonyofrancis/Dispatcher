@@ -586,87 +586,71 @@ object Dispatcher {
             return newDispatch
         }
 
-        override fun <U> combine(dispatch: Dispatch<U>): Dispatch<Pair<R, U>> {
-            return synchronized(dispatchData) {
-                appendDispatchToThis(dispatch)
-                val workHandler = when {
-                    handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                    else -> handler
-                }
-                val newDispatch = DispatchInfo<Pair<R, U>, Pair<R, U>>(
-                    dispatchId = getNewDispatchId(),
-                    handler = workHandler,
-                    delayInMillis = delayInMillis,
-                    worker = { it },
-                    closeHandler = (handler == this.handler) && closeHandler,
-                    dispatchData = dispatchData)
-                newDispatch.dispatchSources.add(this)
-                newDispatch.dispatchSources.add(dispatchData.dispatchQueue.last())
-                dispatchData.dispatchQueue.add(newDispatch)
-                if (dispatchData.completedDispatchQueue) {
-                    dispatchData.completedDispatchQueue = false
-                    dispatchData.rootDispatch.runDispatcher()
-                }
-                newDispatch
+        override fun <U> zip(dispatch: Dispatch<U>): Dispatch<Pair<R, U>> {
+            val workHandler = when {
+                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
+                else -> handler
             }
-        }
-
-        override fun <U, T> combine(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>> {
-            return synchronized(dispatchData) {
-                appendDispatchToThis(dispatch)
-                val dispatchSource1 = dispatchData.dispatchQueue.last()
-                appendDispatchToThis(dispatch2)
-                val dispatchSource2 = dispatchData.dispatchQueue.last()
-                val workHandler = when {
-                    handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                    else -> handler
-                }
-                val newDispatch = DispatchInfo<Triple<R, U, T>, Triple<R, U, T>>(
-                    dispatchId = getNewDispatchId(),
-                    handler = workHandler,
-                    delayInMillis = delayInMillis,
-                    worker = { it },
-                    closeHandler = (handler == this.handler) && closeHandler,
-                    dispatchData = dispatchData)
-                newDispatch.dispatchSources.add(this)
-                newDispatch.dispatchSources.add(dispatchSource1)
-                newDispatch.dispatchSources.add(dispatchSource2)
-                dispatchData.dispatchQueue.add(newDispatch)
-                if (dispatchData.completedDispatchQueue) {
-                    dispatchData.completedDispatchQueue = false
-                    dispatchData.rootDispatch.runDispatcher()
-                }
-                newDispatch
-            }
-        }
-
-        private fun appendDispatchToThis(dispatch: Dispatch<*>) {
-            val newDispatchData = (dispatch as DispatchInfo<*, *>).dispatchData
-            synchronized(newDispatchData) {
-                val queue = newDispatchData.dispatchQueue
-                val cloneMap = mutableMapOf<Dispatch<*>, Dispatch<*>>()
-                for (dispatchInfo in queue) {
-                    val clone = dispatchInfo.cloneWithData(dispatchData, dispatchInfo.dispatchSources.mapNotNull { cloneMap[it] })
-                    cloneMap[dispatchInfo] = clone
-                    dispatchInfo.dispatchSources.forEachIndexed { index, dispatch ->
-                        cloneMap[dispatch] = clone.dispatchSources[index]
-                    }
-                    dispatchData.dispatchQueue.add(clone)
-                }
-            }
-        }
-
-        private fun cloneWithData(dispatchData: DispatchData, dispatchSources: List<Dispatch<*>>): DispatchInfo<*, *> {
-            val dispatch = DispatchInfo(
-                dispatchId = dispatchId,
-                handler = handler,
-                delayInMillis = delayInMillis,
-                worker = worker,
-                closeHandler = closeHandler,
+            val newDispatch = DispatchInfo<Pair<R, U>, Pair<R, U>>(
+                dispatchId = getNewDispatchId(),
+                handler = workHandler,
+                delayInMillis = 0,
+                worker = { it },
+                closeHandler = (workHandler == handler) && closeHandler,
                 dispatchData = dispatchData)
-            dispatch.doOnErrorWorker = doOnErrorWorker
-            dispatch.dispatchSources.addAll(dispatchSources)
-            return dispatch
+            newDispatch.dispatchSources.add(this)
+            newDispatch.dispatchSources.add(dispatch)
+            val rootDispatch = dispatch.rootDispatch as DispatchInfo<*, *>
+            dispatchData.dispatchQueue.add(rootDispatch)
+            val dispatchController = dispatchData.dispatchController
+            val rootDispatchController = rootDispatch.dispatchData.dispatchController
+            if (rootDispatchController == null && dispatchController != null) {
+                rootDispatch.managedBy(dispatchController)
+            }
+            dispatchData.dispatchQueue.add(newDispatch)
+            rootDispatch.dispatchData.dispatchQueue.add(newDispatch)
+            if (dispatchData.completedDispatchQueue) {
+                dispatchData.completedDispatchQueue = false
+                dispatchData.rootDispatch.runDispatcher()
+            }
+            return newDispatch
+        }
+
+        override fun <U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>> {
+            val workHandler = when {
+                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
+                else -> handler
+            }
+            val newDispatch = DispatchInfo<Triple<R, U, T>, Triple<R, U, T>>(
+                dispatchId = getNewDispatchId(),
+                handler = workHandler,
+                delayInMillis = 0,
+                worker = { it },
+                closeHandler = (workHandler == handler) && closeHandler,
+                dispatchData = dispatchData)
+            newDispatch.dispatchSources.add(this)
+            newDispatch.dispatchSources.add(dispatch)
+            newDispatch.dispatchSources.add(dispatch2)
+            val rootDispatch1 = dispatch.rootDispatch as DispatchInfo<*, *>
+            val rootDispatch2 = dispatch2.rootDispatch as DispatchInfo<*, *>
+            dispatchData.dispatchQueue.add(rootDispatch1)
+            rootDispatch1.dispatchData.dispatchQueue.add(rootDispatch2)
+            val dispatchController = dispatchData.dispatchController
+            val rootDispatchController1 = rootDispatch1.dispatchData.dispatchController
+            if (rootDispatchController1 == null && dispatchController != null) {
+                rootDispatch1.managedBy(dispatchController)
+            }
+            val rootDispatchController2 = rootDispatch2.dispatchData.dispatchController
+            if (rootDispatchController2 == null && dispatchController != null) {
+                rootDispatch2.managedBy(dispatchController)
+            }
+            dispatchData.dispatchQueue.add(newDispatch)
+            rootDispatch2.dispatchData.dispatchQueue.add(newDispatch)
+            if (dispatchData.completedDispatchQueue) {
+                dispatchData.completedDispatchQueue = false
+                dispatchData.rootDispatch.runDispatcher()
+            }
+            return newDispatch
         }
 
     }

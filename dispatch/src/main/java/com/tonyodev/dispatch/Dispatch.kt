@@ -165,18 +165,18 @@ interface Dispatch<R> {
     fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R>
 
     /**
-     * Clones the passed in dispatch and combines it to this dispatch.
-     * @param dispatch to be cloned.
-     * @return dispatch with results from the current dispatch and the combines dispatch.
+     * Zips this dispatch with the passed in dispatch and returns a paired result.
+     * @param dispatch dispatch to zip with.
+     * @return dispatch with result pair.
      * */
-    fun <U> combine(dispatch: Dispatch<U>): Dispatch<Pair<R, U>>
+    fun <U> zip(dispatch: Dispatch<U>): Dispatch<Pair<R, U>>
 
     /**
-     * Clones the passed in dispatch objects and combines it to this dispatch.
-     * @param dispatch to be cloned.
-     * @param dispatch2 to be cloned.
-     * @return dispatch with results from the current dispatch and the combined dispach objects.
+     * Zips this dispatch with the passed in dispatches and returns a triple result.
+     * @param dispatch dispatch to zip with.
+     * @param dispatch2 dispatch to zip with.
+     * @return dispatch with result triple.
      * */
-    fun <U, T> combine(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
+    fun <U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
 
 }
