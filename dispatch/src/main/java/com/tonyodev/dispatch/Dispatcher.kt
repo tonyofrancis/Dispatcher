@@ -396,26 +396,42 @@ object Dispatcher {
 
         private fun processNextDispatch() {
             if (!isCancelled) {
-                val iterator = dispatchData.dispatchQueue.iterator()
-                var self: DispatchInfo<*, *>? = null
-                var nextDispatch: DispatchInfo<*, *>? = null
-                var dispatch: DispatchInfo<*, *>
-                while (iterator.hasNext() && !isCancelled) {
-                    dispatch = iterator.next()
-                    if (self != null) {
-                        nextDispatch = dispatch
-                        break
-                    }
-                    if (dispatch == this) {
-                        self = dispatch
+                runNextDispatch(getNextDispatchInfo(this))
+            }
+        }
+
+        private fun runNextDispatch(nextDispatch: DispatchInfo<*, *>?) {
+            when {
+                nextDispatch != null -> {
+                    nextDispatch.runDispatcher()
+                    if (nextDispatch.queueId != queueId) {
+                        runNextDispatch(getNextDispatchInfo(nextDispatch))
                     }
                 }
-                when {
-                    nextDispatch != null -> nextDispatch.runDispatcher()
-                    dispatchData.isIntervalDispatch -> dispatchData.rootDispatch.runDispatcher()
-                    else -> dispatchData.completedDispatchQueue = true
+                dispatchData.isIntervalDispatch -> dispatchData.rootDispatch.runDispatcher()
+                else -> dispatchData.completedDispatchQueue = true
+            }
+        }
+
+        private fun getNextDispatchInfo(after: Dispatch<*>): DispatchInfo<*, *>? {
+            val iterator = dispatchData.dispatchQueue.iterator()
+            var self: DispatchInfo<*, *>? = null
+            var nextDispatch: DispatchInfo<*, *>? = null
+            var dispatch: DispatchInfo<*, *>
+            while (iterator.hasNext() && !isCancelled) {
+                dispatch = iterator.next()
+                if (self != null) {
+                    nextDispatch = dispatch
+                    break
+                }
+                if (dispatch == after) {
+                    self = dispatch
                 }
             }
+            if (isCancelled) {
+                nextDispatch = null
+            }
+            return nextDispatch
         }
 
         private fun runDispatcher() {
@@ -481,8 +497,10 @@ object Dispatcher {
                 var dispatch: DispatchInfo<*, *>?
                 while (iterator.hasNext()) {
                     dispatch = iterator.next()
-                    dispatch.removeDispatcher()
-                    dispatch.dispatchSources.clear()
+                    if (dispatch.queueId == queueId) {
+                        dispatch.removeDispatcher()
+                        dispatch.dispatchSources.clear()
+                    }
                     iterator.remove()
                 }
             }
