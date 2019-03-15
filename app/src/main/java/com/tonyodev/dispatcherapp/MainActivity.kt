@@ -29,8 +29,9 @@ class MainActivity : AppCompatActivity() {
             .build()
         service = retrofit.create(TestService::class.java)
 
-        runTestService()
-        runTestTimer()
+
+        //runTestService()
+       // runTestTimer()
     }
 
     private fun runTestService() {

@@ -1,3 +1,7 @@
+Version 1.0.2
+- Small Fixes
+- Added cancel on complete method
+
 Version 1.0.1
 - Combine method renamed to zipWith.
 - Added new ZipWithAny method.
