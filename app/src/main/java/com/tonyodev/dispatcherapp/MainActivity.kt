@@ -5,9 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import com.tonyodev.dispatch.Dispatch
 import com.tonyodev.dispatch.Dispatcher
-import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatchretrofit.DispatchCallAdapterFactory
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -16,8 +14,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var retrofit: Retrofit
     private lateinit var service: TestService
-
-    private var serviceDispatch: Dispatch<*>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,25 +29,8 @@ class MainActivity : AppCompatActivity() {
             .build()
         service = retrofit.create(TestService::class.java)
 
-
-        Dispatcher.createDispatch()
-            .managedBy(this)
-            .doWork {
-                "Hello World"
-            }
-            .zipWithAny(service.getSampleJson(), Dispatcher.createTimerDispatch(20000).doWork { 20000 })
-            .doWork {
-                Log.d("tonyoTest", "Results")
-            }
-            .run()
-
-       Thread {
-
-
-       }.start()
-
-       // runTestService()
-       // runTestTimer()
+        runTestService()
+        runTestTimer()
     }
 
     private fun runTestService() {
@@ -61,6 +40,18 @@ class MainActivity : AppCompatActivity() {
                 Log.d("dispatcherTest", "data size is:${data.size}")
             }
            .run()
+        //or
+        Dispatcher.createDispatch()
+            .managedBy(this)
+            .doWork { "66" }
+            .zipWith(service.getSampleJson())
+            .doWork {
+                it.second
+            }
+            .postMain {
+                Log.d("dispatcherTest", "data size is:${it.size}")
+            }
+            .run()
     }
 
     private fun runTestTimer() {
