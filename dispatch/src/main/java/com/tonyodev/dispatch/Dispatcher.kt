@@ -50,7 +50,7 @@ object Dispatcher {
     private var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
     @Volatile
     private var newThreadCount = 0
-    private var enableWarnings = true
+    private var enableWarnings = false
 
     /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
@@ -64,7 +64,7 @@ object Dispatcher {
 
     /**
      * Enable or disable log warnings by the library.
-     * @param enabled value. Enabled by default
+     * @param enabled value. Disabled by default.
      * */
     @JvmStatic
     fun setEnableLogWarnings(enabled: Boolean) {
@@ -275,7 +275,9 @@ object Dispatcher {
                                     delayInMillis: Long,
                                     closeHandler: Boolean,
                                     isIntervalDispatch: Boolean): Dispatch<Unit> {
-        val dispatchData = DispatchData(queueId = getNewQueueId(), isIntervalDispatch = isIntervalDispatch)
+        val dispatchData = DispatchData(queueId = getNewQueueId(),
+            isIntervalDispatch = isIntervalDispatch,
+            cancelOnComplete = !isIntervalDispatch)
         val newDispatch = DispatchInfo<Unit, Unit>(
             dispatchId = getNewDispatchId(),
             handler = handler,
@@ -290,7 +292,8 @@ object Dispatcher {
     }
 
     private class DispatchData(val queueId: Int,
-                               val isIntervalDispatch: Boolean = false) {
+                               val isIntervalDispatch: Boolean = false,
+                               var cancelOnComplete: Boolean) {
         @Volatile
         var isCancelled = false
         @Volatile
@@ -423,7 +426,12 @@ object Dispatcher {
                 when {
                     nextDispatch != null -> nextDispatch.runDispatcher()
                     dispatchData.isIntervalDispatch -> dispatchData.rootDispatch.runDispatcher()
-                    else -> dispatchData.completedDispatchQueue = true
+                    else -> {
+                        dispatchData.completedDispatchQueue = true
+                        if (!dispatchData.isIntervalDispatch && dispatchData.cancelOnComplete) {
+                            cancel()
+                        }
+                    }
                 }
             }
         }
@@ -905,6 +913,14 @@ object Dispatcher {
                 queueDispatch.runDispatcher()
             }
             return newDispatch
+        }
+
+        override fun cancelOnComplete(cancel: Boolean): Dispatch<R> {
+            dispatchData.cancelOnComplete = cancel
+            if (cancel && dispatchData.completedDispatchQueue) {
+                cancel()
+            }
+            return this
         }
 
     }

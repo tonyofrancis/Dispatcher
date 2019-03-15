@@ -194,4 +194,11 @@ interface Dispatch<R> {
      * */
     fun <U, T> zipWithAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>>
 
+    /**
+     * Cancels the dispatch queue when all dispatch items have been processed/handled.
+     * @param cancel true or false. True by default for non interval dispatch queues.
+     * @return dispatch
+     * */
+    fun cancelOnComplete(cancel: Boolean): Dispatch<R>
+
 }
