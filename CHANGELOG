@@ -1,2 +1,7 @@
+Version 1.0.1
+- Combine method renamed to zipWith.
+- Added new ZipWithAny method.
+- Bug Fixes and performance improvements.
+
 Version 1.0.0
 - Initial Version
