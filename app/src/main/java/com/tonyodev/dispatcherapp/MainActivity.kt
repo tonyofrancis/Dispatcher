@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import com.tonyodev.dispatch.Dispatch
 import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatchretrofit.DispatchCallAdapterFactory
@@ -15,6 +16,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var retrofit: Retrofit
     private lateinit var service: TestService
+
+    private var serviceDispatch: Dispatch<*>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,8 +32,26 @@ class MainActivity : AppCompatActivity() {
             .baseUrl("http://mysafeinfo.com")
             .build()
         service = retrofit.create(TestService::class.java)
-        runTestService()
-        runTestTimer()
+
+
+        Dispatcher.createDispatch()
+            .managedBy(this)
+            .doWork {
+                "Hello World"
+            }
+            .zip(service.getSampleJson(), Dispatcher.createTimerDispatch(2000))
+            .doWork {
+                Log.d("tonyoTest", "Results")
+            }
+            .run()
+
+       Thread {
+
+
+       }.start()
+
+       // runTestService()
+       // runTestTimer()
     }
 
     private fun runTestService() {
@@ -40,15 +61,6 @@ class MainActivity : AppCompatActivity() {
                 Log.d("dispatcherTest", "data size is:${data.size}")
             }
            .run()
-        //or
-        Dispatcher.createTimerDispatch(2000)
-            .managedBy(this)
-            .doWork { 124 }
-            .combine(service.getSampleJson().doOnError { emptyList() })
-            .doWork {
-                Log.d("dispatcherTest", "data is:(number:${it.first}, listOf: ${it.second})")
-            }
-            .run()
     }
 
     private fun runTestTimer() {
