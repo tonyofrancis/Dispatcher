@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
             }
            .run()
         //or
-        Dispatcher.createDispatch()
+        Dispatcher.backgroundDispatch
             .managedBy(this)
             .doWork { "66" }
             .zipWith(service.getSampleJson())

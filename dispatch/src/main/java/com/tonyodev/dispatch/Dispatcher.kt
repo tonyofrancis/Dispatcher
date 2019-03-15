@@ -29,6 +29,15 @@ object Dispatcher {
         handlerThread.start()
         Handler(handlerThread.looper)
     }()
+    private var background1Handler: Handler? = null
+        get() {
+            if (field == null) {
+                val handlerThread = HandlerThread("dispatcherBackground1")
+                handlerThread.start()
+                field = Handler(handlerThread.looper)
+            }
+            return field
+        }
     private var networkHandler: Handler? = null
         get() {
             if (field == null) {
@@ -236,6 +245,70 @@ object Dispatcher {
             isIntervalDispatch = true)
     }
 
+    /**
+     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * The dispatch operates on the default background handler/thread.
+     * @return new dispatch.
+     * */
+    @JvmStatic
+    val backgroundDispatch: Dispatch<Unit>
+        get() {
+            val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND)
+            return createFreshDispatch(
+                handler = handlerPair.first,
+                delayInMillis = 0,
+                closeHandler = handlerPair.second,
+                isIntervalDispatch = false)
+        }
+
+    /**
+     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * The dispatch operates on the secondary background handler/thread.
+     * @return new dispatch.
+     * */
+    @JvmStatic
+    val background1Dispatch: Dispatch<Unit>
+        get() {
+            val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND1)
+            return createFreshDispatch(
+                handler = handlerPair.first,
+                delayInMillis = 0,
+                closeHandler = handlerPair.second,
+                isIntervalDispatch = false)
+        }
+
+    /**
+     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * The dispatch operates on the default io handler/thread.
+     * @return new dispatch.
+     * */
+    @JvmStatic
+    val ioDispatch: Dispatch<Unit>
+        get() {
+            val handlerPair = getHandlerPairForThreadType(ThreadType.IO)
+            return createFreshDispatch(
+                handler = handlerPair.first,
+                delayInMillis = 0,
+                closeHandler = handlerPair.second,
+                isIntervalDispatch = false)
+        }
+
+    /**
+     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * The dispatch operates on the default network handler/thread.
+     * @return new dispatch.
+     * */
+    @JvmStatic
+    val networkDispatch: Dispatch<Unit>
+        get() {
+            val handlerPair = getHandlerPairForThreadType(ThreadType.NETWORK)
+            return createFreshDispatch(
+                handler = handlerPair.first,
+                delayInMillis = 0,
+                closeHandler = handlerPair.second,
+                isIntervalDispatch = false)
+        }
+
     private fun getNewDispatchHandler(name: String? = null): Handler {
         val threadName = if (name == null || name.isEmpty()) {
             "dispatch${++newThreadCount}"
@@ -250,6 +323,7 @@ object Dispatcher {
     private fun getHandlerPairForThreadType(threadType: ThreadType): Pair<Handler, Boolean> {
         return when(threadType) {
             ThreadType.BACKGROUND -> Pair(backgroundHandler, false)
+            ThreadType.BACKGROUND1 -> Pair(background1Handler!!, false)
             ThreadType.IO -> Pair(ioHandler!!, false)
             ThreadType.NETWORK -> Pair(networkHandler!!, false)
             ThreadType.NEW -> Pair(getNewDispatchHandler(), true)

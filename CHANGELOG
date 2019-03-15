@@ -1,3 +1,7 @@
+Version 1.0.3
+- Added new static methods for Dispatcher with namedDispatches.
+- Added new ThreadType BACKGROUND1 secondary background handler
+
 Version 1.0.2
 - Small Fixes
 - Added cancel on complete method

@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             }
             .run()
 
-        Dispatcher.createDispatch(null)
+        Dispatcher.backgroundDispatch
             .managedBy(dispatchController)
             .doWork {
                 service.getSampleJson().getResults()

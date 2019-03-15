@@ -15,6 +15,11 @@ enum class ThreadType {
     /** Use default Background thread.*/
     BACKGROUND,
 
+    /**
+     * Use the secondary background thread.
+     * */
+    BACKGROUND1,
+
     /** Use a new background thread.*/
     NEW;
 
