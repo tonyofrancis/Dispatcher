@@ -16,7 +16,7 @@ import java.lang.IllegalArgumentException
  * id 88 -> dispatch(post) -> dispatch(doWork)
  * id 78595 -> dispatch(postMain)
  * */
-interface Dispatch<R> {
+interface Dispatch<R>: DispatchObservable<R> {
 
     /**
      * the dispatch queue id.
@@ -200,5 +200,11 @@ interface Dispatch<R> {
      * @return dispatch
      * */
     fun cancelOnComplete(cancel: Boolean): Dispatch<R>
+
+    /**
+     * Gets the backing dispatch Observable.
+     * @return DispatchObservable
+     * */
+    fun getDispatchObservable(): DispatchObservable<R>
 
 }

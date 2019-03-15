@@ -313,6 +313,7 @@ object Dispatcher {
                                      private val dispatchType: Int): Dispatch<R> {
 
         private val dispatchSources = ArrayList<Dispatch<*>?>(3)
+        private val dispatchObserversSet = mutableSetOf<DispatchObserver<R>>()
 
         private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
@@ -378,10 +379,12 @@ object Dispatcher {
                         }
                         if (data != INVALID_RESULT && !isCancelled) {
                             results = worker.invoke(data as T)
+                            notifyDispatchObservers()
                             processNextDispatch()
                         }
                     } else {
                         results = Unit
+                        notifyDispatchObservers()
                         processNextDispatch()
                     }
                 }
@@ -390,12 +393,24 @@ object Dispatcher {
                 if (doOnErrorWorker != null && !isCancelled) {
                     try {
                         results = doOnErrorWorker.invoke(err)
+                        notifyDispatchObservers()
                         processNextDispatch()
                     } catch (e: Exception) {
                         handleException(e)
                     }
                 } else {
                     handleException(err)
+                }
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun notifyDispatchObservers() {
+            val iterator = dispatchObserversSet.iterator()
+            val result = results as R
+            uiHandler.post {
+                while (iterator.hasNext()) {
+                    iterator.next().onChanged(result)
                 }
             }
         }
@@ -533,6 +548,10 @@ object Dispatcher {
 
         private fun removeDispatcher() {
             handler.removeCallbacks(dispatcher)
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                iterator.remove()
+            }
             if (closeHandler) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     handler.looper.quitSafely()
@@ -920,6 +939,40 @@ object Dispatcher {
             if (cancel && dispatchData.completedDispatchQueue) {
                 cancel()
             }
+            return this
+        }
+
+        override fun addObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R> {
+            dispatchObserversSet.add(dispatchObserver)
+            return this
+        }
+
+        override fun addObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
+            dispatchObserversSet.addAll(dispatchObservers)
+            return this
+        }
+
+        override fun removeObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R> {
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                if (dispatchObserver == iterator.next()) {
+                    iterator.remove()
+                }
+            }
+            return this
+        }
+
+        override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                if (dispatchObservers.contains(iterator.next())) {
+                    iterator.remove()
+                }
+            }
+            return this
+        }
+
+        override fun getDispatchObservable(): DispatchObservable<R> {
             return this
         }
 

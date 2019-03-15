@@ -1,6 +1,7 @@
 Version 1.0.2
 - Small Fixes
 - Added cancel on complete method
+- Added DispatchObserver
 
 Version 1.0.1
 - Combine method renamed to zipWith.
