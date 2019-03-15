@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
             .doWork {
                 "Hello World"
             }
-            .zip(service.getSampleJson(), Dispatcher.createTimerDispatch(2000))
+            .zipWithAny(service.getSampleJson(), Dispatcher.createTimerDispatch(20000).doWork { 20000 })
             .doWork {
                 Log.d("tonyoTest", "Results")
             }
