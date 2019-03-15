@@ -166,24 +166,24 @@ interface Dispatch<R> {
 
     /**
      * Zips this dispatch with the passed in dispatch and returns a paired result.
-     * @param dispatch dispatch to zip with.
+     * @param dispatch dispatch to zipWith with.
      * @return dispatch with result pair.
      * */
-    fun <U> zip(dispatch: Dispatch<U>): Dispatch<Pair<R, U>>
+    fun <U> zipWith(dispatch: Dispatch<U>): Dispatch<Pair<R, U>>
 
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result.
-     * @param dispatch dispatch to zip with.
-     * @param dispatch2 dispatch to zip with.
+     * @param dispatch dispatch to zipWith with.
+     * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
      * */
-    fun <U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
+    fun <U, T> zipWith(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
 
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result. A triple
      * result is returned when all or any of the dispatches gets processed.
-     * @param dispatch dispatch to zip with.
-     * @param dispatch2 dispatch to zip with.
+     * @param dispatch dispatch to zipWith with.
+     * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
      * */
     fun <U, T> zipWithAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>>

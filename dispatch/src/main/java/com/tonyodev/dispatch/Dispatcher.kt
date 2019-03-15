@@ -626,7 +626,7 @@ object Dispatcher {
             return newDispatch
         }
 
-        override fun <U> zip(dispatch: Dispatch<U>): Dispatch<Pair<R, U>> {
+        override fun <U> zipWith(dispatch: Dispatch<U>): Dispatch<Pair<R, U>> {
             val workHandler = when {
                 handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
                 else -> handler
@@ -696,7 +696,7 @@ object Dispatcher {
             return newDispatch
         }
 
-        override fun <U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>> {
+        override fun <U, T> zipWith(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>> {
             val zipDispatch = dispatch as DispatchInfo<*, *>
             val zipRootDispatch = zipDispatch.rootDispatch as DispatchInfo<*, *>
             val zipDispatchData = zipRootDispatch.dispatchData
