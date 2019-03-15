@@ -12,10 +12,16 @@ import kotlin.collections.ArrayList
 
 /**
  * Dispatcher is a simple and flexible work scheduler that schedulers work on a background or UI thread correctly
- * in the form of Dispatch using the android.os.Handler class.
+ * in the form of Dispatch objects using the android.os.Handler class to handle threading.
  * @see Dispatcher.createDispatch() to get started.
  */
 object Dispatcher {
+
+    private const val TAG = "com.tonyodev.dispatch"
+    private const val DISPATCH_TYPE_NORMAL = 0
+    private const val DISPATCH_TYPE_QUEUE_RUNNER = 1
+    private const val DISPATCH_TYPE_ANY_RESULT = 2
+    private val INVALID_RESULT = InvalidResult()
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private val backgroundHandler: Handler = {
@@ -41,23 +47,18 @@ object Dispatcher {
             }
             return field
         }
-    private var globalErrorHandler: ((dispatch: Dispatch<*>, throwable: Throwable) -> Unit)? = null
+    private var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
     @Volatile
     private var newThreadCount = 0
     private var enableWarnings = true
-    private const val TAG = "com.tonyodev.dispatch"
-    private val INVALID_RESULT = InvalidResult()
-    private const val DISPATCH_TYPE_NORMAL = 0
-    private const val DISPATCH_TYPE_QUEUE_RUNNER = 1
-    private const val DISPATCH_TYPE_ANY_RESULT = 2
 
     /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
-     * if a dispatch does not handler its errors. The error handler is called on the main thread.
+     * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
      * @param errorHandler the error handler. Notifies of the dispatch that throw the error and the error that was thrown.
      * */
     @JvmStatic
-    fun setGlobalErrorHandler(errorHandler: ((dispatch: Dispatch<*>, throwable: Throwable) -> Unit)?) {
+    fun setGlobalErrorHandler(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?) {
         this.globalErrorHandler = errorHandler
     }
 
@@ -72,7 +73,7 @@ object Dispatcher {
 
     /**
      * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
-     * The dispatch object returned will use the default handler to schedule work in the background.
+     * The dispatch object returned will use the default background handler to schedule work in the background.
      * @return new dispatch.
      * */
     @JvmStatic
@@ -109,7 +110,7 @@ object Dispatcher {
      * */
     @JvmStatic
     fun createDispatch(threadType: ThreadType): Dispatch<Unit> {
-        val handlerPair = getHandlerForThreadType(threadType)
+        val handlerPair = getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
             delayInMillis = 0,
@@ -176,7 +177,7 @@ object Dispatcher {
      * */
     @JvmStatic
     fun createTimerDispatch(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
-        val handlerPair = getHandlerForThreadType(threadType)
+        val handlerPair = getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
@@ -227,7 +228,7 @@ object Dispatcher {
      * */
     @JvmStatic
     fun createIntervalDispatch(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
-        val handlerPair = getHandlerForThreadType(threadType)
+        val handlerPair = getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
@@ -246,7 +247,7 @@ object Dispatcher {
         return Handler(handlerThread.looper)
     }
 
-    private fun getHandlerForThreadType(threadType: ThreadType): Pair<Handler, Boolean> {
+    private fun getHandlerPairForThreadType(threadType: ThreadType): Pair<Handler, Boolean> {
         return when(threadType) {
             ThreadType.BACKGROUND -> Pair(backgroundHandler, false)
             ThreadType.IO -> Pair(ioHandler!!, false)
@@ -340,9 +341,8 @@ object Dispatcher {
                         val data = when (dispatchSources.size) {
                             3 -> {
                                 if (dispatchType == DISPATCH_TYPE_ANY_RESULT) {
-                                    val s1 = (dispatchSources[1] as DispatchInfo<*, *>).results
-                                    val s2 = (dispatchSources[2] as DispatchInfo<*, *>).results
-                                    if (s1 == INVALID_RESULT && s2 == INVALID_RESULT) {
+                                    if ((dispatchSources[1] as DispatchInfo<*, *>).results == INVALID_RESULT
+                                        && (dispatchSources[2] as DispatchInfo<*, *>).results == INVALID_RESULT) {
                                         return@Runnable
                                     }
                                 }
@@ -373,7 +373,7 @@ object Dispatcher {
                                 }
                             }
                         }
-                        if (data != INVALID_RESULT) {
+                        if (data != INVALID_RESULT && !isCancelled) {
                             results = worker.invoke(data as T)
                             processNextDispatch()
                         }
@@ -457,6 +457,13 @@ object Dispatcher {
                 } else {
                     handler.post(dispatcher)
                 }
+                if (dispatchData.dispatchController == null && enableWarnings
+                    && this == dispatchData.rootDispatch) {
+                    Log.w(
+                        TAG, "No DispatchController set for dispatch queue with id: $queueId. " +
+                                "Not setting a DispatchController can cause memory leaks."
+                    )
+                }
             }
         }
 
@@ -469,12 +476,6 @@ object Dispatcher {
             if (!isCancelled) {
                 dispatchData.completedDispatchQueue = false
                 dispatchData.rootDispatch.runDispatcher()
-                if (dispatchData.dispatchController == null && enableWarnings) {
-                    Log.w(
-                        TAG, "No DispatchController set for dispatch queue with id: $queueId. " +
-                                "Not setting a dispatch controller can cause memory leaks."
-                    )
-                }
             }
             return this
         }
@@ -491,7 +492,7 @@ object Dispatcher {
             val globalHandler = globalErrorHandler
             if (globalHandler != null) {
                 uiHandler.post {
-                    globalHandler.invoke(this, throwable)
+                    globalHandler.invoke(throwable, this)
                 }
                 cancel()
                 return
@@ -591,21 +592,19 @@ object Dispatcher {
         }
 
         override fun <U> doWork(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
-            val handlerPair = getHandlerForThreadType(threadType)
+            val handlerPair = getHandlerPairForThreadType(threadType)
             return getNewDispatch(func, handlerPair.first, 0, handlerPair.second)
         }
 
         override fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            val handlerPair = getHandlerForThreadType(threadType)
+            val handlerPair = getHandlerPairForThreadType(threadType)
             return getNewDispatch(func, handlerPair.first, delayInMillis, handlerPair.second)
         }
 
-        private fun <T, R> getNewDispatch(
-            worker: (T) -> R,
-            handler: Handler,
-            delayInMillis: Long,
-            closeHandler: Boolean
-        ): Dispatch<R> {
+        private fun <T, R> getNewDispatch(worker: (T) -> R,
+                                          handler: Handler,
+                                          delayInMillis: Long,
+                                          closeHandler: Boolean): Dispatch<R> {
             val newDispatch = DispatchInfo(
                 dispatchId = getNewDispatchId(),
                 handler = handler,
@@ -613,14 +612,13 @@ object Dispatcher {
                 worker = worker,
                 closeHandler = closeHandler,
                 dispatchData = dispatchData,
-                dispatchType = DISPATCH_TYPE_NORMAL
-            )
+                dispatchType = DISPATCH_TYPE_NORMAL)
             newDispatch.dispatchSources.add(this)
             if (!isCancelled) {
                 dispatchData.dispatchQueue.add(newDispatch)
                 if (dispatchData.completedDispatchQueue) {
                     dispatchData.completedDispatchQueue = false
-                    dispatchData.rootDispatch.runDispatcher()
+                    newDispatch.runDispatcher()
                 }
             }
             return newDispatch
@@ -641,8 +639,7 @@ object Dispatcher {
                 worker = { it },
                 closeHandler = (workHandler == handler) && closeHandler,
                 dispatchData = dispatchData,
-                dispatchType = DISPATCH_TYPE_NORMAL
-            )
+                dispatchType = DISPATCH_TYPE_NORMAL)
             newDispatch.dispatchSources.add(this)
             newDispatch.dispatchSources.add(dispatch)
             val zipWorkHandler = when {
@@ -662,8 +659,7 @@ object Dispatcher {
                 },
                 closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
                 dispatchData = zipDispatchData,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
+                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
             zipQueueDispatch.dispatchSources.add(dispatch)
             val queueDispatch = DispatchInfo<R, R>(
                 dispatchId = getNewDispatchId(),
@@ -671,15 +667,18 @@ object Dispatcher {
                 delayInMillis = 0,
                 worker = {
                     if (!zipDispatchData.isCancelled) {
-                        zipDispatchData.completedDispatchQueue = false
-                        zipDispatchData.rootDispatch.runDispatcher()
+                        if (zipDispatchData.completedDispatchQueue) {
+                            zipDispatchData.completedDispatchQueue = false
+                            zipQueueDispatch.runDispatcher()
+                        } else {
+                            zipDispatchData.rootDispatch.runDispatcher()
+                        }
                     }
                     it
                 },
                 closeHandler = (workHandler == handler) && closeHandler,
                 dispatchData = dispatchData,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
+                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
             queueDispatch.dispatchSources.add(this)
             val dispatchController = dispatchData.dispatchController
             val zipDispatchController = zipDispatchData.dispatchController
@@ -691,7 +690,7 @@ object Dispatcher {
             dispatchData.dispatchQueue.add(newDispatch)
             if (dispatchData.completedDispatchQueue) {
                 dispatchData.completedDispatchQueue = false
-                dispatchData.rootDispatch.runDispatcher()
+                queueDispatch.runDispatcher()
             }
             return newDispatch
         }
@@ -714,31 +713,10 @@ object Dispatcher {
                 worker = { it },
                 closeHandler = (workHandler == handler) && closeHandler,
                 dispatchData = dispatchData,
-                dispatchType = DISPATCH_TYPE_NORMAL
-            )
+                dispatchType = DISPATCH_TYPE_NORMAL)
             newDispatch.dispatchSources.add(this)
             newDispatch.dispatchSources.add(dispatch)
             newDispatch.dispatchSources.add(dispatch2)
-            val zipWorkHandler = when {
-                zipDispatch.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> zipDispatch.handler
-            }
-            val zipQueueDispatch = DispatchInfo<Any?, Any?>(
-                dispatchId = getNewDispatchId(),
-                handler = zipWorkHandler,
-                delayInMillis = 0,
-                worker = {
-                    if (!zipDispatchData2.isCancelled) {
-                        zipDispatchData2.completedDispatchQueue = false
-                        zipDispatchData2.rootDispatch.runDispatcher()
-                    }
-                    it
-                },
-                closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
-                dispatchData = zipDispatchData,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
-            zipQueueDispatch.dispatchSources.add(dispatch)
             val zipWorkHandler2 = when {
                 zipDispatch2.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
                 else -> zipDispatch2.handler
@@ -756,24 +734,49 @@ object Dispatcher {
                 },
                 closeHandler = (zipWorkHandler2 == handler) && zipDispatch2.closeHandler,
                 dispatchData = zipDispatchData2,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
+                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
             zipQueueDispatch2.dispatchSources.add(dispatch2)
+            val zipWorkHandler = when {
+                zipDispatch.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
+                else -> zipDispatch.handler
+            }
+            val zipQueueDispatch = DispatchInfo<Any?, Any?>(
+                dispatchId = getNewDispatchId(),
+                handler = zipWorkHandler,
+                delayInMillis = 0,
+                worker = {
+                    if (!zipDispatchData2.isCancelled) {
+                        if (zipDispatchData2.completedDispatchQueue) {
+                            zipDispatchData2.completedDispatchQueue = false
+                            zipQueueDispatch2.runDispatcher()
+                        } else {
+                            zipDispatchData2.rootDispatch.runDispatcher()
+                        }
+                    }
+                    it
+                },
+                closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
+                dispatchData = zipDispatchData,
+                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
+            zipQueueDispatch.dispatchSources.add(dispatch)
             val queueDispatch = DispatchInfo<R, R>(
                 dispatchId = getNewDispatchId(),
                 handler = workHandler,
                 delayInMillis = 0,
                 worker = {
                     if (!zipDispatchData.isCancelled) {
-                        zipDispatchData.completedDispatchQueue = false
-                        zipDispatchData.rootDispatch.runDispatcher()
+                      if (zipDispatchData.completedDispatchQueue) {
+                          zipDispatchData.completedDispatchQueue = false
+                          zipQueueDispatch.runDispatcher()
+                      } else {
+                          zipDispatchData.rootDispatch.runDispatcher()
+                      }
                     }
                     it
                 },
                 closeHandler = (workHandler == handler) && closeHandler,
                 dispatchData = dispatchData,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
+                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
             queueDispatch.dispatchSources.add(this)
             val dispatchController = dispatchData.dispatchController
             val zipDispatchController = zipDispatchData.dispatchController
@@ -790,7 +793,7 @@ object Dispatcher {
             dispatchData.dispatchQueue.add(newDispatch)
             if (dispatchData.completedDispatchQueue) {
                 dispatchData.completedDispatchQueue = false
-                dispatchData.rootDispatch.runDispatcher()
+                queueDispatch.runDispatcher()
             }
             return newDispatch
         }
@@ -813,8 +816,7 @@ object Dispatcher {
                 worker = { it },
                 closeHandler = (workHandler == handler) && closeHandler,
                 dispatchData = dispatchData,
-                dispatchType = DISPATCH_TYPE_ANY_RESULT
-            )
+                dispatchType = DISPATCH_TYPE_ANY_RESULT)
             newDispatch.dispatchSources.add(this)
             newDispatch.dispatchSources.add(dispatch)
             newDispatch.dispatchSources.add(dispatch2)
@@ -835,8 +837,7 @@ object Dispatcher {
                 },
                 closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
                 dispatchData = zipDispatchData,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
+                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
             zipQueueDispatch.dispatchSources.add(dispatch)
             val zipWorkHandler2 = when {
                 zipDispatch2.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
@@ -864,12 +865,20 @@ object Dispatcher {
                 delayInMillis = 0,
                 worker = {
                     if (!zipDispatchData.isCancelled) {
-                        zipDispatchData.completedDispatchQueue = false
-                        zipDispatchData.rootDispatch.runDispatcher()
+                        if (zipDispatchData.completedDispatchQueue) {
+                            zipDispatchData.completedDispatchQueue = false
+                            zipQueueDispatch.runDispatcher()
+                        } else {
+                            zipDispatchData.rootDispatch.runDispatcher()
+                        }
                     }
                     if (!zipDispatchData2.isCancelled) {
-                        zipDispatchData2.completedDispatchQueue = false
-                        zipDispatchData2.rootDispatch.runDispatcher()
+                        if (zipDispatchData2.completedDispatchQueue) {
+                            zipDispatchData2.completedDispatchQueue = false
+                            zipQueueDispatch2.runDispatcher()
+                        } else {
+                            zipDispatchData2.rootDispatch.runDispatcher()
+                        }
                     }
                     it
                 },
@@ -893,12 +902,11 @@ object Dispatcher {
             dispatchData.dispatchQueue.add(newDispatch)
             if (dispatchData.completedDispatchQueue) {
                 dispatchData.completedDispatchQueue = false
-                dispatchData.rootDispatch.runDispatcher()
+                queueDispatch.runDispatcher()
             }
             return newDispatch
         }
-    }
 
-    private class InvalidResult
+    }
 
 }

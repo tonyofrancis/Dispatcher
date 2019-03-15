@@ -41,7 +41,7 @@ class DispatchCallAdapterFactory private constructor(
         @JvmOverloads
         fun create(handler: Handler? = null): DispatchCallAdapterFactory {
             if (handler?.looper?.thread?.name == Looper.getMainLooper().thread.name) {
-                throw IllegalArgumentException("Handler cannot use the main thread for network operations.")
+                throw IllegalArgumentException("DispatchCallAdapterFactory: Handler cannot use the main thread for network operations.")
             }
             return DispatchCallAdapterFactory(handler)
         }

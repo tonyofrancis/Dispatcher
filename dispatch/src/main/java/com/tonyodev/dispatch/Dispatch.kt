@@ -166,6 +166,8 @@ interface Dispatch<R> {
 
     /**
      * Zips this dispatch with the passed in dispatch and returns a paired result.
+     * If the passed in dispatch is not manager by a DispatchController and the current dispatch is managed.
+     * The passed in dispatch will then be managed by this dispatch's DispatchController.
      * @param dispatch dispatch to zipWith with.
      * @return dispatch with result pair.
      * */
@@ -173,6 +175,8 @@ interface Dispatch<R> {
 
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result.
+     * If the passed in dispatch is not manager by a DispatchController and the current dispatch is managed.
+     * The passed in dispatch will then be managed by this dispatch's DispatchController.
      * @param dispatch dispatch to zipWith with.
      * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
@@ -182,6 +186,8 @@ interface Dispatch<R> {
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result. A triple
      * result is returned when all or any of the dispatches gets processed.
+     * If the passed in dispatch is not manager by a DispatchController and the current dispatch is managed.
+     * The passed in dispatch will then be managed by this dispatch's DispatchController.
      * @param dispatch dispatch to zipWith with.
      * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
