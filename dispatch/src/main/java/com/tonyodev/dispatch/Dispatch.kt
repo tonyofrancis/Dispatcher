@@ -111,7 +111,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     /**
      * Triggers the dispatch queue to start.
      * @param errorHandler the error handler for the dispatch queue. Notifies of the dispatch that throw the error and the error that was thrown. Only called
-     * if a dispatch does not handle it's error within the doOnError method.
+     * if a dispatch does not handle it's error within the doOnError method. The error handler is called on the main thread.
      * @return dispatch.
      * */
     fun start(errorHandler: ((Throwable, Dispatch<*>) -> Unit)?): Dispatch<R>
