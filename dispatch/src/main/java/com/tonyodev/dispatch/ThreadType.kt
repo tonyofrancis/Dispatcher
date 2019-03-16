@@ -6,7 +6,7 @@ package com.tonyodev.dispatch
  * */
 enum class ThreadType {
 
-    /** Use Default IO thread.*/
+    /** Use default IO thread.*/
     IO,
 
     /** Use default Network thread.*/
@@ -16,9 +16,9 @@ enum class ThreadType {
     BACKGROUND,
 
     /**
-     * Use the secondary background thread.
+     * Use the Secondary Background thread.
      * */
-    BACKGROUND1,
+    BACKGROUND_SECONDARY,
 
     /** Use a new background thread.*/
     NEW;
