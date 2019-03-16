@@ -33,7 +33,7 @@ class DispatchCallAdapterFactory private constructor(
 
         /**
          * Creates an instance of DispatchCallAdapterFactory
-         * @param handler Optional handler used to run this dispatch object.
+         * @param handler Optional handler used to start this dispatch object.
          * @throws IllegalArgumentException is the passed in handler uses the main thread to do background work.
          * @return new instance of DispatchCallAdapterFactory.
          * */

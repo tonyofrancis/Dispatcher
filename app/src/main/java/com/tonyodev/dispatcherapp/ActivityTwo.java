@@ -56,7 +56,7 @@ public class ActivityTwo extends AppCompatActivity {
                 Log.d("dispatcherTest", "void method called");
                 return null;
             }
-        }).run();
+        }).start();
     }
 
 }

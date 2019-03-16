@@ -29,7 +29,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     val dispatchId: String
 
     /**
-     * The root dispatch in the chain.
+     * The root dispatch in the queue.
      * */
     val rootDispatch: Dispatch<*>
 
@@ -63,7 +63,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
     /**
      * Perform work on the background thread.
-     * @param backgroundHandler the handler that will run the background work.
+     * @param backgroundHandler the handler that will start the background work.
      * @param func the function.
      * @throws IllegalArgumentException if the handler passed in uses the main thread.
      * @return the dispatch.
@@ -90,7 +90,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
     /**
      * Perform work on the background thread.
-     * @param backgroundHandler the handler that will run the background work.
+     * @param backgroundHandler the handler that will start the background work.
      * @param delayInMillis the delay in milliseconds before the handler runs the func.
      * Values under 1 indicates that there are no delays.
      * @param func the function.
@@ -109,23 +109,23 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
-     * Triggers the dispatch to perform work. The dispatch do not perform work until run is called.
+     * Triggers the dispatch to perform work. The dispatch do not perform work until start is called.
      * @param errorHandler the error handler. Notifies of the dispatch that throw the error and the error that was thrown. Can be null. Only called
      * if a block does not handle it's error within doOnErrorMethod.
      * @return dispatch.
      * */
-    fun run(errorHandler: ((Throwable, Dispatch<*>) -> Unit)?): Dispatch<R>
+    fun start(errorHandler: ((Throwable, Dispatch<*>) -> Unit)?): Dispatch<R>
 
     /**
-     * Tiggers the dispatch to perform work. The dispatch do not perform work until run is called.
+     * Tiggers the dispatch to perform work. The dispatch do not perform work until start is called.
      * Run can only be called once.
      * @return dispatch.
      * */
-    fun run(): Dispatch<R>
+    fun start(): Dispatch<R>
 
     /**
      * Cancels all pending work on the dispatch. All queued dispatch with the same queue id
-     * will be cancelled. Once cancelled a dispatch queue cannot run again. It would be unsafe to do so.
+     * will be cancelled. Once cancelled a dispatch queue cannot start again. It would be unsafe to do so.
      * @return dispatch.
      * */
     fun cancel(): Dispatch<R>

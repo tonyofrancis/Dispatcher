@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
             .doWork { data ->
                 Log.d("dispatcherTest", "data size is:${data.size}")
             }
-           .run()
+           .start()
         //or
         Dispatcher.backgroundDispatch
             .managedBy(this)
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
             .postMain {
                 Log.d("dispatcherTest", "data size is:${it.size}")
             }
-            .run()
+            .start()
     }
 
     private fun runTestTimer() {
@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
             .postMain {
                 Log.d("dispatcherTest","Test timer after 5000 millis. data is $it")
             }
-            .run()
+            .start()
     }
 
 }

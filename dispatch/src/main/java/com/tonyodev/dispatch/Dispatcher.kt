@@ -144,7 +144,7 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new timer dispatch. A new handler thread is created to run the timer dispatch.
+     * Creates a new timer dispatch. A new handler thread is created to start the timer dispatch.
      * @param delayInMillis the delay in milliseconds before the handler runs the dispatch.
      * Values under 1 indicates that there are no delays.
      * @return new dispatch.
@@ -195,7 +195,7 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new interval dispatch that fires every x time. A new handler thread is created to run the interval dispatch.
+     * Creates a new interval dispatch that fires every x time. A new handler thread is created to start the interval dispatch.
      * @param delayInMillis the delay in milliseconds before the handler runs the worker.
      * Values under 1 indicates that there are no delays.
      * @return new dispatch.
@@ -562,11 +562,11 @@ object Dispatcher {
             }
         }
 
-        override fun run(): Dispatch<R> {
-            return run(null)
+        override fun start(): Dispatch<R> {
+            return start(null)
         }
 
-        override fun run(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?): Dispatch<R> {
+        override fun start(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?): Dispatch<R> {
             dispatchData.errorHandler = errorHandler
             if (!isCancelled) {
                 dispatchData.completedDispatchQueue = false

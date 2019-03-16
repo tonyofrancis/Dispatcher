@@ -218,9 +218,11 @@ open class ActivityDispatchQueueController(private val activity: Activity): Disp
          * */
         @JvmStatic
         fun getInstance(activity: Activity): ActivityDispatchQueueController {
-            val controller = map[activity] ?: ActivityDispatchQueueController(activity)
-            map[activity] = controller
-            return controller
+           return synchronized(map) {
+               val controller = map[activity] ?: ActivityDispatchQueueController(activity)
+               map[activity] = controller
+               controller
+           }
         }
 
     }
