@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.0.3) ](https://bintray.com/tonyofrancis/maven/dispatch/1.0.3/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.0.4) ](https://bintray.com/tonyofrancis/maven/dispatch/1.0.4/link)
 
 Overview
 --------
@@ -7,12 +7,12 @@ Dispatch is a simple and flexible work scheduler that schedulers work on a backg
 
 To use dispatch add the following to your app's build.gradle file
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.0.3"
+implementation "com.tonyodev.dispatch:dispatch:1.0.4"
 ```
 
 To use with Retrofit add
 ```java
-    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.0.3"
+    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.0.4"
 ```
 
 Example:
@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var retrofit: Retrofit
     private lateinit var service: TestService
-    private val dispatchQueueController = DispatchController.create()
+    private val dispatchQueueController = DispatchQueueController.create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,42 +44,42 @@ class MainActivity : AppCompatActivity() {
     private fun runTestService() {
         service.getSampleJson()
             .managedBy(dispatchQueueController)
-            .doWork { data ->
+            .async { data ->
                 Log.d("test", "data size is:${data.size}")
             }
-            .run()
+            .start()
 
-        Dispatcher.backgroundDispatch
+        Dispatcher.backgroundDispatchQueue
             .managedBy(dispatchQueueController)
-            .doWork {
+            .async { //runs on background thread
                 service.getSampleJson().getResults()
             }
-            .postMain {
+            .post { //runs on main thread
                 Log.d("test", "network result first item:${it.first()}")
             }
             .run()
     }
 
     private fun runTestTimer() {
-        Dispatcher.createTimerDispatch(5000)
+        Dispatcher.createTimerDispatchQueue(5000)
             .managedBy(dispatchQueueController)
-            .postMain {
+            .post {
                 Log.d("test","Test timer after 5000 millis")
             }
-            .run()
+            .start()
     }
 
     private fun runTestInterval() {
-        Dispatcher.createIntervalDispatch(10000)
+        Dispatcher.createIntervalDispatchQueue(10000)
             .managedBy(dispatchQueueController)
-            .doWork {
+            .async {
                 Log.d("test","Test interval every 10 seconds")
             }
-            .doWork(2000) {
+            .async(2000) {
                 Log.d("test","interval break")
                 "hello world"
             }
-            .postMain {
+            .post {
                 Log.d("test","main thread break: $it")
             }
             .run()
