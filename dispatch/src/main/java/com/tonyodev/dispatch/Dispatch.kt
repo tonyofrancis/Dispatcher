@@ -138,27 +138,28 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     fun doOnError(func: ((Throwable) -> R)): Dispatch<R>
 
     /**
-     * Set's this dispatch to be managed by a DispatchController.
-     * Managed dispatch objects can be cancelled by the DispatchController if the dispatch is not already cancelled.
-     * @param dispatchController the dispatch controller that will manage the dispatch.
+     * Set's this dispatch queue to be managed by a DispatchQueueController.
+     * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
+     * @param dispatchQueueController the dispatch controller that will manage the dispatch queue.
      * @return dispatch.
      * */
-    fun managedBy(dispatchController: DispatchController): Dispatch<R>
+    fun managedBy(dispatchQueueController: DispatchQueueController): Dispatch<R>
 
     /**
-     * Set's this dispatch to be managed by an Activity. The activity is wrapped in an instance
-     * of ActivityDispatchController. This dispatch controller is controlled by the activity's lifecycle.
-     * Managed dispatch objects can be cancelled by the DispatchController if the dispatch is not already cancelled.
-     * @param activity the activity that will manage the dispatch. The cancel type is Destroyed.
+     * Set's this dispatch queue to be managed by an Activity. The activity is wrapped in an instance
+     * of ActivityDispatchQueueController. ActivityDispatchQueueController is controlled by the activity's lifecycle.
+     * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
+     * @param activity the activity that will manage the dispatch queue. The cancel type is Destroyed. Cancellation
+     * occurs when the activity's onDestroy method is called.
      * @return dispatch.
      * */
     fun managedBy(activity: Activity): Dispatch<R>
 
     /**
-     * Set's this dispatch to be managed by an Activity. The activity is wrapped in an instance
-     * of ActivityDispatchController. This dispatch controller is controlled by the activity's lifecycle.
-     * Managed dispatch objects can be cancelled by the DispatchController if the dispatch is not already cancelled.
-     * @param activity the activity that will manage the dispatch.
+     * Set's this dispatch queue to be managed by an Activity. The activity is wrapped in an instance
+     * of ActivityDispatchQueueController. ActivityDispatchQueueController is controlled by the activity's lifecycle.
+     * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
+     * @param activity the activity that will manage the dispatch queue.
      * @param cancelType the cancel type
      * @return dispatch.
      * */
@@ -166,8 +167,8 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
     /**
      * Zips this dispatch with the passed in dispatch and returns a paired result.
-     * If the passed in dispatch is not manager by a DispatchController and the current dispatch is managed.
-     * The passed in dispatch will then be managed by this dispatch's DispatchController.
+     * If the passed in dispatch is not manager by a DispatchQueueController and the current dispatch is managed.
+     * The passed in dispatch will then be managed by this dispatch's DispatchQueueController.
      * @param dispatch dispatch to zipWith with.
      * @return dispatch with result pair.
      * */
@@ -175,8 +176,8 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result.
-     * If the passed in dispatch is not manager by a DispatchController and the current dispatch is managed.
-     * The passed in dispatch will then be managed by this dispatch's DispatchController.
+     * If the passed in dispatch is not manager by a DispatchQueueController and the current dispatch is managed.
+     * The passed in dispatch will then be managed by this dispatch's DispatchQueueController.
      * @param dispatch dispatch to zipWith with.
      * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
@@ -186,8 +187,8 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result. A triple
      * result is returned when all or any of the dispatches gets processed.
-     * If the passed in dispatch is not manager by a DispatchController and the current dispatch is managed.
-     * The passed in dispatch will then be managed by this dispatch's DispatchController.
+     * If the passed in dispatch is not manager by a DispatchQueueController and the current dispatch is managed.
+     * The passed in dispatch will then be managed by this dispatch's DispatchQueueController.
      * @param dispatch dispatch to zipWith with.
      * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
@@ -195,7 +196,9 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     fun <U, T> zipWithAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>>
 
     /**
-     * Cancels the dispatch queue when all dispatch items have been processed/handled.
+     * Cancels the dispatch queue when all dispatch objects have been processed/handled. If a Dispatch
+     * Controller is managing the dispatch queue. This value has no effect. The DispatchQueueController will
+     * handle the queue's cancellation.
      * @param cancel true or false. True by default for non interval dispatch queues.
      * @return dispatch
      * */

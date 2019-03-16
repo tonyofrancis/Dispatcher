@@ -375,7 +375,7 @@ object Dispatcher {
         lateinit var rootDispatch: DispatchInfo<*, *>
         val dispatchQueue = LinkedList<DispatchInfo<*, *>>()
         var errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
-        var dispatchController: DispatchController? = null
+        var dispatchQueueController: DispatchQueueController? = null
     }
 
     private class DispatchInfo<T, R>(override val dispatchId: String,
@@ -554,11 +554,11 @@ object Dispatcher {
                 } else {
                     handler.post(dispatcher)
                 }
-                if (dispatchData.dispatchController == null && enableWarnings
+                if (dispatchData.dispatchQueueController == null && enableWarnings
                     && this == dispatchData.rootDispatch) {
                     Log.w(
-                        TAG, "No DispatchController set for dispatch queue with id: $queueId. " +
-                                "Not setting a DispatchController can cause memory leaks."
+                        TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
+                                "Not setting a DispatchQueueController can cause memory leaks."
                     )
                 }
             }
@@ -601,9 +601,9 @@ object Dispatcher {
         override fun cancel(): Dispatch<R> {
             if (!isCancelled) {
                 dispatchData.isCancelled = true
-                val dispatchController = dispatchData.dispatchController
-                dispatchData.dispatchController = null
-                if (dispatchController is ActivityDispatchController) {
+                val dispatchController = dispatchData.dispatchQueueController
+                dispatchData.dispatchQueueController = null
+                if (dispatchController is ActivityDispatchQueueController) {
                     dispatchController.unmanage(this)
                 } else {
                     dispatchController?.unmanage(this)
@@ -640,12 +640,13 @@ object Dispatcher {
             return this
         }
 
-        override fun managedBy(dispatchController: DispatchController): Dispatch<R> {
-            val oldDispatchController = this.dispatchData.dispatchController
-            this.dispatchData.dispatchController = null
+        override fun managedBy(dispatchQueueController: DispatchQueueController): Dispatch<R> {
+            val oldDispatchController = this.dispatchData.dispatchQueueController
+            this.dispatchData.dispatchQueueController = null
             oldDispatchController?.unmanage(this)
-            this.dispatchData.dispatchController = dispatchController
-            dispatchController.manage(this)
+            this.dispatchData.dispatchQueueController = dispatchQueueController
+            this.dispatchData.cancelOnComplete = false
+            dispatchQueueController.manage(this)
             return this
         }
 
@@ -654,11 +655,12 @@ object Dispatcher {
         }
 
         override fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R> {
-            val oldDispatchController = this.dispatchData.dispatchController
-            this.dispatchData.dispatchController = null
+            val oldDispatchController = this.dispatchData.dispatchQueueController
+            this.dispatchData.dispatchQueueController = null
             oldDispatchController?.unmanage(this)
-            val dispatchController = ActivityDispatchController.getInstance(activity)
-            this.dispatchData.dispatchController = dispatchController
+            val dispatchController = ActivityDispatchQueueController.getInstance(activity)
+            this.dispatchData.dispatchQueueController = dispatchController
+            this.dispatchData.cancelOnComplete = false
             dispatchController.manage(this, cancelType)
             return this
         }
@@ -781,8 +783,8 @@ object Dispatcher {
                 dispatchData = dispatchData,
                 dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
             queueDispatch.dispatchSources.add(this)
-            val dispatchController = dispatchData.dispatchController
-            val zipDispatchController = zipDispatchData.dispatchController
+            val dispatchController = dispatchData.dispatchQueueController
+            val zipDispatchController = zipDispatchData.dispatchQueueController
             if (zipDispatchController == null && dispatchController != null) {
                 zipRootDispatch.managedBy(dispatchController)
             }
@@ -879,12 +881,12 @@ object Dispatcher {
                 dispatchData = dispatchData,
                 dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
             queueDispatch.dispatchSources.add(this)
-            val dispatchController = dispatchData.dispatchController
-            val zipDispatchController = zipDispatchData.dispatchController
+            val dispatchController = dispatchData.dispatchQueueController
+            val zipDispatchController = zipDispatchData.dispatchQueueController
             if (zipDispatchController == null && dispatchController != null) {
                 zipRootDispatch.managedBy(dispatchController)
             }
-            val zipDispatchController2 = zipDispatchData2.dispatchController
+            val zipDispatchController2 = zipDispatchData2.dispatchQueueController
             if (zipDispatchController2 == null && dispatchController != null) {
                 zipRootDispatch2.managedBy(dispatchController)
             }
@@ -988,12 +990,12 @@ object Dispatcher {
                 dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
             )
             queueDispatch.dispatchSources.add(this)
-            val dispatchController = dispatchData.dispatchController
-            val zipDispatchController = zipDispatchData.dispatchController
+            val dispatchController = dispatchData.dispatchQueueController
+            val zipDispatchController = zipDispatchData.dispatchQueueController
             if (zipDispatchController == null && dispatchController != null) {
                 zipRootDispatch.managedBy(dispatchController)
             }
-            val zipDispatchController2 = zipDispatchData2.dispatchController
+            val zipDispatchController2 = zipDispatchData2.dispatchQueueController
             if (zipDispatchController2 == null && dispatchController != null) {
                 zipRootDispatch2.managedBy(dispatchController)
             }
@@ -1009,9 +1011,11 @@ object Dispatcher {
         }
 
         override fun cancelOnComplete(cancel: Boolean): Dispatch<R> {
-            dispatchData.cancelOnComplete = cancel
-            if (cancel && dispatchData.completedDispatchQueue) {
-                cancel()
+            if (dispatchData.dispatchQueueController == null) {
+                dispatchData.cancelOnComplete = cancel
+                if (cancel && dispatchData.completedDispatchQueue) {
+                    cancel()
+                }
             }
             return this
         }
@@ -1031,6 +1035,7 @@ object Dispatcher {
             while (iterator.hasNext()) {
                 if (dispatchObserver == iterator.next()) {
                     iterator.remove()
+                    break
                 }
             }
             return this
@@ -1038,9 +1043,14 @@ object Dispatcher {
 
         override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
             val iterator = dispatchObserversSet.iterator()
+            var count = 0
             while (iterator.hasNext()) {
                 if (dispatchObservers.contains(iterator.next())) {
                     iterator.remove()
+                    ++count
+                    if (count == dispatchObservers.size) {
+                        break
+                    }
                 }
             }
             return this

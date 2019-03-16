@@ -1,8 +1,8 @@
 package com.tonyodev.dispatch
 
 /**
- * Cancel Type used with Dispatch objects
- * that are being managed by an activity/ActivityDispatchController
+ * Cancel Type used with a Dispatch queues
+ * that are being managed by an ActivityDispatchQueueController
  * */
 enum class CancelType {
 

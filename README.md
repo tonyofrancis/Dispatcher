@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var retrofit: Retrofit
     private lateinit var service: TestService
-    private val dispatchController = DispatchController.create()
+    private val dispatchQueueController = DispatchController.create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,14 +43,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestService() {
         service.getSampleJson()
-            .managedBy(dispatchController)
+            .managedBy(dispatchQueueController)
             .doWork { data ->
                 Log.d("test", "data size is:${data.size}")
             }
             .run()
 
         Dispatcher.backgroundDispatch
-            .managedBy(dispatchController)
+            .managedBy(dispatchQueueController)
             .doWork {
                 service.getSampleJson().getResults()
             }
@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestTimer() {
         Dispatcher.createTimerDispatch(5000)
-            .managedBy(dispatchController)
+            .managedBy(dispatchQueueController)
             .postMain {
                 Log.d("test","Test timer after 5000 millis")
             }
@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestInterval() {
         Dispatcher.createIntervalDispatch(10000)
-            .managedBy(dispatchController)
+            .managedBy(dispatchQueueController)
             .doWork {
                 Log.d("test","Test interval every 10 seconds")
             }
@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        dispatchController.cancelAllDispatch()
+        dispatchQueueController.cancelAllDispatch()
     }
 
 }

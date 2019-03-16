@@ -5,27 +5,28 @@ import android.app.Application
 import android.os.Bundle
 
 /**
- * A Dispatch Controller that uses an activity's lifecycle to manage
- * Dispatch objects.
+ * A DispatchQueueController that uses an activity's lifecycle to manage
+ * Dispatch queues. ActivityDispatchQueueController automatically cancels and unmanages
+ * any dispatch queue that is not cancelled when the activity is destroyed.
  * */
-open class ActivityDispatchController(private val activity: Activity): DispatchController() {
+open class ActivityDispatchQueueController(private val activity: Activity): DispatchQueueController() {
 
     private val activityLifecycleCallbacks = object: Application.ActivityLifecycleCallbacks {
 
         override fun onActivityPaused(activity: Activity?) {
-            if (this@ActivityDispatchController.activity == activity) {
+            if (this@ActivityDispatchQueueController.activity == activity) {
                 cancelAllPaused()
             }
         }
 
         override fun onActivityStopped(activity: Activity?) {
-            if (this@ActivityDispatchController.activity == activity) {
+            if (this@ActivityDispatchQueueController.activity == activity) {
                 cancelAllStopped()
             }
         }
 
         override fun onActivityDestroyed(activity: Activity?) {
-            if (this@ActivityDispatchController.activity == activity) {
+            if (this@ActivityDispatchQueueController.activity == activity) {
                 cancelAll()
                 release()
             }
@@ -41,19 +42,19 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
 
     }
 
-    private val pausedSet = mutableSetOf<Dispatch<*>>()
+    private val pausedQueueSet = mutableSetOf<Dispatch<*>>()
 
-    private val stoppedSet = mutableSetOf<Dispatch<*>>()
+    private val stoppedQueueSet = mutableSetOf<Dispatch<*>>()
 
-    private val destroySet = mutableSetOf<Dispatch<*>>()
+    private val destroyQueueSet = mutableSetOf<Dispatch<*>>()
 
     init {
         activity.application.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
     }
 
     fun cancelAllPaused() {
-        super.cancelDispatch(*pausedSet.toTypedArray())
-        val iterator = pausedSet.iterator()
+        super.cancelDispatch(pausedQueueSet)
+        val iterator = pausedQueueSet.iterator()
         while (iterator.hasNext()) {
             iterator.next()
             iterator.remove()
@@ -61,8 +62,8 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
     }
 
     fun cancelAllStopped() {
-        super.cancelDispatch(*stoppedSet.toTypedArray())
-        val iterator = stoppedSet.iterator()
+        super.cancelDispatch(stoppedQueueSet)
+        val iterator = stoppedQueueSet.iterator()
         while (iterator.hasNext()) {
             iterator.next()
             iterator.remove()
@@ -71,17 +72,17 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
 
     fun cancelAll() {
         super.cancelAllDispatch()
-        var iterator = pausedSet.iterator()
+        var iterator = pausedQueueSet.iterator()
         while (iterator.hasNext()) {
             iterator.next()
             iterator.remove()
         }
-        iterator = stoppedSet.iterator()
+        iterator = stoppedQueueSet.iterator()
         while (iterator.hasNext()) {
             iterator.next()
             iterator.remove()
         }
-        iterator = destroySet.iterator()
+        iterator = destroyQueueSet.iterator()
         while (iterator.hasNext()) {
             iterator.next()
             iterator.remove()
@@ -101,26 +102,32 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
 
     override fun unmanage(dispatch: Dispatch<*>) {
         super.unmanage(dispatch)
-        var iterator = pausedSet.iterator()
+        var iterator = pausedQueueSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next() == dispatch.rootDispatch) {
                 iterator.remove()
                 return
             }
         }
-        iterator = stoppedSet.iterator()
+        iterator = stoppedQueueSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next() == dispatch.rootDispatch) {
                 iterator.remove()
                 return
             }
         }
-        iterator = destroySet.iterator()
+        iterator = destroyQueueSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next() == dispatch.rootDispatch) {
                 iterator.remove()
                 break
             }
+        }
+    }
+
+    override fun unmanage(dispatchList: List<Dispatch<*>>) {
+        for (dispatch in dispatchList) {
+            unmanage(dispatch)
         }
     }
 
@@ -131,9 +138,15 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
     fun manage(dispatch: Dispatch<*>, cancelType: CancelType) {
         super.manage(dispatch)
         when(cancelType) {
-            CancelType.PAUSED -> pausedSet.add(dispatch.rootDispatch)
-            CancelType.STOPPED -> stoppedSet.add(dispatch.rootDispatch)
-            CancelType.DESTROYED -> destroySet.add(dispatch.rootDispatch)
+            CancelType.PAUSED -> pausedQueueSet.add(dispatch.rootDispatch)
+            CancelType.STOPPED -> stoppedQueueSet.add(dispatch.rootDispatch)
+            CancelType.DESTROYED -> destroyQueueSet.add(dispatch.rootDispatch)
+        }
+    }
+
+    override fun manage(dispatchList: List<Dispatch<*>>) {
+        for (dispatch in dispatchList) {
+            manage(dispatch, CancelType.DESTROYED)
         }
     }
 
@@ -162,22 +175,29 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
         }
     }
 
+    override fun cancelDispatch(dispatchCollection: Collection<Dispatch<*>>) {
+        for (dispatch in dispatchCollection) {
+            super.cancelDispatch(dispatch)
+            remove(dispatch.queueId)
+        }
+    }
+
     private fun remove(queueId: Int) {
-        var iterator = pausedSet.iterator()
+        var iterator = pausedQueueSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next().queueId == queueId) {
                 iterator.remove()
                 return
             }
         }
-        iterator = stoppedSet.iterator()
+        iterator = stoppedQueueSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next().queueId == queueId) {
                 iterator.remove()
                 return
             }
         }
-        iterator = destroySet.iterator()
+        iterator = destroyQueueSet.iterator()
         while (iterator.hasNext()) {
             if (iterator.next().queueId == queueId) {
                 iterator.remove()
@@ -189,16 +209,16 @@ open class ActivityDispatchController(private val activity: Activity): DispatchC
     companion object {
 
         @JvmStatic
-        private val map = mutableMapOf<Activity, ActivityDispatchController>()
+        private val map = mutableMapOf<Activity, ActivityDispatchQueueController>()
 
-        @JvmStatic
         /**
-         * Gets the ActivityDispatchController instance for the passed in activity.
+         * Gets the ActivityDispatchQueueController instance for the passed in activity.
          * @param activity the activity.
          * @return return instance.
          * */
-        fun getInstance(activity: Activity): ActivityDispatchController {
-            val controller = map[activity] ?: ActivityDispatchController(activity)
+        @JvmStatic
+        fun getInstance(activity: Activity): ActivityDispatchQueueController {
+            val controller = map[activity] ?: ActivityDispatchQueueController(activity)
             map[activity] = controller
             return controller
         }
