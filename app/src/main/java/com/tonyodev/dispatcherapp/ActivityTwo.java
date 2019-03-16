@@ -31,26 +31,26 @@ public class ActivityTwo extends AppCompatActivity {
     private void runIntervalTask() {
         Dispatcher.createIntervalDispatchQueue(10000)
                 .managedBy(this, CancelType.PAUSED)
-                .doWork(new Function1<Unit, Integer>() {
+                .async(new Function1<Unit, Integer>() {
                     @Override
                     public Integer invoke(Unit unit) {
                         return 55;
                     }
                 })
-                .doWork(2000, new Function1<Integer, String>() {
+                .async(2000, new Function1<Integer, String>() {
             @Override
             public String invoke(Integer integer) {
                 Log.d("dispatcherTest", "interval break");
                 return "hello world";
             }
-        }).postMain(new Function1<String, Void>() {
+        }).post(new Function1<String, Void>() {
             @Override
             public Void invoke(String s) {
                 textView.setText(s);
                 Log.d("dispatcherTest", "main thread break:" + s);
                 return null;
             }
-        }).doWork(new Function1<Void, Void>() {
+        }).async(new Function1<Void, Void>() {
             @Override
             public Void invoke(Void aVoid) {
                 Log.d("dispatcherTest", "void method called");

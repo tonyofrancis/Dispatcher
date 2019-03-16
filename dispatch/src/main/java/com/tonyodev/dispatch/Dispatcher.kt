@@ -666,23 +666,23 @@ object Dispatcher {
             return this
         }
 
-        override fun <U> postMain(func: (R) -> U): Dispatch<U> {
-            return postMain(0, func)
+        override fun <U> post(func: (R) -> U): Dispatch<U> {
+            return post(0, func)
         }
 
-        override fun <U> postMain(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
+        override fun <U> post(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
             return getNewDispatch(func, uiHandler, delayInMillis, false)
         }
 
-        override fun <U> doWork(func: (R) -> U): Dispatch<U> {
-            return doWork(0, func)
+        override fun <U> async(func: (R) -> U): Dispatch<U> {
+            return async(0, func)
         }
 
-        override fun <U> doWork(backgroundHandler: Handler, func: (R) -> U): Dispatch<U> {
-            return doWork(backgroundHandler, 0, func)
+        override fun <U> async(backgroundHandler: Handler, func: (R) -> U): Dispatch<U> {
+            return async(backgroundHandler, 0, func)
         }
 
-        override fun <U> doWork(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
+        override fun <U> async(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
             val workHandler = when {
                 handler.looper.thread.name == uiHandler.looper.thread.name -> getBackgroundHandler()
                 else -> handler
@@ -690,17 +690,17 @@ object Dispatcher {
             return getNewDispatch(func, workHandler, delayInMillis, workHandler == handler && closeHandler)
         }
 
-        override fun <U> doWork(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
+        override fun <U> async(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
             throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
             return getNewDispatch(func, backgroundHandler, delayInMillis, backgroundHandler == handler && closeHandler)
         }
 
-        override fun <U> doWork(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
+        override fun <U> async(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
             val handlerPair = getHandlerPairForThreadType(threadType)
             return getNewDispatch(func, handlerPair.first, 0, handlerPair.second)
         }
 
-        override fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
+        override fun <U> async(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
             val handlerPair = getHandlerPairForThreadType(threadType)
             return getNewDispatch(func, handlerPair.first, delayInMillis, handlerPair.second)
         }

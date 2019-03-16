@@ -36,19 +36,19 @@ class MainActivity : AppCompatActivity() {
     private fun runTestService() {
        service.getSampleJson()
            .managedBy(this)
-            .doWork { data ->
+            .async { data ->
                 Log.d("dispatcherTest", "data size is:${data.size}")
             }
            .start()
         //or
         Dispatcher.backgroundDispatchQueue
             .managedBy(this)
-            .doWork { "66" }
+            .async { "66" }
             .zipWith(service.getSampleJson())
-            .doWork {
+            .async {
                 it.second
             }
-            .postMain {
+            .post {
                 Log.d("dispatcherTest", "data size is:${it.size}")
             }
             .start()
@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     private fun runTestTimer() {
         Dispatcher.createTimerDispatchQueue(5000)
             .managedBy(this)
-            .postMain {
+            .post {
                 Log.d("dispatcherTest","Test timer after 5000 millis. data is $it")
             }
             .start()

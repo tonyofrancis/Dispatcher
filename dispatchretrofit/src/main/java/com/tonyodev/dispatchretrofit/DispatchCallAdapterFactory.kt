@@ -56,7 +56,7 @@ class DispatchCallAdapterFactory private constructor(
                 Dispatcher.createDispatchQueue(ThreadType.NETWORK)
             } else {
                 Dispatcher.createDispatchQueue(handler)
-            }.doWork {
+            }.async {
                 val callClone = call.clone()
                 val response = callClone.execute()
                 val data: Any? = if (response.isSuccessful) {

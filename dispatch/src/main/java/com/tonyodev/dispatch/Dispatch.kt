@@ -11,10 +11,10 @@ import java.lang.IllegalArgumentException
  * queue will be cancelled.
  *
  * Example:
- * queueId 66 -> dispatch(doWork) -> dispatch(doWork) -> dispatch(postMain)
+ * queueId 66 -> dispatch(async) -> dispatch(async) -> dispatch(post)
  * queueId 1 -> dispatch()
- * queueId 88 -> dispatch(post) -> dispatch(doWork)
- * queueId 78595 -> dispatch(postMain)
+ * queueId 88 -> dispatch(post) -> dispatch(async)
+ * queueId 78595 -> dispatch(post)
  * */
 interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
@@ -43,7 +43,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @param func the function.
      * @return the dispatch.
      * */
-    fun <U> postMain(func: (R) -> U): Dispatch<U>
+    fun <U> post(func: (R) -> U): Dispatch<U>
 
     /**
      * Posts work on the UI thread.
@@ -52,14 +52,14 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @param func the function.
      * @return the dispatch.
      * */
-    fun <U> postMain(delayInMillis: Long, func: (R) -> U): Dispatch<U>
+    fun <U> post(delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.
      * @param func the func.
      * @return the dispatch.
      * */
-    fun <U> doWork(func: (R) -> U): Dispatch<U>
+    fun <U> async(func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.
@@ -68,7 +68,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @throws IllegalArgumentException if the handler passed in uses the main thread.
      * @return the dispatch.
      * */
-    fun <U> doWork(backgroundHandler: Handler, func: (R) -> U): Dispatch<U>
+    fun <U> async(backgroundHandler: Handler, func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.
@@ -77,7 +77,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @throws IllegalArgumentException if the handler passed in uses the main thread.
      * @return the dispatch.
      * */
-    fun <U> doWork(threadType: ThreadType, func: (R) -> U): Dispatch<U>
+    fun <U> async(threadType: ThreadType, func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.
@@ -86,7 +86,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @param func the function.
      * @return the dispatch.
      * */
-    fun <U> doWork(delayInMillis: Long, func: (R) -> U): Dispatch<U>
+    fun <U> async(delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.
@@ -96,7 +96,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @param func the function.
      * @return the dispatch.
      * */
-    fun <U> doWork(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U>
+    fun <U> async(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.
@@ -106,7 +106,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @param func the function.
      * @return the dispatch.
      * */
-    fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U>
+    fun <U> async(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
      * Triggers the dispatch queue to start.
