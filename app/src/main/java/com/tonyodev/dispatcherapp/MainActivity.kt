@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
             }
            .start()
         //or
-        Dispatcher.backgroundDispatch
+        Dispatcher.backgroundDispatchQueue
             .managedBy(this)
             .doWork { "66" }
             .zipWith(service.getSampleJson())
@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runTestTimer() {
-        Dispatcher.createTimerDispatch(5000)
+        Dispatcher.createTimerDispatchQueue(5000)
             .managedBy(this)
             .postMain {
                 Log.d("dispatcherTest","Test timer after 5000 millis. data is $it")

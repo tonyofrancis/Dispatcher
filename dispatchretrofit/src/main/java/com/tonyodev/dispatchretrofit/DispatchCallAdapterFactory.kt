@@ -53,9 +53,9 @@ class DispatchCallAdapterFactory private constructor(
 
         override fun adapt(call: Call<R>): Dispatch<*> {
             return if (handler == null) {
-                Dispatcher.createDispatch(ThreadType.NETWORK)
+                Dispatcher.createDispatchQueue(ThreadType.NETWORK)
             } else {
-                Dispatcher.createDispatch(handler)
+                Dispatcher.createDispatchQueue(handler)
             }.doWork {
                 val callClone = call.clone()
                 val response = callClone.execute()

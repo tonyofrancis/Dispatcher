@@ -29,7 +29,7 @@ public class ActivityTwo extends AppCompatActivity {
     }
 
     private void runIntervalTask() {
-        Dispatcher.createIntervalDispatch(10000)
+        Dispatcher.createIntervalDispatchQueue(10000)
                 .managedBy(this, CancelType.PAUSED)
                 .doWork(new Function1<Unit, Integer>() {
                     @Override

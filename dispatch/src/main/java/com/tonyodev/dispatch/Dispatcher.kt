@@ -13,7 +13,7 @@ import kotlin.collections.ArrayList
 /**
  * Dispatcher is a simple and flexible work scheduler that schedulers work on a background or UI thread correctly
  * in the form of Dispatch objects in queues using the android.os.Handler class to handle threading.
- * @see Dispatcher.createDispatch() to get started.
+ * @see Dispatcher.createDispatchQueue() to get started.
  */
 object Dispatcher {
 
@@ -85,7 +85,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatch(): Dispatch<Unit> {
+    fun createDispatchQueue(): Dispatch<Unit> {
         return createFreshDispatch(
             handler = getBackgroundHandler(),
             delayInMillis = 0,
@@ -100,7 +100,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatch(backgroundHandler: Handler?): Dispatch<Unit> {
+    fun createDispatchQueue(backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
             handler = backgroundHandler ?: getBackgroundHandler(),
@@ -117,7 +117,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatch(threadType: ThreadType): Dispatch<Unit> {
+    fun createDispatchQueue(threadType: ThreadType): Dispatch<Unit> {
         val handlerPair = getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
@@ -134,7 +134,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatch(handlerName: String): Dispatch<Unit> {
+    fun createDispatchQueue(handlerName: String): Dispatch<Unit> {
         return createFreshDispatch(
             handler = getNewDispatchHandler(handlerName),
             delayInMillis = 0,
@@ -149,7 +149,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createTimerDispatch(delayInMillis: Long): Dispatch<Unit> {
+    fun createTimerDispatchQueue(delayInMillis: Long): Dispatch<Unit> {
         return createFreshDispatch(
             handler = getNewDispatchHandler(),
             delayInMillis = delayInMillis,
@@ -166,7 +166,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createTimerDispatch(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
+    fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
             handler = backgroundHandler ?: getNewDispatchHandler(),
@@ -184,7 +184,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createTimerDispatch(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
+    fun createTimerDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
         val handlerPair = getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
@@ -200,7 +200,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createIntervalDispatch(delayInMillis: Long): Dispatch<Unit> {
+    fun createIntervalDispatchQueue(delayInMillis: Long): Dispatch<Unit> {
         return createFreshDispatch(
             handler = getNewDispatchHandler(),
             delayInMillis = delayInMillis,
@@ -217,7 +217,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createIntervalDispatch(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
+    fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
             handler = backgroundHandler ?: getNewDispatchHandler(),
@@ -235,7 +235,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createIntervalDispatch(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
+    fun createIntervalDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
         val handlerPair = getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
@@ -250,7 +250,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val backgroundDispatch: Dispatch<Unit>
+    val backgroundDispatchQueue: Dispatch<Unit>
         get() {
             val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND)
             return createFreshDispatch(
@@ -266,7 +266,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val backgroundSecondaryDispatch: Dispatch<Unit>
+    val backgroundSecondaryDispatchQueue: Dispatch<Unit>
         get() {
             val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND_SECONDARY)
             return createFreshDispatch(
@@ -282,7 +282,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val ioDispatch: Dispatch<Unit>
+    val ioDispatchQueue: Dispatch<Unit>
         get() {
             val handlerPair = getHandlerPairForThreadType(ThreadType.IO)
             return createFreshDispatch(
@@ -298,7 +298,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val networkDispatch: Dispatch<Unit>
+    val networkDispatchQueue: Dispatch<Unit>
         get() {
             val handlerPair = getHandlerPairForThreadType(ThreadType.NETWORK)
             return createFreshDispatch(
