@@ -59,11 +59,16 @@ class DispatchCallAdapterFactory private constructor(
             }.doWork {
                 val callClone = call.clone()
                 val response = callClone.execute()
-                if (response.isSuccessful) {
+                val data: Any? = if (response.isSuccessful) {
                     response.body()
                 } else {
-                    throw HttpException(response)
+                    HttpException(response)
                 }
+                callClone.cancel()
+                if (data is HttpException) {
+                    throw data
+                }
+                data
             }
         }
 
