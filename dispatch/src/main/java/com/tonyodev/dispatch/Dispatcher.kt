@@ -269,7 +269,7 @@ object Dispatcher {
     @JvmStatic
     val background1Dispatch: Dispatch<Unit>
         get() {
-            val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND1)
+            val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND_SECONDARY)
             return createFreshDispatch(
                 handler = handlerPair.first,
                 delayInMillis = 0,
@@ -323,7 +323,7 @@ object Dispatcher {
     private fun getHandlerPairForThreadType(threadType: ThreadType): Pair<Handler, Boolean> {
         return when(threadType) {
             ThreadType.BACKGROUND -> Pair(backgroundHandler, false)
-            ThreadType.BACKGROUND1 -> Pair(background1Handler!!, false)
+            ThreadType.BACKGROUND_SECONDARY -> Pair(background1Handler!!, false)
             ThreadType.IO -> Pair(ioHandler!!, false)
             ThreadType.NETWORK -> Pair(networkHandler!!, false)
             ThreadType.NEW -> Pair(getNewDispatchHandler(), true)
@@ -1046,7 +1046,7 @@ object Dispatcher {
             return this
         }
 
-        override fun getDispatchObservable(): DispatchObservable<R> {
+        override fun getDispatchObservable(): DispatchObservable<R, Dispatch<R>> {
             return this
         }
 

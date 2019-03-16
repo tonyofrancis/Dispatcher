@@ -1,36 +1,36 @@
 package com.tonyodev.dispatch
 
 /**
- * Interface that allows for attaching of dispatch observers.
+ * Interface that allows for the attaching of dispatch observers.
  * */
-interface DispatchObservable<R> {
+interface DispatchObservable<R, T> {
 
     /**
-     * Adds a dispatch observer to the dispatch.
+     * Adds a dispatch observer.
      * @param dispatchObserver the observer.
      * @return the dispatch.
      * */
-    fun addObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R>
+    fun addObserver(dispatchObserver: DispatchObserver<R>): T
 
     /**
-     * Adds a list of dispatch observers to the dispatch.
+     * Adds a list of dispatch observers.
      * @param dispatchObservers the list of observers.
      * @return the dispatch.
      * */
-    fun addObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R>
+    fun addObservers(dispatchObservers: List<DispatchObserver<R>>): T
 
     /**
-     * Removes a dispatch observer from the dispatch.
+     * Removes a dispatch observer.
      * @param dispatchObserver the observer to be removed.
      * @return the dispatch.
      * */
-    fun removeObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R>
+    fun removeObserver(dispatchObserver: DispatchObserver<R>): T
 
     /**
-     * Remove a list of dispatch observers from the dispatch.
+     * Remove a list of dispatch observers.
      * @param dispatchObservers the list of observers to be removed.
      * @return the dispatch.
      * */
-    fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R>
+    fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): T
 
 }
