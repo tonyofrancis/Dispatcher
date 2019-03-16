@@ -12,7 +12,7 @@ import kotlin.collections.ArrayList
 
 /**
  * Dispatcher is a simple and flexible work scheduler that schedulers work on a background or UI thread correctly
- * in the form of Dispatch objects using the android.os.Handler class to handle threading.
+ * in the form of Dispatch objects in queues using the android.os.Handler class to handle threading.
  * @see Dispatcher.createDispatch() to get started.
  */
 object Dispatcher {
@@ -22,17 +22,16 @@ object Dispatcher {
     private const val DISPATCH_TYPE_QUEUE_RUNNER = 1
     private const val DISPATCH_TYPE_ANY_RESULT = 2
     private val INVALID_RESULT = InvalidResult()
-
     private val uiHandler = Handler(Looper.getMainLooper())
     private val backgroundHandler: Handler = {
         val handlerThread = HandlerThread("dispatcherBackground")
         handlerThread.start()
         Handler(handlerThread.looper)
     }()
-    private var background1Handler: Handler? = null
+    private var backgroundSecondaryHandler: Handler? = null
         get() {
             if (field == null) {
-                val handlerThread = HandlerThread("dispatcherBackground1")
+                val handlerThread = HandlerThread("dispatcherBackgroundSecondary")
                 handlerThread.start()
                 field = Handler(handlerThread.looper)
             }
@@ -56,10 +55,10 @@ object Dispatcher {
             }
             return field
         }
-    private var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
     @Volatile
     private var newThreadCount = 0
     private var enableWarnings = false
+    private var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
 
     /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
@@ -81,21 +80,21 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * The dispatch object returned will use the default background handler to schedule work in the background.
      * @return new dispatch.
      * */
     @JvmStatic
     fun createDispatch(): Dispatch<Unit> {
         return createFreshDispatch(
-            handler = backgroundHandler,
+            handler = getBackgroundHandler(),
             delayInMillis = 0,
             closeHandler = false,
             isIntervalDispatch = false)
     }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * @param backgroundHandler the background handler used to schedule work in the background. If null, the default background handler is used.
      * @throws Exception throws exception if backgroundHandler thread passed in uses the ui thread.
      * @return new dispatch.
@@ -104,15 +103,15 @@ object Dispatcher {
     fun createDispatch(backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
-            handler = backgroundHandler ?: this.backgroundHandler,
+            handler = backgroundHandler ?: getBackgroundHandler(),
             delayInMillis = 0,
             closeHandler = false,
             isIntervalDispatch = false)
     }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
-     * The returned dispatch will have a handler of the thread type
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+     * The returned dispatch queue will have a handler of the thread type
      * @param threadType the default threadType to use.
      * handler is used.
      * @return new dispatch.
@@ -128,7 +127,7 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * The returned dispatch will have a newly created handler that will handle background work.
      * @param handlerName the name used by the handler.
      * handler is used.
@@ -144,9 +143,9 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new timer dispatch. A new handler thread is created to start the timer dispatch.
+     * Creates a new timer dispatch queue. A new handler thread is created to start the timer dispatch queue.
      * @param delayInMillis the delay in milliseconds before the handler runs the dispatch.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @return new dispatch.
      * */
     @JvmStatic
@@ -159,9 +158,9 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new timer dispatch.
+     * Creates a new timer dispatch queue.
      * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @param backgroundHandler the background handler used for the timer task. If null, a new backgroundHandler is created.
      * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
      * @return new dispatch.
@@ -177,9 +176,9 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new timer dispatch.
+     * Creates a new timer dispatch queue.
      * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @param threadType the thread type.
      * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
      * @return new dispatch.
@@ -195,9 +194,9 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new interval dispatch that fires every x time. A new handler thread is created to start the interval dispatch.
+     * Creates a new interval dispatch queue that fires every x time. A new handler thread is created to start the interval dispatch.
      * @param delayInMillis the delay in milliseconds before the handler runs the worker.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @return new dispatch.
      * */
     @JvmStatic
@@ -210,9 +209,9 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new interval dispatch that fires every x time.
+     * Creates a new interval dispatch queue that fires every x time.
      * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @param backgroundHandler the background handler used for the timer task. If null, a new backgroundHandler is created.
      * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
      * @return new dispatch.
@@ -228,9 +227,9 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new interval dispatch that fires every x time.
+     * Creates a new interval dispatch queue that fires every x time.
      * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @param threadType the thread type.
      * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
      * @return new dispatch.
@@ -246,8 +245,8 @@ object Dispatcher {
     }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
-     * The dispatch operates on the default background handler/thread.
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+     * The dispatch queue operates on the default background handler/thread.
      * @return new dispatch.
      * */
     @JvmStatic
@@ -262,12 +261,12 @@ object Dispatcher {
         }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
-     * The dispatch operates on the secondary background handler/thread.
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+     * The dispatch queue operates on the secondary background handler/thread.
      * @return new dispatch.
      * */
     @JvmStatic
-    val background1Dispatch: Dispatch<Unit>
+    val backgroundSecondaryDispatch: Dispatch<Unit>
         get() {
             val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND_SECONDARY)
             return createFreshDispatch(
@@ -278,8 +277,8 @@ object Dispatcher {
         }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
-     * The dispatch operates on the default io handler/thread.
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+     * The dispatch queue operates on the default io handler/thread.
      * @return new dispatch.
      * */
     @JvmStatic
@@ -294,8 +293,8 @@ object Dispatcher {
         }
 
     /**
-     * Creates a new dispatch object that can be used to post work on the main thread or do work in the background.
-     * The dispatch operates on the default network handler/thread.
+     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+     * The dispatch queue operates on the default network handler/thread.
      * @return new dispatch.
      * */
     @JvmStatic
@@ -308,6 +307,10 @@ object Dispatcher {
                 closeHandler = handlerPair.second,
                 isIntervalDispatch = false)
         }
+
+    private fun getBackgroundHandler(): Handler {
+        return  backgroundHandler
+    }
 
     private fun getNewDispatchHandler(name: String? = null): Handler {
         val threadName = if (name == null || name.isEmpty()) {
@@ -323,7 +326,7 @@ object Dispatcher {
     private fun getHandlerPairForThreadType(threadType: ThreadType): Pair<Handler, Boolean> {
         return when(threadType) {
             ThreadType.BACKGROUND -> Pair(backgroundHandler, false)
-            ThreadType.BACKGROUND_SECONDARY -> Pair(background1Handler!!, false)
+            ThreadType.BACKGROUND_SECONDARY -> Pair(backgroundSecondaryHandler!!, false)
             ThreadType.IO -> Pair(ioHandler!!, false)
             ThreadType.NETWORK -> Pair(networkHandler!!, false)
             ThreadType.NEW -> Pair(getNewDispatchHandler(), true)
@@ -681,7 +684,7 @@ object Dispatcher {
 
         override fun <U> doWork(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
             val workHandler = when {
-                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
+                handler.looper.thread.name == uiHandler.looper.thread.name -> getBackgroundHandler()
                 else -> handler
             }
             return getNewDispatch(func, workHandler, delayInMillis, workHandler == handler && closeHandler)
@@ -1062,6 +1065,7 @@ object Dispatcher {
             this.dispatchId = id
             return this
         }
+
     }
 
 }
