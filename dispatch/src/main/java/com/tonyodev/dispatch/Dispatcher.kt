@@ -482,10 +482,8 @@ object Dispatcher {
         private fun notifyDispatchObservers() {
             val iterator = dispatchObserversSet.iterator()
             val result = results as R
-            uiHandler.post {
-                while (iterator.hasNext()) {
-                    iterator.next().onChanged(result)
-                }
+            while (iterator.hasNext()) {
+                iterator.next().onChanged(result)
             }
         }
 
