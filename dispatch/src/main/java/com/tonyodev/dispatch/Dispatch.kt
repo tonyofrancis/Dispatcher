@@ -5,26 +5,26 @@ import android.os.Handler
 import java.lang.IllegalArgumentException
 
 /**
- * A Dispatch is used to perform work on the right thread at the right time and only completes one unit of work.
- * Once it completes, it checks if there are any other dispatch objects in the queue with the same queue id and performs work
- * on that dispatch. Hence they are chained and can return the data from the previous dispatch.
- * If cancelled is called on a dispatch, all queued dispatch objects with the same queue id will cancelled.
+ * A Dispatch is used to perform work and return data on the right thread at the right time.
+ * Dispatch objects are chained to form a dispatch queue. Hence the reason a dispatch can pass data to another dispatch
+ * further down in the queue. If the cancel method is called on a dispatch object, all other dispatch in its dispatch
+ * queue will be cancelled.
  *
- * dispatch example:
- * id 66 -> dispatch(doWork) -> dispatch(doWork) -> dispatch(postMain)
- * id 1 -> dispatch()
- * id 88 -> dispatch(post) -> dispatch(doWork)
- * id 78595 -> dispatch(postMain)
+ * Example:
+ * queueId 66 -> dispatch(doWork) -> dispatch(doWork) -> dispatch(postMain)
+ * queueId 1 -> dispatch()
+ * queueId 88 -> dispatch(post) -> dispatch(doWork)
+ * queueId 78595 -> dispatch(postMain)
  * */
 interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
     /**
-     * the dispatch queue id.
+     * The dispatch queue id.
      * */
     val queueId: Int
 
     /***
-     * The block id.
+     * The dispatch id.
      * */
     val dispatchId: String
 
@@ -34,7 +34,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     val rootDispatch: Dispatch<*>
 
     /**
-     * Checks if a dispatch was cancelled.
+     * Checks if a dispatch queue has been cancelled.
      * */
     val isCancelled: Boolean
 
@@ -48,7 +48,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     /**
      * Posts work on the UI thread.
      * @param delayInMillis the delay in milliseconds before the dispatch runs the function.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @param func the function.
      * @return the dispatch.
      * */
@@ -82,7 +82,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     /**
      * Perform work on the background thread.
      * @param delayInMillis the delay in milliseconds before the handler runs the func.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @param func the function.
      * @return the dispatch.
      * */
@@ -92,7 +92,7 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * Perform work on the background thread.
      * @param backgroundHandler the handler that will start the background work.
      * @param delayInMillis the delay in milliseconds before the handler runs the func.
-     * Values under 1 indicates that there are no delays.
+     * Values less than 1 indicates that there are no delays.
      * @param func the function.
      * @return the dispatch.
      * */
@@ -102,36 +102,35 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * Perform work on the background thread.
      * @param threadType the threadType.
      * @param delayInMillis the delay in milliseconds before the handler runs the func.
-     * Values under 1 indicates that there are no delays.
+     * Values less than indicates that there are no delays.
      * @param func the function.
      * @return the dispatch.
      * */
     fun <U> doWork(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
-     * Triggers the dispatch to perform work. The dispatch do not perform work until start is called.
-     * @param errorHandler the error handler. Notifies of the dispatch that throw the error and the error that was thrown. Can be null. Only called
-     * if a block does not handle it's error within doOnErrorMethod.
+     * Triggers the dispatch queue to start.
+     * @param errorHandler the error handler for the dispatch queue. Notifies of the dispatch that throw the error and the error that was thrown. Only called
+     * if a dispatch does not handle it's error within the doOnError method.
      * @return dispatch.
      * */
     fun start(errorHandler: ((Throwable, Dispatch<*>) -> Unit)?): Dispatch<R>
 
     /**
-     * Tiggers the dispatch to perform work. The dispatch do not perform work until start is called.
-     * Run can only be called once.
+     * Triggers the dispatch queue to start.
      * @return dispatch.
      * */
     fun start(): Dispatch<R>
 
     /**
-     * Cancels all pending work on the dispatch. All queued dispatch with the same queue id
-     * will be cancelled. Once cancelled a dispatch queue cannot start again. It would be unsafe to do so.
+     * Cancels all pending work on the dispatch queue.
+     * Once cancelled a dispatch queue cannot start again.
      * @return dispatch.
      * */
     fun cancel(): Dispatch<R>
 
     /**
-     * If set, the error handler for this dispatch is not called because the function will provide default data.
+     * If set, the error handler for this dispatch queue may not be called because the function will provide default data.
      * @param func the do on error function.
      * @return dispatch.
      * */
@@ -166,9 +165,10 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R>
 
     /**
-     * Zips this dispatch with the passed in dispatch and returns a paired result.
-     * If the passed in dispatch is not manager by a DispatchQueueController and the current dispatch is managed.
-     * The passed in dispatch will then be managed by this dispatch's DispatchQueueController.
+     * Zips this dispatch with the passed in dispatch and returns a paired result. Both dispatch objects
+     * are still controlled by their respective dispatch queues.
+     * If the passed in dispatch is not managed by a DispatchQueueController and the current dispatch is managed,
+     * the passed in dispatch will then be managed by this dispatch's DispatchQueueController.
      * @param dispatch dispatch to zipWith with.
      * @return dispatch with result pair.
      * */
@@ -176,8 +176,8 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result.
-     * If the passed in dispatch is not manager by a DispatchQueueController and the current dispatch is managed.
-     * The passed in dispatch will then be managed by this dispatch's DispatchQueueController.
+     * If the passed in dispatch objects are not managed by a DispatchQueueController and the current dispatch is managed,
+     * the passed in dispatch objects will then be managed by this dispatch's DispatchQueueController.
      * @param dispatch dispatch to zipWith with.
      * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
@@ -186,9 +186,10 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
 
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result. A triple
-     * result is returned when all or any of the dispatches gets processed.
-     * If the passed in dispatch is not manager by a DispatchQueueController and the current dispatch is managed.
-     * The passed in dispatch will then be managed by this dispatch's DispatchQueueController.
+     * result is returned when all or any of the dispatches gets processed. All dispatch objects
+     * are still controlled by their respective dispatch queues.
+     * If the passed in dispatch objects are not managed by a DispatchQueueController and the current dispatch is managed,
+     * the passed in dispatch objects will then be managed by this dispatch's DispatchQueueController.
      * @param dispatch dispatch to zipWith with.
      * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
@@ -209,5 +210,11 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @return DispatchObservable
      * */
     fun getDispatchObservable(): DispatchObservable<R, Dispatch<R>>
+
+    /**
+     * Sets the dispatch object id. Use this id to identify where errors occur in the dispatch queue.
+     * @param id the dispatch object id.
+     * */
+    fun setDispatchId(id: String): Dispatch<R>
 
 }

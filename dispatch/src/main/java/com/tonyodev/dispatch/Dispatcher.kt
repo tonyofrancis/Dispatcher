@@ -378,7 +378,7 @@ object Dispatcher {
         var dispatchQueueController: DispatchQueueController? = null
     }
 
-    private class DispatchInfo<T, R>(override val dispatchId: String,
+    private class DispatchInfo<T, R>(override var dispatchId: String,
                                      private val handler: Handler,
                                      private val delayInMillis: Long = -1,
                                      private val worker: ((T) -> R)?,
@@ -1058,6 +1058,10 @@ object Dispatcher {
             return this
         }
 
+        override fun setDispatchId(id: String): Dispatch<R> {
+            this.dispatchId = id
+            return this
+        }
     }
 
 }
