@@ -217,4 +217,12 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * */
     fun setDispatchId(id: String): Dispatch<R>
 
+    /**
+     * Transforms the data from the previous dispatch object to a another
+     * data type.
+     * @param func the function.
+     * @return the new dispatch.
+     * */
+    fun <T> transform(func: (R) -> T): Dispatch<T>
+
 }

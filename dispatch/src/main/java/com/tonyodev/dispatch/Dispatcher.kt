@@ -715,6 +715,10 @@ object Dispatcher {
             return getNewDispatch(func, handlerPair.first, delayInMillis, handlerPair.second)
         }
 
+        override fun <T> transform(func: (R) -> T): Dispatch<T> {
+            return async(func)
+        }
+
         private fun <T, R> getNewDispatch(worker: (T) -> R,
                                           handler: Handler,
                                           delayInMillis: Long,
