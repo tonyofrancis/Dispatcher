@@ -661,6 +661,20 @@ object Dispatcher {
             return this
         }
 
+        override fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController): Dispatch<R> {
+            return managedBy(lifecycleDispatchQueueController, CancelType.DESTROYED)
+        }
+
+        override fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController, cancelType: CancelType): Dispatch<R> {
+            val oldDispatchQueueController = this.dispatchQueue.dispatchQueueController
+            this.dispatchQueue.dispatchQueueController = null
+            oldDispatchQueueController?.unmanage(this)
+            this.dispatchQueue.dispatchQueueController = lifecycleDispatchQueueController
+            this.dispatchQueue.cancelOnComplete = false
+            lifecycleDispatchQueueController.manage(this, cancelType)
+            return this
+        }
+
         override fun managedBy(activity: Activity): Dispatch<R> {
             return managedBy(activity, CancelType.DESTROYED)
         }

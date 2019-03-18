@@ -165,6 +165,25 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R>
 
     /**
+     * Set's this dispatch queue to be managed by a LifecycleDispatchQueueController.
+     * LifecycleDispatchQueueController is controlled by an Android component's lifecycle.
+     * @param lifecycleDispatchQueueController the lifecycleDispatchQueueController that will manage the dispatch queue.
+     * The cancel type is Destroyed. Cancellation occurs when the Android components's onDestroy method is called.
+     * @return dispatch.
+     * */
+    fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController): Dispatch<R>
+
+    /**
+     * Set's this dispatch queue to be managed by a LifecycleDispatchQueueController.
+     * LifecycleDispatchQueueController is controlled by an Android component's lifecycle.
+     * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
+     * @param lifecycleDispatchQueueController the lifecycleDispatchQueueController that will manage the dispatch queue.
+     * @param cancelType the cancel type
+     * @return dispatch.
+     * */
+    fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController, cancelType: CancelType): Dispatch<R>
+
+    /**
      * Zips this dispatch with the passed in dispatch and returns a paired result. Both dispatch objects
      * are still controlled by their respective dispatch queues.
      * If the passed in dispatch is not managed by a DispatchQueueController and the current dispatch is managed,
