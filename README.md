@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.0.4) ](https://bintray.com/tonyofrancis/maven/dispatch/1.0.4/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.0.5) ](https://bintray.com/tonyofrancis/maven/dispatch/1.0.5/link)
 
 Overview
 --------
@@ -7,12 +7,12 @@ Dispatch is a simple and flexible work scheduler that schedulers work on a backg
 
 To use dispatch add the following to your app's build.gradle file
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.0.4"
+implementation "com.tonyodev.dispatch:dispatch:1.0.5"
 ```
 
 To use with Retrofit add
 ```java
-    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.0.4"
+    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.0.5"
 ```
 
 Example:
@@ -21,7 +21,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var retrofit: Retrofit
     private lateinit var service: TestService
-    private val dispatchQueueController = DispatchQueueController.create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,14 +42,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestService() {
         service.getSampleJson()
-            .managedBy(dispatchQueueController)
+            .managedBy(this)
             .async { data ->
                 Log.d("test", "data size is:${data.size}")
             }
             .start()
 
         Dispatcher.backgroundDispatchQueue
-            .managedBy(dispatchQueueController)
+            .managedBy(this)
             .async { //runs on background thread
                 service.getSampleJson().getResults()
             }
@@ -62,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestTimer() {
         Dispatcher.createTimerDispatchQueue(5000)
-            .managedBy(dispatchQueueController)
+            .managedBy(this)
             .post {
                 Log.d("test","Test timer after 5000 millis")
             }
@@ -71,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTestInterval() {
         Dispatcher.createIntervalDispatchQueue(10000)
-            .managedBy(dispatchQueueController)
+            .managedBy(this)
             .async {
                 Log.d("test","Test interval every 10 seconds")
             }
@@ -83,11 +82,6 @@ class MainActivity : AppCompatActivity() {
                 Log.d("test","main thread break: $it")
             }
             .run()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        dispatchQueueController.cancelAllDispatch()
     }
 
 }
