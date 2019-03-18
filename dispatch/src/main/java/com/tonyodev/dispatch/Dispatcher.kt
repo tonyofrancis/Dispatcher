@@ -656,7 +656,6 @@ object Dispatcher {
             this.dispatchQueue.dispatchQueueController = null
             oldDispatchQueueController?.unmanage(this)
             this.dispatchQueue.dispatchQueueController = dispatchQueueController
-            this.dispatchQueue.cancelOnComplete = false
             dispatchQueueController.manage(this)
             return this
         }
@@ -670,7 +669,6 @@ object Dispatcher {
             this.dispatchQueue.dispatchQueueController = null
             oldDispatchQueueController?.unmanage(this)
             this.dispatchQueue.dispatchQueueController = lifecycleDispatchQueueController
-            this.dispatchQueue.cancelOnComplete = false
             lifecycleDispatchQueueController.manage(this, cancelType)
             return this
         }
@@ -685,7 +683,6 @@ object Dispatcher {
             oldDispatchQueueController?.unmanage(this)
             val dispatchQueueController = ActivityDispatchQueueController.getInstance(activity)
             this.dispatchQueue.dispatchQueueController = dispatchQueueController
-            this.dispatchQueue.cancelOnComplete = false
             dispatchQueueController.manage(this, cancelType)
             return this
         }
@@ -1057,11 +1054,9 @@ object Dispatcher {
         }
 
         override fun cancelOnComplete(cancel: Boolean): Dispatch<R> {
-            if (dispatchQueue.dispatchQueueController == null) {
-                dispatchQueue.cancelOnComplete = cancel
-                if (cancel && dispatchQueue.completedDispatchQueue) {
-                    cancel()
-                }
+            dispatchQueue.cancelOnComplete = cancel
+            if (cancel && dispatchQueue.completedDispatchQueue) {
+                cancel()
             }
             return this
         }
