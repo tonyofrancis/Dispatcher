@@ -1,3 +1,6 @@
+Version 1.0.6
+- Cancel fixes
+
 Version 1.0.5
 - Added new transform method on Dispatch
 - Added new class LifecycleDispatchQueueController
