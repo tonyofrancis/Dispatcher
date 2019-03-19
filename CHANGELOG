@@ -1,3 +1,6 @@
+Version 1.0.8
+- Added ErrorHandler for DispatchCallAdapterFactory
+
 Version 1.0.7
 - Renamed transform method to map
 
