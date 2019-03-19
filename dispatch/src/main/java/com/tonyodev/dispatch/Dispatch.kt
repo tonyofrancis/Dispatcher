@@ -242,6 +242,6 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @param func the function.
      * @return the new dispatch.
      * */
-    fun <T> transform(func: (R) -> T): Dispatch<T>
+    fun <T> map(func: (R) -> T): Dispatch<T>
 
 }

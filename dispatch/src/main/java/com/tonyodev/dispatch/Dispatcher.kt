@@ -726,7 +726,7 @@ object Dispatcher {
             return getNewDispatch(func, handlerPair.first, delayInMillis, handlerPair.second)
         }
 
-        override fun <T> transform(func: (R) -> T): Dispatch<T> {
+        override fun <T> map(func: (R) -> T): Dispatch<T> {
             return async(func)
         }
 
