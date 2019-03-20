@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.0.8) ](https://bintray.com/tonyofrancis/maven/dispatch/1.0.8/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.0.9) ](https://bintray.com/tonyofrancis/maven/dispatch/1.0.9/link)
 
 Overview
 --------
@@ -7,12 +7,12 @@ Dispatch is a simple and flexible work scheduler that schedulers work on a backg
 
 To use dispatch add the following to your app's build.gradle file
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.0.8"
+implementation "com.tonyodev.dispatch:dispatch:1.0.9"
 ```
 
 To use with Retrofit add
 ```java
-    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.0.8"
+    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.0.9"
 ```
 
 Example:

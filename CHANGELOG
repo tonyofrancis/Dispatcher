@@ -1,3 +1,6 @@
+Version 1.0.9
+- Improvements to using DispatchObservable
+
 Version 1.0.8
 - Added ErrorHandler for DispatchCallAdapterFactory
 

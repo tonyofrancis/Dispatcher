@@ -16,7 +16,7 @@ import java.lang.IllegalArgumentException
  * queueId 88 -> dispatch(post) -> dispatch(async)
  * queueId 78595 -> dispatch(post)
  * */
-interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
+interface Dispatch<R> {
 
     /**
      * The dispatch queue id.
@@ -225,12 +225,6 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
     fun cancelOnComplete(cancel: Boolean): Dispatch<R>
 
     /**
-     * Gets the backing dispatch Observable.
-     * @return DispatchObservable
-     * */
-    fun getDispatchObservable(): DispatchObservable<R, Dispatch<R>>
-
-    /**
      * Sets the dispatch object id. Use this id to identify where errors occur in the dispatch queue.
      * @param id the dispatch object id.
      * */
@@ -243,5 +237,39 @@ interface Dispatch<R>: DispatchObservable<R, Dispatch<R>> {
      * @return the new dispatch.
      * */
     fun <T> map(func: (R) -> T): Dispatch<T>
+
+    /**
+     * Gets the backing dispatch Observable.
+     * @return DispatchObservable
+     * */
+    fun getDispatchObservable(): DispatchObservable<R>
+
+    /**
+     * Adds a dispatch observer.
+     * @param dispatchObserver the observer.
+     * @return the dispatch.
+     * */
+    fun addObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R>
+
+    /**
+     * Adds a list of dispatch observers.
+     * @param dispatchObservers the list of observers.
+     * @return the dispatch.
+     * */
+    fun addObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R>
+
+    /**
+     * Removes a dispatch observer.
+     * @param dispatchObserver the observer to be removed.
+     * @return the dispatch.
+     * */
+    fun removeObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R>
+
+    /**
+     * Remove a list of dispatch observers.
+     * @param dispatchObservers the list of observers to be removed.
+     * @return the dispatch.
+     * */
+    fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R>
 
 }

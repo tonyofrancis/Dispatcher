@@ -390,8 +390,7 @@ object Dispatcher {
                                      private val dispatchType: Int): Dispatch<R> {
 
         private val dispatchSources = ArrayList<Dispatch<*>?>(3)
-        private val dispatchObserversSet = mutableSetOf<DispatchObserver<R>>()
-
+        private val dispatchObservable = DispatchObservableInfo<R>(handler)
         private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
         override val queueId: Int
@@ -484,11 +483,7 @@ object Dispatcher {
         @Suppress("UNCHECKED_CAST")
         private fun notifyDispatchObservers() {
             if (!isCancelled) {
-                val iterator = dispatchObserversSet.iterator()
-                val result = results as R
-                while (iterator.hasNext()) {
-                    iterator.next().onChanged(result)
-                }
+                dispatchObservable.notifyObservers(results as R)
             }
         }
 
@@ -560,7 +555,7 @@ object Dispatcher {
                 if (dispatchQueue.dispatchQueueController == null && enableWarnings
                     && this == dispatchQueue.rootDispatch) {
                     Log.w(TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
-                                "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
+                            "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
                 }
             }
         }
@@ -575,9 +570,9 @@ object Dispatcher {
                 dispatchQueue.completedDispatchQueue = false
                 dispatchQueue.rootDispatch.runDispatcher()
             } else {
-              if (enableWarnings) {
-                  Log.d(TAG, "Start called on dispatch queue with id: $queueId after it has already been cancelled.")
-              }
+                if (enableWarnings) {
+                    Log.d(TAG, "Start called on dispatch queue with id: $queueId after it has already been cancelled.")
+                }
             }
             return this
         }
@@ -632,11 +627,7 @@ object Dispatcher {
 
         private fun removeDispatcher() {
             handler.removeCallbacks(dispatcher)
-            val iterator = dispatchObserversSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next()
-                iterator.remove()
-            }
+            dispatchObservable.removeAllObservers()
             if (closeHandler) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     handler.looper.quitSafely()
@@ -898,12 +889,12 @@ object Dispatcher {
                 delayInMillis = 0,
                 worker = {
                     if (!zipDispatchQueue.isCancelled) {
-                      if (zipDispatchQueue.completedDispatchQueue) {
-                          zipDispatchQueue.completedDispatchQueue = false
-                          zipQueueDispatch.runDispatcher()
-                      } else {
-                          zipDispatchQueue.rootDispatch.runDispatcher()
-                      }
+                        if (zipDispatchQueue.completedDispatchQueue) {
+                            zipDispatchQueue.completedDispatchQueue = false
+                            zipQueueDispatch.runDispatcher()
+                        } else {
+                            zipDispatchQueue.rootDispatch.runDispatcher()
+                        }
                     }
                     it
                 },
@@ -1062,16 +1053,64 @@ object Dispatcher {
         }
 
         override fun addObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R> {
-            dispatchObserversSet.add(dispatchObserver)
+            dispatchObservable.addObserver(dispatchObserver)
             return this
         }
 
         override fun addObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
-            dispatchObserversSet.addAll(dispatchObservers)
+            dispatchObservable.addObservers(dispatchObservers)
             return this
         }
 
         override fun removeObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R> {
+            dispatchObservable.removeObserver(dispatchObserver)
+            return this
+        }
+
+        override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
+            dispatchObservable.removeObservers(dispatchObservers)
+            return this
+        }
+
+        override fun getDispatchObservable(): DispatchObservable<R> {
+            return dispatchObservable
+        }
+
+        override fun setDispatchId(id: String): Dispatch<R> {
+            this.dispatchId = id
+            return this
+        }
+
+    }
+
+    private class DispatchObservableInfo<R>(private val handler: Handler): DispatchObservable<R> {
+
+        private val dispatchObserversSet = mutableSetOf<DispatchObserver<R>>()
+        private var result: Any? = INVALID_RESULT
+
+        override fun addObserver(dispatchObserver: DispatchObserver<R>): DispatchObservable<R> {
+            dispatchObserversSet.add(dispatchObserver)
+            if (result != INVALID_RESULT) {
+                handler.post {
+                    notifyObserver(dispatchObserver)
+                }
+            }
+            return this
+        }
+
+        override fun addObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchObservable<R> {
+            dispatchObserversSet.addAll(dispatchObservers)
+            if (result != INVALID_RESULT) {
+                handler.post {
+                    for (dispatchObserver in dispatchObservers) {
+                        notifyObserver(dispatchObserver)
+                    }
+                }
+            }
+            return this
+        }
+
+        override fun removeObserver(dispatchObserver: DispatchObserver<R>): DispatchObservable<R> {
             val iterator = dispatchObserversSet.iterator()
             while (iterator.hasNext()) {
                 if (dispatchObserver == iterator.next()) {
@@ -1082,7 +1121,7 @@ object Dispatcher {
             return this
         }
 
-        override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
+        override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchObservable<R> {
             val iterator = dispatchObserversSet.iterator()
             var count = 0
             while (iterator.hasNext()) {
@@ -1097,13 +1136,28 @@ object Dispatcher {
             return this
         }
 
-        override fun getDispatchObservable(): DispatchObservable<R, Dispatch<R>> {
-            return this
+        fun removeAllObservers() {
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                iterator.next()
+                iterator.remove()
+            }
         }
 
-        override fun setDispatchId(id: String): Dispatch<R> {
-            this.dispatchId = id
-            return this
+        @Suppress("UNCHECKED_CAST")
+        private fun notifyObserver(dispatchObserver: DispatchObserver<R>) {
+            val r = result
+            if (r != INVALID_RESULT) {
+                dispatchObserver.onChanged(r as R)
+            }
+        }
+
+        fun notifyObservers(result: R) {
+            this.result = result
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                iterator.next().onChanged(result)
+            }
         }
 
     }
