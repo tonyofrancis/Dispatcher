@@ -21,6 +21,9 @@ enum class ThreadType {
     BACKGROUND_SECONDARY,
 
     /** Use a new background thread.*/
-    NEW;
+    NEW,
+
+    /** User the user interface thread.*/
+    MAIN;
 
 }

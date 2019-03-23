@@ -74,7 +74,7 @@ interface Dispatch<R> {
      * Perform work on the background thread.
      * @param threadType the threadType.
      * @param func the function.
-     * @throws IllegalArgumentException if the handler passed in uses the main thread.
+     * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
      * @return the dispatch.
      * */
     fun <U> async(threadType: ThreadType, func: (R) -> U): Dispatch<U>
@@ -104,6 +104,7 @@ interface Dispatch<R> {
      * @param delayInMillis the delay in milliseconds before the handler runs the func.
      * Values less than indicates that there are no delays.
      * @param func the function.
+     * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
      * @return the dispatch.
      * */
     fun <U> async(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U>

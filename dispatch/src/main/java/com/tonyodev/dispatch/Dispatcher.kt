@@ -1,14 +1,7 @@
 package com.tonyodev.dispatch
 
-import android.app.Activity
-import android.os.Build
 import android.os.Handler
-import android.os.HandlerThread
-import android.os.Looper
-import android.util.Log
 import java.lang.IllegalArgumentException
-import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * Dispatcher is a simple and flexible work scheduler that schedulers work on a background or UI thread correctly
@@ -17,49 +10,6 @@ import kotlin.collections.ArrayList
  */
 object Dispatcher {
 
-    private const val TAG = "com.tonyodev.dispatch"
-    private const val DISPATCH_TYPE_NORMAL = 0
-    private const val DISPATCH_TYPE_QUEUE_RUNNER = 1
-    private const val DISPATCH_TYPE_ANY_RESULT = 2
-    private val INVALID_RESULT = InvalidResult()
-    private val uiHandler = Handler(Looper.getMainLooper())
-    private val backgroundHandler: Handler = {
-        val handlerThread = HandlerThread("dispatcherBackground")
-        handlerThread.start()
-        Handler(handlerThread.looper)
-    }()
-    private var backgroundSecondaryHandler: Handler? = null
-        get() {
-            if (field == null) {
-                val handlerThread = HandlerThread("dispatcherBackgroundSecondary")
-                handlerThread.start()
-                field = Handler(handlerThread.looper)
-            }
-            return field
-        }
-    private var networkHandler: Handler? = null
-        get() {
-            if (field == null) {
-                val handlerThread = HandlerThread("dispatcherNetwork")
-                handlerThread.start()
-                field = Handler(handlerThread.looper)
-            }
-            return field
-        }
-    private var ioHandler: Handler? = null
-        get() {
-            if (field == null) {
-                val handlerThread = HandlerThread("dispatcherIO")
-                handlerThread.start()
-                field = Handler(handlerThread.looper)
-            }
-            return field
-        }
-    @Volatile
-    private var newThreadCount = 0
-    private var enableWarnings = false
-    private var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
-
     /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
      * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
@@ -67,7 +17,7 @@ object Dispatcher {
      * */
     @JvmStatic
     fun setGlobalErrorHandler(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?) {
-        this.globalErrorHandler = errorHandler
+        globalErrorHandler = errorHandler
     }
 
     /**
@@ -76,7 +26,7 @@ object Dispatcher {
      * */
     @JvmStatic
     fun setEnableLogWarnings(enabled: Boolean) {
-        this.enableWarnings = enabled
+        enableWarnings = enabled
     }
 
     /**
@@ -87,7 +37,7 @@ object Dispatcher {
     @JvmStatic
     fun createDispatchQueue(): Dispatch<Unit> {
         return createFreshDispatch(
-            handler = getBackgroundHandler(),
+            handler = Threader.backgroundHandler,
             delayInMillis = 0,
             closeHandler = false,
             isIntervalDispatch = false)
@@ -103,7 +53,7 @@ object Dispatcher {
     fun createDispatchQueue(backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
-            handler = backgroundHandler ?: getBackgroundHandler(),
+            handler = backgroundHandler ?: Threader.backgroundHandler,
             delayInMillis = 0,
             closeHandler = false,
             isIntervalDispatch = false)
@@ -114,11 +64,13 @@ object Dispatcher {
      * The returned dispatch queue will have a handler of the thread type
      * @param threadType the default threadType to use.
      * handler is used.
+     * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
      * @return new dispatch.
      * */
     @JvmStatic
     fun createDispatchQueue(threadType: ThreadType): Dispatch<Unit> {
-        val handlerPair = getHandlerPairForThreadType(threadType)
+        throwIfUsesMainThreadForBackgroundWork(threadType)
+        val handlerPair = Threader.getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
             delayInMillis = 0,
@@ -136,7 +88,7 @@ object Dispatcher {
     @JvmStatic
     fun createDispatchQueue(handlerName: String): Dispatch<Unit> {
         return createFreshDispatch(
-            handler = getNewDispatchHandler(handlerName),
+            handler = Threader.getNewDispatchHandler(handlerName),
             delayInMillis = 0,
             closeHandler = true,
             isIntervalDispatch = false)
@@ -151,7 +103,7 @@ object Dispatcher {
     @JvmStatic
     fun createTimerDispatchQueue(delayInMillis: Long): Dispatch<Unit> {
         return createFreshDispatch(
-            handler = getNewDispatchHandler(),
+            handler = Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = true,
             isIntervalDispatch = false)
@@ -169,7 +121,7 @@ object Dispatcher {
     fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
-            handler = backgroundHandler ?: getNewDispatchHandler(),
+            handler = backgroundHandler ?: Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = backgroundHandler == null,
             isIntervalDispatch = false)
@@ -180,12 +132,13 @@ object Dispatcher {
      * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
      * Values less than 1 indicates that there are no delays.
      * @param threadType the thread type.
-     * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+     * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
      * @return new dispatch.
      * */
     @JvmStatic
     fun createTimerDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
-        val handlerPair = getHandlerPairForThreadType(threadType)
+        throwIfUsesMainThreadForBackgroundWork(threadType)
+        val handlerPair = Threader.getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
@@ -202,7 +155,7 @@ object Dispatcher {
     @JvmStatic
     fun createIntervalDispatchQueue(delayInMillis: Long): Dispatch<Unit> {
         return createFreshDispatch(
-            handler = getNewDispatchHandler(),
+            handler = Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = true,
             isIntervalDispatch = true)
@@ -220,7 +173,7 @@ object Dispatcher {
     fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createFreshDispatch(
-            handler = backgroundHandler ?: getNewDispatchHandler(),
+            handler = backgroundHandler ?: Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = backgroundHandler == null,
             isIntervalDispatch = true)
@@ -231,12 +184,13 @@ object Dispatcher {
      * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
      * Values less than 1 indicates that there are no delays.
      * @param threadType the thread type.
-     * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+     * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
      * @return new dispatch.
      * */
     @JvmStatic
     fun createIntervalDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
-        val handlerPair = getHandlerPairForThreadType(threadType)
+        throwIfUsesMainThreadForBackgroundWork(threadType)
+        val handlerPair = Threader.getHandlerPairForThreadType(threadType)
         return createFreshDispatch(
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
@@ -252,7 +206,7 @@ object Dispatcher {
     @JvmStatic
     val backgroundDispatchQueue: Dispatch<Unit>
         get() {
-            val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND)
+            val handlerPair = Threader.getHandlerPairForThreadType(ThreadType.BACKGROUND)
             return createFreshDispatch(
                 handler = handlerPair.first,
                 delayInMillis = 0,
@@ -268,7 +222,7 @@ object Dispatcher {
     @JvmStatic
     val backgroundSecondaryDispatchQueue: Dispatch<Unit>
         get() {
-            val handlerPair = getHandlerPairForThreadType(ThreadType.BACKGROUND_SECONDARY)
+            val handlerPair = Threader.getHandlerPairForThreadType(ThreadType.BACKGROUND_SECONDARY)
             return createFreshDispatch(
                 handler = handlerPair.first,
                 delayInMillis = 0,
@@ -284,7 +238,7 @@ object Dispatcher {
     @JvmStatic
     val ioDispatchQueue: Dispatch<Unit>
         get() {
-            val handlerPair = getHandlerPairForThreadType(ThreadType.IO)
+            val handlerPair = Threader.getHandlerPairForThreadType(ThreadType.IO)
             return createFreshDispatch(
                 handler = handlerPair.first,
                 delayInMillis = 0,
@@ -300,86 +254,13 @@ object Dispatcher {
     @JvmStatic
     val networkDispatchQueue: Dispatch<Unit>
         get() {
-            val handlerPair = getHandlerPairForThreadType(ThreadType.NETWORK)
+            val handlerPair = Threader.getHandlerPairForThreadType(ThreadType.NETWORK)
             return createFreshDispatch(
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
                 isIntervalDispatch = false)
         }
-
-    /**
-     * Creates a new DispatchObservable that notifies observers of
-     * the result on the ui thread.
-     * @return dispatch observable
-     * */
-    @JvmStatic
-    fun <R> createObservable(): DispatchObservable<R> {
-        return DispatchObservableInfo(uiHandler, true)
-    }
-
-    /**
-     * Creates a new DispatchObservable that notifies observers of
-     * the result on the passed in handler.
-     * @param handler the handler.
-     * @return dispatch observable
-     * */
-    @JvmStatic
-    fun <R> createObservable(handler: Handler): DispatchObservable<R> {
-        return DispatchObservableInfo(handler, true)
-    }
-
-    /**
-     * Creates a new DispatchObservable that notifies observers of
-     * the result on the passed in thread type.
-     * @param threadType the thread type
-     * @return dispatch observable
-     * */
-    @JvmStatic
-    fun <R> createObservable(threadType: ThreadType): DispatchObservable<R> {
-        val threadPair = getHandlerPairForThreadType(threadType)
-        return DispatchObservableInfo(threadPair.first, true)
-    }
-
-    private fun getBackgroundHandler(): Handler {
-        return  backgroundHandler
-    }
-
-    private fun getNewDispatchHandler(name: String? = null): Handler {
-        val threadName = if (name == null || name.isEmpty()) {
-            "dispatch${++newThreadCount}"
-        } else {
-            name
-        }
-        val handlerThread = HandlerThread(threadName)
-        handlerThread.start()
-        return Handler(handlerThread.looper)
-    }
-
-    private fun getHandlerPairForThreadType(threadType: ThreadType): Pair<Handler, Boolean> {
-        return when(threadType) {
-            ThreadType.BACKGROUND -> Pair(backgroundHandler, false)
-            ThreadType.BACKGROUND_SECONDARY -> Pair(backgroundSecondaryHandler!!, false)
-            ThreadType.IO -> Pair(ioHandler!!, false)
-            ThreadType.NETWORK -> Pair(networkHandler!!, false)
-            ThreadType.NEW -> Pair(getNewDispatchHandler(), true)
-        }
-    }
-
-    private fun getNewQueueId(): Int {
-        return UUID.randomUUID().hashCode()
-    }
-
-    private fun getNewDispatchId(): String {
-        return UUID.randomUUID().toString()
-    }
-
-    private fun throwIfUsesMainThreadForBackgroundWork(handler: Handler?) {
-        if (handler != null && handler.looper.thread.name == Looper.getMainLooper().thread.name) {
-            throw IllegalArgumentException("Dispatch handler cannot use the main thread to perform background work." +
-                    "Pass in a handler that uses a different thread.")
-        }
-    }
 
     private fun createFreshDispatch(handler: Handler,
                                     delayInMillis: Long,
@@ -388,7 +269,7 @@ object Dispatcher {
         val dispatchQueueData = DispatchQueue(queueId = getNewQueueId(),
             isIntervalDispatch = isIntervalDispatch,
             cancelOnComplete = !isIntervalDispatch)
-        val newDispatch = DispatchInfo<Unit, Unit>(
+        val newDispatch = DispatchImpl<Unit, Unit>(
             dispatchId = getNewDispatchId(),
             handler = handler,
             delayInMillis = delayInMillis,
@@ -399,834 +280,6 @@ object Dispatcher {
         dispatchQueueData.rootDispatch = newDispatch
         dispatchQueueData.queue.add(newDispatch)
         return newDispatch
-    }
-
-    private class DispatchQueue(val queueId: Int,
-                                val isIntervalDispatch: Boolean = false,
-                                var cancelOnComplete: Boolean) {
-        @Volatile
-        var isCancelled = false
-        @Volatile
-        var completedDispatchQueue = false
-        lateinit var rootDispatch: DispatchInfo<*, *>
-        val queue = LinkedList<DispatchInfo<*, *>>()
-        var errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
-        var dispatchQueueController: DispatchQueueController? = null
-    }
-
-    private class DispatchInfo<T, R>(override var dispatchId: String,
-                                     private val handler: Handler,
-                                     private val delayInMillis: Long = 0,
-                                     private val worker: ((T) -> R)?,
-                                     private val closeHandler: Boolean,
-                                     private val dispatchQueue: DispatchQueue,
-                                     private val dispatchType: Int): Dispatch<R> {
-
-        private val dispatchSources = ArrayList<Dispatch<*>?>(3)
-        private val dispatchObservable = DispatchObservableInfo<R>(handler, false)
-        private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
-
-        override val queueId: Int
-            get() {
-                return dispatchQueue.queueId
-            }
-
-        override val isCancelled: Boolean
-            get() {
-                return dispatchQueue.isCancelled
-            }
-
-        override val rootDispatch: Dispatch<*>
-            get() {
-                return dispatchQueue.rootDispatch
-            }
-
-        var results: Any? = INVALID_RESULT
-
-        @Suppress("UNCHECKED_CAST")
-        private val dispatcher = Runnable {
-            try {
-                if (!isCancelled) {
-                    if (worker != null && dispatchSources.isNotEmpty()) {
-                        val result1: Any?
-                        val result2: Any?
-                        val result3: Any?
-                        val data = when (dispatchSources.size) {
-                            3 -> {
-                                if (dispatchType == DISPATCH_TYPE_ANY_RESULT) {
-                                    if ((dispatchSources[1] as DispatchInfo<*, *>).results == INVALID_RESULT
-                                        && (dispatchSources[2] as DispatchInfo<*, *>).results == INVALID_RESULT) {
-                                        return@Runnable
-                                    }
-                                }
-                                result1 = getSourceResult((dispatchSources[0] as DispatchInfo<*, *>))
-                                result2 = getSourceResult((dispatchSources[1] as DispatchInfo<*, *>))
-                                result3 = getSourceResult((dispatchSources[2] as DispatchInfo<*, *>))
-                                if (hasInvalidResult(result1, result2, result3)) {
-                                    INVALID_RESULT
-                                } else {
-                                    Triple(result1, result2, result3)
-                                }
-                            }
-                            2 -> {
-                                result1 = getSourceResult((dispatchSources[0] as DispatchInfo<*, *>))
-                                result2 = getSourceResult((dispatchSources[1] as DispatchInfo<*, *>))
-                                if (hasInvalidResult(result1, result2)) {
-                                    INVALID_RESULT
-                                } else {
-                                    Pair(result1, result2)
-                                }
-                            }
-                            else -> {
-                                result1 = getSourceResult((dispatchSources[0] as DispatchInfo<*, *>))
-                                if (hasInvalidResult(result1)) {
-                                    INVALID_RESULT
-                                } else {
-                                    result1
-                                }
-                            }
-                        }
-                        if (data != INVALID_RESULT && !isCancelled) {
-                            results = worker.invoke(data as T)
-                            notifyDispatchObservers()
-                            processNextDispatch()
-                        }
-                    } else {
-                        results = Unit
-                        notifyDispatchObservers()
-                        processNextDispatch()
-                    }
-                }
-            } catch (err: Exception) {
-                val doOnErrorWorker = doOnErrorWorker
-                if (doOnErrorWorker != null && !isCancelled) {
-                    try {
-                        results = doOnErrorWorker.invoke(err)
-                        notifyDispatchObservers()
-                        processNextDispatch()
-                    } catch (e: Exception) {
-                        handleException(e)
-                    }
-                } else {
-                    handleException(err)
-                }
-            }
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        private fun notifyDispatchObservers() {
-            if (!isCancelled) {
-                dispatchObservable.notify(results as R)
-            }
-        }
-
-        private fun getSourceResult(sourceDispatchInfo: DispatchInfo<*, *>): Any? {
-            var result = sourceDispatchInfo.results
-            if (dispatchType == DISPATCH_TYPE_ANY_RESULT && result == INVALID_RESULT) {
-                result = null
-            }
-            return result
-        }
-
-        private fun hasInvalidResult(vararg results: Any?): Boolean {
-            if (dispatchType == DISPATCH_TYPE_ANY_RESULT) {
-                return false
-            }
-            for (result in results) {
-                if (result == INVALID_RESULT) {
-                    return true
-                }
-            }
-            return false
-        }
-
-        private fun processNextDispatch() {
-            if (!isCancelled) {
-                val nextDispatch = getNextDispatchInfo(this)
-                when {
-                    nextDispatch != null -> nextDispatch.runDispatcher()
-                    dispatchQueue.isIntervalDispatch -> dispatchQueue.rootDispatch.runDispatcher()
-                    else -> {
-                        dispatchQueue.completedDispatchQueue = true
-                        if (!dispatchQueue.isIntervalDispatch && dispatchQueue.cancelOnComplete) {
-                            cancel()
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun getNextDispatchInfo(after: Dispatch<*>): DispatchInfo<*, *>? {
-            val iterator = dispatchQueue.queue.iterator()
-            var self: DispatchInfo<*, *>? = null
-            var nextDispatch: DispatchInfo<*, *>? = null
-            var dispatch: DispatchInfo<*, *>
-            while (iterator.hasNext() && !isCancelled) {
-                dispatch = iterator.next()
-                if (self != null) {
-                    nextDispatch = dispatch
-                    break
-                }
-                if (dispatch == after) {
-                    self = dispatch
-                }
-            }
-            if (isCancelled) {
-                nextDispatch = null
-            }
-            return nextDispatch
-        }
-
-        private fun runDispatcher() {
-            if (!isCancelled) {
-                handler.removeCallbacksAndMessages(dispatcher)
-                if (delayInMillis >= 1) {
-                    handler.postDelayed(dispatcher, delayInMillis)
-                } else {
-                    handler.post(dispatcher)
-                }
-                if (dispatchQueue.dispatchQueueController == null && enableWarnings
-                    && this == dispatchQueue.rootDispatch) {
-                    Log.w(TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
-                            "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
-                }
-            }
-        }
-
-        override fun start(): Dispatch<R> {
-            return start(null)
-        }
-
-        override fun start(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?): Dispatch<R> {
-            dispatchQueue.errorHandler = errorHandler
-            if (!isCancelled) {
-                dispatchQueue.completedDispatchQueue = false
-                dispatchQueue.rootDispatch.runDispatcher()
-            } else {
-                if (enableWarnings) {
-                    Log.d(TAG, "Start called on dispatch queue with id: $queueId after it has already been cancelled.")
-                }
-            }
-            return this
-        }
-
-        private fun handleException(throwable: Throwable) {
-            val mainErrorHandler = dispatchQueue.errorHandler
-            if (mainErrorHandler != null) {
-                uiHandler.post {
-                    mainErrorHandler.invoke(throwable, this)
-                }
-                cancel()
-                return
-            }
-            val globalHandler = globalErrorHandler
-            if (globalHandler != null) {
-                uiHandler.post {
-                    globalHandler.invoke(throwable, this)
-                }
-                cancel()
-                return
-            }
-            cancel()
-            throw throwable
-        }
-
-        override fun cancel(): Dispatch<R> {
-            if (!isCancelled) {
-                dispatchQueue.isCancelled = true
-                val dispatchQueueController = dispatchQueue.dispatchQueueController
-                dispatchQueue.dispatchQueueController = null
-                if (dispatchQueueController is ActivityDispatchQueueController) {
-                    dispatchQueueController.unmanage(this)
-                } else {
-                    dispatchQueueController?.unmanage(this)
-                }
-                val iterator = dispatchQueue.queue.iterator()
-                var dispatch: DispatchInfo<*, *>?
-                var sourceIterator: Iterator<*>
-                while (iterator.hasNext()) {
-                    dispatch = iterator.next()
-                    dispatch.removeDispatcher()
-                    sourceIterator = dispatch.dispatchSources.iterator()
-                    while (sourceIterator.hasNext()) {
-                        sourceIterator.next()
-                        sourceIterator.remove()
-                    }
-                    iterator.remove()
-                }
-            }
-            return this
-        }
-
-        private fun removeDispatcher() {
-            handler.removeCallbacks(dispatcher)
-            dispatchObservable.removeAllObservers()
-            if (closeHandler) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    handler.looper.quitSafely()
-                } else {
-                    handler.looper.quit()
-                }
-            }
-        }
-
-        override fun doOnError(func: ((Throwable) -> R)): Dispatch<R> {
-            this.doOnErrorWorker = func
-            return this
-        }
-
-        override fun managedBy(dispatchQueueController: DispatchQueueController): Dispatch<R> {
-            val oldDispatchQueueController = this.dispatchQueue.dispatchQueueController
-            this.dispatchQueue.dispatchQueueController = null
-            oldDispatchQueueController?.unmanage(this)
-            this.dispatchQueue.dispatchQueueController = dispatchQueueController
-            dispatchQueueController.manage(this)
-            return this
-        }
-
-        override fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController): Dispatch<R> {
-            return managedBy(lifecycleDispatchQueueController, CancelType.DESTROYED)
-        }
-
-        override fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController, cancelType: CancelType): Dispatch<R> {
-            val oldDispatchQueueController = this.dispatchQueue.dispatchQueueController
-            this.dispatchQueue.dispatchQueueController = null
-            oldDispatchQueueController?.unmanage(this)
-            this.dispatchQueue.dispatchQueueController = lifecycleDispatchQueueController
-            lifecycleDispatchQueueController.manage(this, cancelType)
-            return this
-        }
-
-        override fun managedBy(activity: Activity): Dispatch<R> {
-            return managedBy(activity, CancelType.DESTROYED)
-        }
-
-        override fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R> {
-            val oldDispatchQueueController = this.dispatchQueue.dispatchQueueController
-            this.dispatchQueue.dispatchQueueController = null
-            oldDispatchQueueController?.unmanage(this)
-            val dispatchQueueController = ActivityDispatchQueueController.getInstance(activity)
-            this.dispatchQueue.dispatchQueueController = dispatchQueueController
-            dispatchQueueController.manage(this, cancelType)
-            return this
-        }
-
-        override fun <U> post(func: (R) -> U): Dispatch<U> {
-            return post(0, func)
-        }
-
-        override fun <U> post(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            return getNewDispatch(func, uiHandler, delayInMillis, false)
-        }
-
-        override fun <U> async(func: (R) -> U): Dispatch<U> {
-            return async(0, func)
-        }
-
-        override fun <U> async(backgroundHandler: Handler, func: (R) -> U): Dispatch<U> {
-            return async(backgroundHandler, 0, func)
-        }
-
-        override fun <U> async(delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            val workHandler = when {
-                handler.looper.thread.name == uiHandler.looper.thread.name -> getBackgroundHandler()
-                else -> handler
-            }
-            return getNewDispatch(func, workHandler, delayInMillis, workHandler == handler && closeHandler)
-        }
-
-        override fun <U> async(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
-            return getNewDispatch(func, backgroundHandler, delayInMillis, backgroundHandler == handler && closeHandler)
-        }
-
-        override fun <U> async(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
-            val handlerPair = getHandlerPairForThreadType(threadType)
-            return getNewDispatch(func, handlerPair.first, 0, handlerPair.second)
-        }
-
-        override fun <U> async(threadType: ThreadType, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
-            val handlerPair = getHandlerPairForThreadType(threadType)
-            return getNewDispatch(func, handlerPair.first, delayInMillis, handlerPair.second)
-        }
-
-        override fun <T> map(func: (R) -> T): Dispatch<T> {
-            return async(func)
-        }
-
-        private fun <T, R> getNewDispatch(worker: (T) -> R,
-                                          handler: Handler,
-                                          delayInMillis: Long,
-                                          closeHandler: Boolean): Dispatch<R> {
-            val newDispatch = DispatchInfo(
-                dispatchId = getNewDispatchId(),
-                handler = handler,
-                delayInMillis = delayInMillis,
-                worker = worker,
-                closeHandler = closeHandler,
-                dispatchQueue = dispatchQueue,
-                dispatchType = DISPATCH_TYPE_NORMAL)
-            newDispatch.dispatchSources.add(this)
-            if (!isCancelled) {
-                dispatchQueue.queue.add(newDispatch)
-                if (dispatchQueue.completedDispatchQueue) {
-                    dispatchQueue.completedDispatchQueue = false
-                    newDispatch.runDispatcher()
-                }
-            }
-            return newDispatch
-        }
-
-        override fun <U> zipWith(dispatch: Dispatch<U>): Dispatch<Pair<R, U>> {
-            val workHandler = when {
-                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> handler
-            }
-            val zipDispatch = dispatch as DispatchInfo<*, *>
-            val zipRootDispatch = zipDispatch.rootDispatch as DispatchInfo<*, *>
-            val zipDispatchQueue = zipRootDispatch.dispatchQueue
-            val newDispatch = DispatchInfo<Pair<R, U>, Pair<R, U>>(
-                dispatchId = getNewDispatchId(),
-                handler = workHandler,
-                delayInMillis = 0,
-                worker = { it },
-                closeHandler = (workHandler == handler) && closeHandler,
-                dispatchQueue = dispatchQueue,
-                dispatchType = DISPATCH_TYPE_NORMAL)
-            newDispatch.dispatchSources.add(this)
-            newDispatch.dispatchSources.add(dispatch)
-            val zipWorkHandler = when {
-                zipDispatch.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> zipDispatch.handler
-            }
-            val zipQueueDispatch = DispatchInfo<Any?, Any?>(
-                dispatchId = getNewDispatchId(),
-                handler = zipWorkHandler,
-                delayInMillis = 0,
-                worker = {
-                    if (!isCancelled) {
-                        dispatchQueue.completedDispatchQueue = false
-                        newDispatch.runDispatcher()
-                    }
-                    it
-                },
-                closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
-                dispatchQueue = zipDispatchQueue,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
-            zipQueueDispatch.dispatchSources.add(dispatch)
-            val queueDispatch = DispatchInfo<R, R>(
-                dispatchId = getNewDispatchId(),
-                handler = workHandler,
-                delayInMillis = 0,
-                worker = {
-                    if (!zipDispatchQueue.isCancelled) {
-                        if (zipDispatchQueue.completedDispatchQueue) {
-                            zipDispatchQueue.completedDispatchQueue = false
-                            zipQueueDispatch.runDispatcher()
-                        } else {
-                            zipDispatchQueue.rootDispatch.runDispatcher()
-                        }
-                    }
-                    it
-                },
-                closeHandler = (workHandler == handler) && closeHandler,
-                dispatchQueue = dispatchQueue,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
-            queueDispatch.dispatchSources.add(this)
-            val dispatchQueueController = dispatchQueue.dispatchQueueController
-            val zipDispatchQueueController = zipDispatchQueue.dispatchQueueController
-            if (zipDispatchQueueController == null && dispatchQueueController != null) {
-                zipRootDispatch.managedBy(dispatchQueueController)
-            }
-            val errorHandler = dispatchQueue.errorHandler
-            val zipErrorHandler = zipDispatchQueue.errorHandler
-            if (zipErrorHandler == null && errorHandler != null) {
-                zipDispatchQueue.errorHandler = errorHandler
-            }
-            if (!zipDispatchQueue.isCancelled) {
-                zipDispatchQueue.queue.add(zipQueueDispatch)
-            }
-            if (!isCancelled) {
-                dispatchQueue.queue.add(queueDispatch)
-                dispatchQueue.queue.add(newDispatch)
-                if (dispatchQueue.completedDispatchQueue) {
-                    dispatchQueue.completedDispatchQueue = false
-                    queueDispatch.runDispatcher()
-                }
-            }
-            return newDispatch
-        }
-
-        override fun <U, T> zipWith(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>> {
-            val zipDispatch = dispatch as DispatchInfo<*, *>
-            val zipRootDispatch = zipDispatch.rootDispatch as DispatchInfo<*, *>
-            val zipDispatchQueue = zipRootDispatch.dispatchQueue
-            val zipDispatch2 = dispatch2 as DispatchInfo<*, *>
-            val zipRootDispatch2 = zipDispatch2.rootDispatch as DispatchInfo<*, *>
-            val zipDispatchQueue2 = zipRootDispatch2.dispatchQueue
-            val workHandler = when {
-                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> handler
-            }
-            val newDispatch = DispatchInfo<Triple<R, U, T>, Triple<R, U, T>>(
-                dispatchId = getNewDispatchId(),
-                handler = workHandler,
-                delayInMillis = 0,
-                worker = { it },
-                closeHandler = (workHandler == handler) && closeHandler,
-                dispatchQueue = dispatchQueue,
-                dispatchType = DISPATCH_TYPE_NORMAL)
-            newDispatch.dispatchSources.add(this)
-            newDispatch.dispatchSources.add(dispatch)
-            newDispatch.dispatchSources.add(dispatch2)
-            val zipWorkHandler2 = when {
-                zipDispatch2.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> zipDispatch2.handler
-            }
-            val zipQueueDispatch2 = DispatchInfo<Any?, Any?>(
-                dispatchId = getNewDispatchId(),
-                handler = zipWorkHandler2,
-                delayInMillis = 0,
-                worker = {
-                    if (!dispatchQueue.isCancelled) {
-                        dispatchQueue.completedDispatchQueue = false
-                        newDispatch.runDispatcher()
-                    }
-                    it
-                },
-                closeHandler = (zipWorkHandler2 == handler) && zipDispatch2.closeHandler,
-                dispatchQueue = zipDispatchQueue2,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
-            zipQueueDispatch2.dispatchSources.add(dispatch2)
-            val zipWorkHandler = when {
-                zipDispatch.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> zipDispatch.handler
-            }
-            val zipQueueDispatch = DispatchInfo<Any?, Any?>(
-                dispatchId = getNewDispatchId(),
-                handler = zipWorkHandler,
-                delayInMillis = 0,
-                worker = {
-                    if (!zipDispatchQueue2.isCancelled) {
-                        if (zipDispatchQueue2.completedDispatchQueue) {
-                            zipDispatchQueue2.completedDispatchQueue = false
-                            zipQueueDispatch2.runDispatcher()
-                        } else {
-                            zipDispatchQueue2.rootDispatch.runDispatcher()
-                        }
-                    }
-                    it
-                },
-                closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
-                dispatchQueue = zipDispatchQueue,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
-            zipQueueDispatch.dispatchSources.add(dispatch)
-            val queueDispatch = DispatchInfo<R, R>(
-                dispatchId = getNewDispatchId(),
-                handler = workHandler,
-                delayInMillis = 0,
-                worker = {
-                    if (!zipDispatchQueue.isCancelled) {
-                        if (zipDispatchQueue.completedDispatchQueue) {
-                            zipDispatchQueue.completedDispatchQueue = false
-                            zipQueueDispatch.runDispatcher()
-                        } else {
-                            zipDispatchQueue.rootDispatch.runDispatcher()
-                        }
-                    }
-                    it
-                },
-                closeHandler = (workHandler == handler) && closeHandler,
-                dispatchQueue = dispatchQueue,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
-            queueDispatch.dispatchSources.add(this)
-            val dispatchQueueController = dispatchQueue.dispatchQueueController
-            val zipDispatchQueueController = zipDispatchQueue.dispatchQueueController
-            if (zipDispatchQueueController == null && dispatchQueueController != null) {
-                zipRootDispatch.managedBy(dispatchQueueController)
-            }
-            val zipDispatchQueueController2 = zipDispatchQueue2.dispatchQueueController
-            if (zipDispatchQueueController2 == null && dispatchQueueController != null) {
-                zipRootDispatch2.managedBy(dispatchQueueController)
-            }
-            val errorHandler = dispatchQueue.errorHandler
-            val zipErrorHandler = zipDispatchQueue.errorHandler
-            if (zipErrorHandler == null && errorHandler != null) {
-                zipDispatchQueue.errorHandler = errorHandler
-            }
-            val zipErrorHandler2 = zipDispatchQueue2.errorHandler
-            if (zipErrorHandler2 == null && errorHandler != null) {
-                zipDispatchQueue2.errorHandler = errorHandler
-            }
-            if (!zipDispatchQueue2.isCancelled) {
-                zipDispatchQueue2.queue.add(zipQueueDispatch2)
-            }
-            if (!zipDispatchQueue.isCancelled) {
-                zipDispatchQueue.queue.add(zipQueueDispatch)
-            }
-            if(!isCancelled) {
-                dispatchQueue.queue.add(queueDispatch)
-                dispatchQueue.queue.add(newDispatch)
-                if (dispatchQueue.completedDispatchQueue) {
-                    dispatchQueue.completedDispatchQueue = false
-                    queueDispatch.runDispatcher()
-                }
-            }
-            return newDispatch
-        }
-
-        override fun <U, T> zipWithAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>> {
-            val zipDispatch = dispatch as DispatchInfo<*, *>
-            val zipRootDispatch = zipDispatch.rootDispatch as DispatchInfo<*, *>
-            val zipDispatchQueue = zipRootDispatch.dispatchQueue
-            val zipDispatch2 = dispatch2 as DispatchInfo<*, *>
-            val zipRootDispatch2 = zipDispatch2.rootDispatch as DispatchInfo<*, *>
-            val zipDispatchQueue2 = zipRootDispatch2.dispatchQueue
-            val workHandler = when {
-                handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> handler
-            }
-            val newDispatch = DispatchInfo<Triple<R?, U?, T?>, Triple<R?, U?, T?>>(
-                dispatchId = getNewDispatchId(),
-                handler = workHandler,
-                delayInMillis = 0,
-                worker = { it },
-                closeHandler = (workHandler == handler) && closeHandler,
-                dispatchQueue = dispatchQueue,
-                dispatchType = DISPATCH_TYPE_ANY_RESULT)
-            newDispatch.dispatchSources.add(this)
-            newDispatch.dispatchSources.add(dispatch)
-            newDispatch.dispatchSources.add(dispatch2)
-            val zipWorkHandler = when {
-                zipDispatch.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> zipDispatch.handler
-            }
-            val zipQueueDispatch = DispatchInfo<Any?, Any?>(
-                dispatchId = getNewDispatchId(),
-                handler = zipWorkHandler,
-                delayInMillis = 0,
-                worker = {
-                    if (!dispatchQueue.isCancelled) {
-                        dispatchQueue.completedDispatchQueue = false
-                        newDispatch.runDispatcher()
-                    }
-                    it
-                },
-                closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
-                dispatchQueue = zipDispatchQueue,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
-            zipQueueDispatch.dispatchSources.add(dispatch)
-            val zipWorkHandler2 = when {
-                zipDispatch2.handler.looper.thread.name == uiHandler.looper.thread.name -> backgroundHandler
-                else -> zipDispatch2.handler
-            }
-            val zipQueueDispatch2 = DispatchInfo<Any?, Any?>(
-                dispatchId = getNewDispatchId(),
-                handler = zipWorkHandler2,
-                delayInMillis = 0,
-                worker = {
-                    if (!dispatchQueue.isCancelled) {
-                        dispatchQueue.completedDispatchQueue = false
-                        newDispatch.runDispatcher()
-                    }
-                    it
-                },
-                closeHandler = (zipWorkHandler2 == handler) && zipDispatch2.closeHandler,
-                dispatchQueue = zipDispatchQueue2,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
-            zipQueueDispatch2.dispatchSources.add(dispatch2)
-            val queueDispatch = DispatchInfo<R, R>(
-                dispatchId = getNewDispatchId(),
-                handler = workHandler,
-                delayInMillis = 0,
-                worker = {
-                    if (!zipDispatchQueue.isCancelled) {
-                        if (zipDispatchQueue.completedDispatchQueue) {
-                            zipDispatchQueue.completedDispatchQueue = false
-                            zipQueueDispatch.runDispatcher()
-                        } else {
-                            zipDispatchQueue.rootDispatch.runDispatcher()
-                        }
-                    }
-                    if (!zipDispatchQueue2.isCancelled) {
-                        if (zipDispatchQueue2.completedDispatchQueue) {
-                            zipDispatchQueue2.completedDispatchQueue = false
-                            zipQueueDispatch2.runDispatcher()
-                        } else {
-                            zipDispatchQueue2.rootDispatch.runDispatcher()
-                        }
-                    }
-                    it
-                },
-                closeHandler = (workHandler == handler) && closeHandler,
-                dispatchQueue = dispatchQueue,
-                dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
-            )
-            queueDispatch.dispatchSources.add(this)
-            val dispatchQueueController = dispatchQueue.dispatchQueueController
-            val zipDispatchQueueController = zipDispatchQueue.dispatchQueueController
-            if (zipDispatchQueueController == null && dispatchQueueController != null) {
-                zipRootDispatch.managedBy(dispatchQueueController)
-            }
-            val zipDispatchQueueController2 = zipDispatchQueue2.dispatchQueueController
-            if (zipDispatchQueueController2 == null && dispatchQueueController != null) {
-                zipRootDispatch2.managedBy(dispatchQueueController)
-            }
-            val errorHandler = dispatchQueue.errorHandler
-            val zipErrorHandler = zipDispatchQueue.errorHandler
-            if (zipErrorHandler == null && errorHandler != null) {
-                zipDispatchQueue.errorHandler = errorHandler
-            }
-            val zipErrorHandler2 = zipDispatchQueue2.errorHandler
-            if (zipErrorHandler2 == null && errorHandler != null) {
-                zipDispatchQueue2.errorHandler = errorHandler
-            }
-            if (!zipDispatchQueue2.isCancelled) {
-                zipDispatchQueue2.queue.add(zipQueueDispatch2)
-            }
-            if (!zipDispatchQueue.isCancelled) {
-                zipDispatchQueue.queue.add(zipQueueDispatch)
-            }
-            if (!isCancelled) {
-                dispatchQueue.queue.add(queueDispatch)
-                dispatchQueue.queue.add(newDispatch)
-                if (dispatchQueue.completedDispatchQueue) {
-                    dispatchQueue.completedDispatchQueue = false
-                    queueDispatch.runDispatcher()
-                }
-            }
-            return newDispatch
-        }
-
-        override fun cancelOnComplete(cancel: Boolean): Dispatch<R> {
-            dispatchQueue.cancelOnComplete = cancel
-            if (cancel && dispatchQueue.completedDispatchQueue) {
-                cancel()
-            }
-            return this
-        }
-
-        override fun addObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R> {
-            dispatchObservable.addObserver(dispatchObserver)
-            return this
-        }
-
-        override fun addObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
-            dispatchObservable.addObservers(dispatchObservers)
-            return this
-        }
-
-        override fun removeObserver(dispatchObserver: DispatchObserver<R>): Dispatch<R> {
-            dispatchObservable.removeObserver(dispatchObserver)
-            return this
-        }
-
-        override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R> {
-            dispatchObservable.removeObservers(dispatchObservers)
-            return this
-        }
-
-        override fun getDispatchObservable(): DispatchObservable<R> {
-            return dispatchObservable
-        }
-
-        override fun setDispatchId(id: String): Dispatch<R> {
-            this.dispatchId = id
-            return this
-        }
-
-    }
-
-    private class DispatchObservableInfo<R>(private val handler: Handler,
-                                            private val shouldNotifyOnHandler: Boolean): DispatchObservable<R> {
-
-        private val dispatchObserversSet = mutableSetOf<DispatchObserver<R>>()
-        private var result: Any? = INVALID_RESULT
-
-        override fun addObserver(dispatchObserver: DispatchObserver<R>): DispatchObservable<R> {
-            dispatchObserversSet.add(dispatchObserver)
-            if (result != INVALID_RESULT) {
-                handler.post {
-                    notifyObserver(dispatchObserver)
-                }
-            }
-            return this
-        }
-
-        override fun addObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchObservable<R> {
-            dispatchObserversSet.addAll(dispatchObservers)
-            if (result != INVALID_RESULT) {
-                handler.post {
-                    for (dispatchObserver in dispatchObservers) {
-                        notifyObserver(dispatchObserver)
-                    }
-                }
-            }
-            return this
-        }
-
-        override fun removeObserver(dispatchObserver: DispatchObserver<R>): DispatchObservable<R> {
-            val iterator = dispatchObserversSet.iterator()
-            while (iterator.hasNext()) {
-                if (dispatchObserver == iterator.next()) {
-                    iterator.remove()
-                    break
-                }
-            }
-            return this
-        }
-
-        override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchObservable<R> {
-            val iterator = dispatchObserversSet.iterator()
-            var count = 0
-            while (iterator.hasNext()) {
-                if (dispatchObservers.contains(iterator.next())) {
-                    iterator.remove()
-                    ++count
-                    if (count == dispatchObservers.size) {
-                        break
-                    }
-                }
-            }
-            return this
-        }
-
-        fun removeAllObservers() {
-            val iterator = dispatchObserversSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next()
-                iterator.remove()
-            }
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        private fun notifyObserver(dispatchObserver: DispatchObserver<R>) {
-            val r = result
-            if (r != INVALID_RESULT) {
-                dispatchObserver.onChanged(r as R)
-            }
-        }
-
-        override fun notify(result: R): DispatchObservable<R> {
-            if (shouldNotifyOnHandler) {
-                handler.post {
-                    notifyObservers(result)
-                }
-            } else {
-                notifyObservers(result)
-            }
-            return this
-        }
-
-        private fun notifyObservers(result: R) {
-            this.result = result
-            val iterator = dispatchObserversSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next().onChanged(result)
-            }
-        }
-
     }
 
 }

@@ -1,5 +1,7 @@
 package com.tonyodev.dispatch
 
+import android.os.Handler
+
 /**
  * Interface that allows for the attaching of dispatch observers.
  * */
@@ -38,5 +40,40 @@ interface DispatchObservable<R> {
      * @return the dispatchObservable.
      * */
     fun notify(result: R): DispatchObservable<R>
+
+
+    companion object Factory {
+
+        /**
+         * Creates a new DispatchObservable that notifies observers of
+         * the result on the ui thread.
+         * @return dispatch observable
+         * */
+        fun <R> create(): DispatchObservable<R> {
+            return create(ThreadType.MAIN)
+        }
+
+        /**
+         * Creates a new DispatchObservable that notifies observers of
+         * the result on the passed in handler.
+         * @param handler the handler.
+         * @return dispatch observable
+         * */
+        fun <R> create(handler: Handler): DispatchObservable<R> {
+            return DispatchObservableImpl(handler, true)
+        }
+
+        /**
+         * Creates a new DispatchObservable that notifies observers of
+         * the result on the passed in thread type.
+         * @param threadType the thread type
+         * @return dispatch observable
+         * */
+        fun <R> create(threadType: ThreadType): DispatchObservable<R> {
+            val threadPair = Threader.getHandlerPairForThreadType(threadType)
+            return DispatchObservableImpl(threadPair.first, true)
+        }
+
+    }
 
 }
