@@ -805,6 +805,11 @@ object Dispatcher {
             if (zipDispatchQueueController == null && dispatchQueueController != null) {
                 zipRootDispatch.managedBy(dispatchQueueController)
             }
+            val errorHandler = dispatchQueue.errorHandler
+            val zipErrorHandler = zipDispatchQueue.errorHandler
+            if (zipErrorHandler == null && errorHandler != null) {
+                zipDispatchQueue.errorHandler = errorHandler
+            }
             if (!zipDispatchQueue.isCancelled) {
                 zipDispatchQueue.queue.add(zipQueueDispatch)
             }
@@ -911,7 +916,15 @@ object Dispatcher {
             if (zipDispatchQueueController2 == null && dispatchQueueController != null) {
                 zipRootDispatch2.managedBy(dispatchQueueController)
             }
-
+            val errorHandler = dispatchQueue.errorHandler
+            val zipErrorHandler = zipDispatchQueue.errorHandler
+            if (zipErrorHandler == null && errorHandler != null) {
+                zipDispatchQueue.errorHandler = errorHandler
+            }
+            val zipErrorHandler2 = zipDispatchQueue2.errorHandler
+            if (zipErrorHandler2 == null && errorHandler != null) {
+                zipDispatchQueue2.errorHandler = errorHandler
+            }
             if (!zipDispatchQueue2.isCancelled) {
                 zipDispatchQueue2.queue.add(zipQueueDispatch2)
             }
@@ -1026,6 +1039,15 @@ object Dispatcher {
             val zipDispatchQueueController2 = zipDispatchQueue2.dispatchQueueController
             if (zipDispatchQueueController2 == null && dispatchQueueController != null) {
                 zipRootDispatch2.managedBy(dispatchQueueController)
+            }
+            val errorHandler = dispatchQueue.errorHandler
+            val zipErrorHandler = zipDispatchQueue.errorHandler
+            if (zipErrorHandler == null && errorHandler != null) {
+                zipDispatchQueue.errorHandler = errorHandler
+            }
+            val zipErrorHandler2 = zipDispatchQueue2.errorHandler
+            if (zipErrorHandler2 == null && errorHandler != null) {
+                zipDispatchQueue2.errorHandler = errorHandler
             }
             if (!zipDispatchQueue2.isCancelled) {
                 zipDispatchQueue2.queue.add(zipQueueDispatch2)
