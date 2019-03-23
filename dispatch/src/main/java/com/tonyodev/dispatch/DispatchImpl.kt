@@ -14,7 +14,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                                   private val dispatchType: Int): Dispatch<R> {
 
     private val dispatchSources = ArrayList<Dispatch<*>?>(3)
-    private val dispatchObservable = DispatchObservableImpl<R>(handler, false)
+    private val dispatchObservable = DispatchObservable.create<R>(handler, false)
     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
     override val queueId: Int
