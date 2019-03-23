@@ -33,4 +33,10 @@ interface DispatchObservable<R> {
      * */
     fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchObservable<R>
 
+    /** Notifies observers of the passed in result
+     * @param result the result
+     * @return the dispatchObservable.
+     * */
+    fun notify(result: R): DispatchObservable<R>
+
 }

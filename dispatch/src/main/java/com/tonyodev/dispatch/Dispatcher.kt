@@ -308,6 +308,39 @@ object Dispatcher {
                 isIntervalDispatch = false)
         }
 
+    /**
+     * Creates a new DispatchObservable that notifies observers of
+     * the result on the ui thread.
+     * @return dispatch observable
+     * */
+    @JvmStatic
+    fun <R> createObservable(): DispatchObservable<R> {
+        return DispatchObservableInfo(uiHandler, true)
+    }
+
+    /**
+     * Creates a new DispatchObservable that notifies observers of
+     * the result on the passed in handler.
+     * @param handler the handler.
+     * @return dispatch observable
+     * */
+    @JvmStatic
+    fun <R> createObservable(handler: Handler): DispatchObservable<R> {
+        return DispatchObservableInfo(handler, true)
+    }
+
+    /**
+     * Creates a new DispatchObservable that notifies observers of
+     * the result on the passed in thread type.
+     * @param threadType the thread type
+     * @return dispatch observable
+     * */
+    @JvmStatic
+    fun <R> createObservable(threadType: ThreadType): DispatchObservable<R> {
+        val threadPair = getHandlerPairForThreadType(threadType)
+        return DispatchObservableInfo(threadPair.first, true)
+    }
+
     private fun getBackgroundHandler(): Handler {
         return  backgroundHandler
     }
@@ -390,7 +423,7 @@ object Dispatcher {
                                      private val dispatchType: Int): Dispatch<R> {
 
         private val dispatchSources = ArrayList<Dispatch<*>?>(3)
-        private val dispatchObservable = DispatchObservableInfo<R>(handler)
+        private val dispatchObservable = DispatchObservableInfo<R>(handler, false)
         private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
         override val queueId: Int
@@ -483,7 +516,7 @@ object Dispatcher {
         @Suppress("UNCHECKED_CAST")
         private fun notifyDispatchObservers() {
             if (!isCancelled) {
-                dispatchObservable.notifyObservers(results as R)
+                dispatchObservable.notify(results as R)
             }
         }
 
@@ -1105,7 +1138,8 @@ object Dispatcher {
 
     }
 
-    private class DispatchObservableInfo<R>(private val handler: Handler): DispatchObservable<R> {
+    private class DispatchObservableInfo<R>(private val handler: Handler,
+                                            private val shouldNotifyOnHandler: Boolean): DispatchObservable<R> {
 
         private val dispatchObserversSet = mutableSetOf<DispatchObserver<R>>()
         private var result: Any? = INVALID_RESULT
@@ -1174,7 +1208,18 @@ object Dispatcher {
             }
         }
 
-        fun notifyObservers(result: R) {
+        override fun notify(result: R): DispatchObservable<R> {
+            if (shouldNotifyOnHandler) {
+                handler.post {
+                    notifyObservers(result)
+                }
+            } else {
+                notifyObservers(result)
+            }
+            return this
+        }
+
+        private fun notifyObservers(result: R) {
             this.result = result
             val iterator = dispatchObserversSet.iterator()
             while (iterator.hasNext()) {
