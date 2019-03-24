@@ -139,7 +139,7 @@ class DispatchObservable<R> private constructor(private val handler: Handler,
          * */
         @JvmStatic
         fun <R> create(handler: Handler): DispatchObservable<R> {
-            return DispatchObservable(handler, true)
+            return create(handler, true)
         }
 
         /**
