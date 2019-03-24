@@ -251,7 +251,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
 
     private fun removeDispatcher() {
         handler.removeCallbacks(dispatcher)
-        dispatchObservable.removeAllObservers()
+        dispatchObservable.removeObservers()
         if (closeHandler) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 handler.looper.quitSafely()

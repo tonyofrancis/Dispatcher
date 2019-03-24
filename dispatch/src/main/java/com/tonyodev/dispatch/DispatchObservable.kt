@@ -80,7 +80,7 @@ class DispatchObservable<R> private constructor(private val handler: Handler,
     }
 
     /** Removes all observers attached this observable.*/
-    fun removeAllObservers() {
+    fun removeObservers() {
         val iterator = dispatchObserversSet.iterator()
         while (iterator.hasNext()) {
             iterator.next()
