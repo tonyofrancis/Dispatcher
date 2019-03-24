@@ -273,4 +273,10 @@ interface Dispatch<R> {
      * */
     fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): Dispatch<R>
 
+    /**
+     * Removes all dispatch observers.
+     * @return the dispatch.
+     * */
+    fun removeObservers(): Dispatch<R>
+
 }

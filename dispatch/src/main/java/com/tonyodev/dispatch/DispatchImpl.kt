@@ -720,6 +720,11 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
         return this
     }
 
+    override fun removeObservers(): Dispatch<R> {
+        dispatchObservable.removeObservers()
+        return this
+    }
+
     override fun getDispatchObservable(): DispatchObservable<R> {
         return dispatchObservable
     }
