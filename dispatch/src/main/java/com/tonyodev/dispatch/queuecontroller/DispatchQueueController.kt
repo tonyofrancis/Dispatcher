@@ -1,4 +1,6 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.queuecontroller
+
+import com.tonyodev.dispatch.Dispatch
 
 /**
  * A DispatchQueueController manages dispatch queues and is
@@ -135,18 +137,6 @@ open class DispatchQueueController {
      * */
     open fun cancelDispatch(vararg arrayOfDispatchQueueId: Int) {
         cancelDispatch(arrayOfDispatchQueueId.toList())
-    }
-
-    companion object {
-
-        /**
-         * Creates a new instance of DispatchQueueController
-         * */
-        @JvmStatic
-        fun create(): DispatchQueueController {
-            return DispatchQueueController()
-        }
-
     }
 
 }

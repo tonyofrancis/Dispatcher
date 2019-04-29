@@ -1,7 +1,8 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.utils
 
 import android.os.Handler
 import android.os.Looper
+import com.tonyodev.dispatch.ThreadType
 import java.lang.IllegalArgumentException
 import java.util.*
 

@@ -73,9 +73,7 @@ class DispatchCallAdapterFactory constructor(
                 }
                 callClone.cancel()
                 if (data is HttpException) {
-                    try {
-                        errorHandler?.invoke(data, callClone.request())
-                    }catch ( e: Exception) { }
+                    errorHandler?.invoke(data, callClone.request())
                     throw data
                 }
                 data

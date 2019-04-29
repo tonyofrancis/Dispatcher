@@ -1,5 +1,7 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.internals
 
+import com.tonyodev.dispatch.Dispatch
+import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import java.util.*
 
 internal class DispatchQueue(val queueId: Int,

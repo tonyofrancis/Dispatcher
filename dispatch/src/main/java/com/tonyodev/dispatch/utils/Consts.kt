@@ -1,4 +1,4 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.utils
 
 internal const val TAG = "com.tonyodev.dispatch"
 internal const val DISPATCH_TYPE_NORMAL = 0

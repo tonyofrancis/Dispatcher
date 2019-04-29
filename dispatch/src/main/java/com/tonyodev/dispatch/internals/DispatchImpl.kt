@@ -1,9 +1,27 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.internals
 
 import android.app.Activity
 import android.os.Build
 import android.os.Handler
 import android.util.Log
+import com.tonyodev.dispatch.Dispatch
+import com.tonyodev.dispatch.DispatchObservable
+import com.tonyodev.dispatch.DispatchObserver
+import com.tonyodev.dispatch.ThreadType
+import com.tonyodev.dispatch.queuecontroller.ActivityDispatchQueueController
+import com.tonyodev.dispatch.queuecontroller.CancelType
+import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
+import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
+import com.tonyodev.dispatch.utils.DISPATCH_TYPE_ANY_RESULT
+import com.tonyodev.dispatch.utils.DISPATCH_TYPE_NORMAL
+import com.tonyodev.dispatch.utils.DISPATCH_TYPE_QUEUE_RUNNER
+import com.tonyodev.dispatch.utils.INVALID_RESULT
+import com.tonyodev.dispatch.utils.TAG
+import com.tonyodev.dispatch.utils.Threader
+import com.tonyodev.dispatch.utils.enableWarnings
+import com.tonyodev.dispatch.utils.getNewDispatchId
+import com.tonyodev.dispatch.utils.globalErrorHandler
+import com.tonyodev.dispatch.utils.throwIfUsesMainThreadForBackgroundWork
 
 internal class DispatchImpl<T, R>(override var dispatchId: String,
                                   private val handler: Handler,
@@ -14,7 +32,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                                   private val dispatchType: Int): Dispatch<R> {
 
     private val dispatchSources = ArrayList<Dispatch<*>?>(3)
-    private val dispatchObservable = DispatchObservable.create<R>(handler, false)
+    private val dispatchObservable = DispatchObservable<R>(handler, false)
     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
     override val queueId: Int
@@ -46,7 +64,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                         3 -> {
                             if (dispatchType == DISPATCH_TYPE_ANY_RESULT) {
                                 if ((dispatchSources[1] as DispatchImpl<*, *>).results == INVALID_RESULT
-                                    && (dispatchSources[2] as DispatchImpl<*, *>).results == INVALID_RESULT) {
+                                    && (dispatchSources[2] as DispatchImpl<*, *>).results == INVALID_RESULT
+                                ) {
                                     return@Runnable
                                 }
                             }
@@ -178,7 +197,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             }
             if (dispatchQueue.dispatchQueueController == null && enableWarnings
                 && this == dispatchQueue.rootDispatch) {
-                Log.w(TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
+                Log.w(
+                    TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
                         "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
             }
         }
@@ -358,7 +378,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             worker = worker,
             closeHandler = closeHandler,
             dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_NORMAL)
+            dispatchType = DISPATCH_TYPE_NORMAL
+        )
         newDispatch.dispatchSources.add(this)
         if (!isCancelled) {
             dispatchQueue.queue.add(newDispatch)
@@ -385,7 +406,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             worker = { it },
             closeHandler = (workHandler == handler) && closeHandler,
             dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_NORMAL)
+            dispatchType = DISPATCH_TYPE_NORMAL
+        )
         newDispatch.dispatchSources.add(this)
         newDispatch.dispatchSources.add(dispatch)
         val zipWorkHandler = when {
@@ -405,7 +427,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             },
             closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
             dispatchQueue = zipDispatchQueue,
-            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
+            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
+        )
         zipQueueDispatch.dispatchSources.add(dispatch)
         val queueDispatch = DispatchImpl<R, R>(
             dispatchId = getNewDispatchId(),
@@ -424,7 +447,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             },
             closeHandler = (workHandler == handler) && closeHandler,
             dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
+            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
+        )
         queueDispatch.dispatchSources.add(this)
         val dispatchQueueController = dispatchQueue.dispatchQueueController
         val zipDispatchQueueController = zipDispatchQueue.dispatchQueueController
@@ -468,7 +492,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             worker = { it },
             closeHandler = (workHandler == handler) && closeHandler,
             dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_NORMAL)
+            dispatchType = DISPATCH_TYPE_NORMAL
+        )
         newDispatch.dispatchSources.add(this)
         newDispatch.dispatchSources.add(dispatch)
         newDispatch.dispatchSources.add(dispatch2)
@@ -489,7 +514,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             },
             closeHandler = (zipWorkHandler2 == handler) && zipDispatch2.closeHandler,
             dispatchQueue = zipDispatchQueue2,
-            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
+            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
+        )
         zipQueueDispatch2.dispatchSources.add(dispatch2)
         val zipWorkHandler = when {
             zipDispatch.handler.looper.thread.name == Threader.uiHandler.looper.thread.name -> Threader.backgroundHandler
@@ -512,7 +538,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             },
             closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
             dispatchQueue = zipDispatchQueue,
-            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
+            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
+        )
         zipQueueDispatch.dispatchSources.add(dispatch)
         val queueDispatch = DispatchImpl<R, R>(
             dispatchId = getNewDispatchId(),
@@ -531,7 +558,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             },
             closeHandler = (workHandler == handler) && closeHandler,
             dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
+            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
+        )
         queueDispatch.dispatchSources.add(this)
         val dispatchQueueController = dispatchQueue.dispatchQueueController
         val zipDispatchQueueController = zipDispatchQueue.dispatchQueueController
@@ -586,7 +614,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             worker = { it },
             closeHandler = (workHandler == handler) && closeHandler,
             dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_ANY_RESULT)
+            dispatchType = DISPATCH_TYPE_ANY_RESULT
+        )
         newDispatch.dispatchSources.add(this)
         newDispatch.dispatchSources.add(dispatch)
         newDispatch.dispatchSources.add(dispatch2)
@@ -607,7 +636,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             },
             closeHandler = (zipWorkHandler == handler) && zipDispatch.closeHandler,
             dispatchQueue = zipDispatchQueue,
-            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER)
+            dispatchType = DISPATCH_TYPE_QUEUE_RUNNER
+        )
         zipQueueDispatch.dispatchSources.add(dispatch)
         val zipWorkHandler2 = when {
             zipDispatch2.handler.looper.thread.name == Threader.uiHandler.looper.thread.name -> Threader.backgroundHandler

@@ -1,4 +1,6 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.queuecontroller
+
+import com.tonyodev.dispatch.Dispatch
 
 /**
  * A DispatchQueueController that uses the Android's framework lifecycle events to manage
@@ -172,18 +174,6 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
                 break
             }
         }
-    }
-
-    companion object {
-
-        /**
-         * Gets a new instance of LifecycleDispatchQueueController.
-         * */
-        @JvmStatic
-        fun getInstance(): LifecycleDispatchQueueController {
-            return LifecycleDispatchQueueController()
-        }
-
     }
 
 }

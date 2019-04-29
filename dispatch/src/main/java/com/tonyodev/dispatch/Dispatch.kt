@@ -2,6 +2,9 @@ package com.tonyodev.dispatch
 
 import android.app.Activity
 import android.os.Handler
+import com.tonyodev.dispatch.queuecontroller.CancelType
+import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
+import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
 import java.lang.IllegalArgumentException
 
 /**
@@ -131,8 +134,12 @@ interface Dispatch<R> {
     fun cancel(): Dispatch<R>
 
     /**
+     * The doOnError handles the case where an error occurred during a async or post operation. Each dispatch object
+     * can have its own doOnError callback.
      * If set, the error handler for this dispatch queue may not be called because the function will provide default data.
-     * @param func the do on error function.
+     * This is called on the same thread the the error occurred.
+     * @param func the do on error function. This function has to return data of the same type the preceding async or post dispatch
+     * would have returned. The data returned here would most likely/q be some kind of default/generic data indicating an error occurred.
      * @return dispatch.
      * */
     fun doOnError(func: ((Throwable) -> R)): Dispatch<R>
@@ -233,7 +240,7 @@ interface Dispatch<R> {
 
     /**
      * Transforms the data from the previous dispatch object to a another
-     * data type.
+     * data type. The transformation is performed on the background thread.
      * @param func the function.
      * @return the new dispatch.
      * */

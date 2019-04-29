@@ -1,4 +1,4 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.queuecontroller
 
 /**
  * Cancel Type used with a Dispatch queues

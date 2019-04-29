@@ -1,4 +1,4 @@
-package com.tonyodev.dispatch
+package com.tonyodev.dispatch.queuecontroller
 
 import android.app.Activity
 import android.app.Application
@@ -70,7 +70,9 @@ open class ActivityDispatchQueueController(private val activity: Activity): Life
         @JvmStatic
         fun getInstance(activity: Activity): ActivityDispatchQueueController {
            return synchronized(map) {
-               val controller = map[activity] ?: ActivityDispatchQueueController(activity)
+               val controller = map[activity] ?: ActivityDispatchQueueController(
+                   activity
+               )
                map[activity] = controller
                controller
            }

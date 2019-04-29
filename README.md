@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.0.9) ](https://bintray.com/tonyofrancis/maven/dispatch/1.0.9/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.1.0) ](https://bintray.com/tonyofrancis/maven/dispatch/1.1.0/link)
 
 Overview
 --------
@@ -7,12 +7,12 @@ Dispatch is a simple and flexible work scheduler that schedulers work on a backg
 
 To use dispatch add the following to your app's build.gradle file
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.0.9"
+implementation "com.tonyodev.dispatch:dispatch:1.1.0"
 ```
 
 To use with Retrofit add
 ```java
-    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.0.9"
+    implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.1.0"
 ```
 
 Example:
@@ -25,10 +25,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        findViewById<Button>(R.id.button).setOnClickListener {
-            val intent = Intent(this, ActivityTwo::class.java)
-            startActivity(intent)
-        }
         retrofit = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(DispatchCallAdapterFactory.create())
@@ -56,7 +52,7 @@ class MainActivity : AppCompatActivity() {
             .post { //runs on main thread
                 Log.d("test", "network result first item:${it.first()}")
             }
-            .run()
+            .start()
     }
 
     private fun runTestTimer() {
@@ -81,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             .post {
                 Log.d("test","main thread break: $it")
             }
-            .run()
+            .start()
     }
 
 }
