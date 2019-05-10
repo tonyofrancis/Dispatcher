@@ -20,7 +20,9 @@ class DispatchCallAdapterFactory constructor(
     /** Optional error handler for network requests made by a DispatchCallAdapter instance.
      * Only called in an error occurred. Note: The errors will still be thrown inside the Dispatch.
      * This callback only allows for observing at a global level. Called on a background thread. */
-    private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter.Factory() {
+    private val errorHandler: ((HttpException, Request) -> Unit)?,
+    /** If true, all dispatches are created using the test dispatch queue. */
+    private val useTestDispatchQueue: Boolean = false): CallAdapter.Factory() {
 
     override fun get(returnType: Type, annotations: Array<Annotation>, retrofit: Retrofit): CallAdapter<*, *>? {
         val clazz = getRawType(returnType)
@@ -29,7 +31,7 @@ class DispatchCallAdapterFactory constructor(
                 throw IllegalArgumentException("Dispatch return type must be parameterized as Dispatch<Foo>")
             }
             val responseType = getParameterUpperBound(0, returnType)
-            return DispatchCallAdapter<Any>(responseType, handler, errorHandler)
+            return DispatchCallAdapter<Any>(responseType, handler, errorHandler, useTestDispatchQueue)
         }
         return null
     }
@@ -52,14 +54,28 @@ class DispatchCallAdapterFactory constructor(
             return DispatchCallAdapterFactory(handler, errorHandler)
         }
 
+        /**
+         * Creates an instance of DispatchCallAdapterFactory that uses a test dispatch queue to perform network requests.
+         * @param errorHandler Optional global error handler.
+         * @return new instance of DispatchCallAdapterFactory for test.
+         * */
+        @JvmStatic
+        @JvmOverloads
+        fun createTestFactory(errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
+            return DispatchCallAdapterFactory(null, errorHandler, true)
+        }
+
     }
 
     class DispatchCallAdapter<R>(private val responseType: Type,
                                  private val handler: Handler?,
-                                 private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter<R, Dispatch<*>> {
+                                 private val errorHandler: ((HttpException, Request) -> Unit)?,
+                                 private val useTestDispatchQueue: Boolean): CallAdapter<R, Dispatch<*>> {
 
         override fun adapt(call: Call<R>): Dispatch<*> {
-            return if (handler == null) {
+            return if (useTestDispatchQueue) {
+                Dispatcher.testDispatchQueue
+            } else if (handler == null) {
                 Dispatcher.createDispatchQueue(ThreadType.NETWORK)
             } else {
                 Dispatcher.createDispatchQueue(handler)
