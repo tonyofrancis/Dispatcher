@@ -176,4 +176,28 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         }
     }
 
+    /**
+     * Gets a copy of the paused managed queues.
+     * @return copy of the paused manged queues in a set.
+     * */
+    fun getMangedPausedQueueDispatches(): Set<Dispatch<*>> {
+        return pausedQueueSet.toSet()
+    }
+
+    /**
+     * Gets a copy of the stopped managed queues.
+     * @return copy of the stopped manged queues in a set.
+     * */
+    fun getMangedStoppedQueueDispatches(): Set<Dispatch<*>> {
+        return stoppedQueueSet.toSet()
+    }
+
+    /**
+     * Gets a copy of the destroyed managed queues.
+     * @return copy of the destoryed manged queues in a set.
+     * */
+    fun getMangedDestroyedQueueDispatches(): Set<Dispatch<*>> {
+        return destroyQueueSet.toSet()
+    }
+
 }

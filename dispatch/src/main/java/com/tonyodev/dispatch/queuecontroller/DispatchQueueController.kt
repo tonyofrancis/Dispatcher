@@ -5,6 +5,7 @@ import com.tonyodev.dispatch.Dispatch
 /**
  * A DispatchQueueController manages dispatch queues and is
  * responsible for cancelling a dispatch queue at the appropriate time.
+ * Note: DispatchQueueController only holds a strong reference to the root dispatch
  * */
 open class DispatchQueueController {
 
@@ -12,6 +13,7 @@ open class DispatchQueueController {
 
     /**
      * Set this dispatch controller to manage the passed in dispatch's queue.
+     * It only holds the root dispatch.
      * @param dispatch the dispatch who's queue will be managed.
      * */
     open fun manage(dispatch: Dispatch<*>) {
@@ -137,6 +139,14 @@ open class DispatchQueueController {
      * */
     open fun cancelDispatch(vararg arrayOfDispatchQueueId: Int) {
         cancelDispatch(arrayOfDispatchQueueId.toList())
+    }
+
+    /**
+     * Gets a copy of the managed queues.
+     * @return copy of the manged queues in a set.
+     * */
+    fun getMangedQueueDispatches(): Set<Dispatch<*>> {
+        return dispatchQueueSet.toSet()
     }
 
 }
