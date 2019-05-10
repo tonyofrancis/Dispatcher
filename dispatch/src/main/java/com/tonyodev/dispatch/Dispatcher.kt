@@ -5,10 +5,8 @@ import com.tonyodev.dispatch.internals.DispatchImpl
 import com.tonyodev.dispatch.internals.DispatchQueue
 import com.tonyodev.dispatch.utils.DISPATCH_TYPE_NORMAL
 import com.tonyodev.dispatch.utils.Threader
-import com.tonyodev.dispatch.utils.enableWarnings
 import com.tonyodev.dispatch.utils.getNewDispatchId
 import com.tonyodev.dispatch.utils.getNewQueueId
-import com.tonyodev.dispatch.utils.globalErrorHandler
 import com.tonyodev.dispatch.utils.throwIfUsesMainThreadForBackgroundWork
 import java.lang.IllegalArgumentException
 
@@ -20,23 +18,19 @@ import java.lang.IllegalArgumentException
 object Dispatcher {
 
     /**
+     * Enable or disable log warnings by the library.
+     * @param enabled value. Disabled by default.
+     * */
+    @JvmStatic
+    var enableLogWarnings = false
+
+    /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
      * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
      * @param errorHandler the error handler. Notifies of the dispatch that throw the error and the error that was thrown.
      * */
     @JvmStatic
-    fun setGlobalErrorHandler(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?) {
-        globalErrorHandler = errorHandler
-    }
-
-    /**
-     * Enable or disable log warnings by the library.
-     * @param enabled value. Disabled by default.
-     * */
-    @JvmStatic
-    fun setEnableLogWarnings(enabled: Boolean) {
-        enableWarnings = enabled
-    }
+    var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
 
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.

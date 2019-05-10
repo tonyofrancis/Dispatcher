@@ -4,10 +4,7 @@ import android.app.Activity
 import android.os.Build
 import android.os.Handler
 import android.util.Log
-import com.tonyodev.dispatch.Dispatch
-import com.tonyodev.dispatch.DispatchObservable
-import com.tonyodev.dispatch.DispatchObserver
-import com.tonyodev.dispatch.ThreadType
+import com.tonyodev.dispatch.*
 import com.tonyodev.dispatch.queuecontroller.ActivityDispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
@@ -18,9 +15,7 @@ import com.tonyodev.dispatch.utils.DISPATCH_TYPE_QUEUE_RUNNER
 import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.TAG
 import com.tonyodev.dispatch.utils.Threader
-import com.tonyodev.dispatch.utils.enableWarnings
 import com.tonyodev.dispatch.utils.getNewDispatchId
-import com.tonyodev.dispatch.utils.globalErrorHandler
 import com.tonyodev.dispatch.utils.throwIfUsesMainThreadForBackgroundWork
 
 internal class DispatchImpl<T, R>(override var dispatchId: String,
@@ -195,7 +190,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             } else {
                 handler.post(dispatcher)
             }
-            if (dispatchQueue.dispatchQueueController == null && enableWarnings
+            if (dispatchQueue.dispatchQueueController == null && Dispatcher.enableLogWarnings
                 && this == dispatchQueue.rootDispatch) {
                 Log.w(
                     TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
@@ -214,7 +209,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             dispatchQueue.completedDispatchQueue = false
             dispatchQueue.rootDispatch.runDispatcher()
         } else {
-            if (enableWarnings) {
+            if (Dispatcher.enableLogWarnings) {
                 Log.d(TAG, "Start called on dispatch queue with id: $queueId after it has already been cancelled.")
             }
         }
@@ -230,7 +225,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             cancel()
             return
         }
-        val globalHandler = globalErrorHandler
+        val globalHandler = Dispatcher.globalErrorHandler
         if (globalHandler != null) {
             Threader.uiHandler.post {
                 globalHandler.invoke(throwable, this)
