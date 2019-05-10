@@ -281,7 +281,7 @@ object Dispatcher {
 
     /**
      * Creates a new test dispatch queue. All async and post run on the same thread this dispatch was created on.
-     * Note: Test Dispatch queues no not run with delays.
+     * Note: Test Dispatch queues do not run with delays.
      * @return test dispatch.
      * */
     @JvmStatic
