@@ -42,6 +42,11 @@ interface Dispatch<R> {
     val isCancelled: Boolean
 
     /**
+     * Checks if a dispatch queue is a test queue.
+     * */
+    val isTestDispatch: Boolean
+
+    /**
      * Posts work on the UI thread.
      * @param func the function.
      * @return the dispatch.

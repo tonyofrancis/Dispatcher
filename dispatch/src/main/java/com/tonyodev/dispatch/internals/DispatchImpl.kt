@@ -45,7 +45,12 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             return dispatchQueue.rootDispatch
         }
 
-    var results: Any? = INVALID_RESULT
+    override val isTestDispatch: Boolean
+        get() {
+            return dispatchQueue.isTestDispatchQueue
+        }
+
+    private var results: Any? = INVALID_RESULT
 
     @Suppress("UNCHECKED_CAST")
     private val dispatcher = Runnable {
@@ -185,16 +190,16 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     private fun runDispatcher() {
         if (!isCancelled) {
             handler.removeCallbacksAndMessages(dispatcher)
-            if (delayInMillis >= 1) {
-                handler.postDelayed(dispatcher, delayInMillis)
-            } else {
-                handler.post(dispatcher)
-            }
             if (dispatchQueue.dispatchQueueController == null && Dispatcher.enableLogWarnings
                 && this == dispatchQueue.rootDispatch) {
                 Log.w(
                     TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
-                        "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
+                            "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
+            }
+            when {
+                isTestDispatch -> dispatcher.run()
+                delayInMillis >= 1 -> handler.postDelayed(dispatcher, delayInMillis)
+                else -> handler.post(dispatcher)
             }
         }
     }
@@ -219,16 +224,24 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     private fun handleException(throwable: Throwable) {
         val mainErrorHandler = dispatchQueue.errorHandler
         if (mainErrorHandler != null) {
-            Threader.uiHandler.post {
+            if (isTestDispatch) {
                 mainErrorHandler.invoke(throwable, this)
+            } else {
+                Threader.uiHandler.post {
+                    mainErrorHandler.invoke(throwable, this)
+                }
             }
             cancel()
             return
         }
         val globalHandler = Dispatcher.globalErrorHandler
         if (globalHandler != null) {
-            Threader.uiHandler.post {
+            if (isTestDispatch) {
                 globalHandler.invoke(throwable, this)
+            } else {
+                Threader.uiHandler.post {
+                    globalHandler.invoke(throwable, this)
+                }
             }
             cancel()
             return

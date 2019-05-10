@@ -43,7 +43,8 @@ object Dispatcher {
             handler = Threader.backgroundHandler,
             delayInMillis = 0,
             closeHandler = false,
-            isIntervalDispatch = false)
+            isIntervalDispatch = false,
+            isTestDispatch = false)
     }
 
     /**
@@ -59,7 +60,8 @@ object Dispatcher {
             handler = backgroundHandler ?: Threader.backgroundHandler,
             delayInMillis = 0,
             closeHandler = false,
-            isIntervalDispatch = false)
+            isIntervalDispatch = false,
+            isTestDispatch = false)
     }
 
     /**
@@ -78,7 +80,8 @@ object Dispatcher {
             handler = handlerPair.first,
             delayInMillis = 0,
             closeHandler = handlerPair.second,
-            isIntervalDispatch = false)
+            isIntervalDispatch = false,
+            isTestDispatch = false)
     }
 
     /**
@@ -94,7 +97,8 @@ object Dispatcher {
             handler = Threader.getNewDispatchHandler(handlerName),
             delayInMillis = 0,
             closeHandler = true,
-            isIntervalDispatch = false)
+            isIntervalDispatch = false,
+            isTestDispatch = false)
     }
 
     /**
@@ -109,7 +113,8 @@ object Dispatcher {
             handler = Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = true,
-            isIntervalDispatch = false)
+            isIntervalDispatch = false,
+            isTestDispatch = false)
     }
 
     /**
@@ -127,7 +132,8 @@ object Dispatcher {
             handler = backgroundHandler ?: Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = backgroundHandler == null,
-            isIntervalDispatch = false)
+            isIntervalDispatch = false,
+            isTestDispatch = false)
     }
 
     /**
@@ -146,7 +152,8 @@ object Dispatcher {
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
             closeHandler = handlerPair.second,
-            isIntervalDispatch = false)
+            isIntervalDispatch = false,
+            isTestDispatch = false)
     }
 
     /**
@@ -161,7 +168,8 @@ object Dispatcher {
             handler = Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = true,
-            isIntervalDispatch = true)
+            isIntervalDispatch = true,
+            isTestDispatch = false)
     }
 
     /**
@@ -179,7 +187,8 @@ object Dispatcher {
             handler = backgroundHandler ?: Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = backgroundHandler == null,
-            isIntervalDispatch = true)
+            isIntervalDispatch = true,
+            isTestDispatch = false)
     }
 
     /**
@@ -198,7 +207,8 @@ object Dispatcher {
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
             closeHandler = handlerPair.second,
-            isIntervalDispatch = true)
+            isIntervalDispatch = true,
+            isTestDispatch = false)
     }
 
     /**
@@ -214,7 +224,8 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false)
+                isIntervalDispatch = false,
+                isTestDispatch = false)
         }
 
     /**
@@ -230,7 +241,8 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false)
+                isIntervalDispatch = false,
+                isTestDispatch = false)
         }
 
     /**
@@ -246,7 +258,8 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false)
+                isIntervalDispatch = false,
+                isTestDispatch = false)
         }
 
     /**
@@ -262,17 +275,38 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false)
+                isIntervalDispatch = false,
+                isTestDispatch = false)
         }
+
+    /**
+     * Creates a new test dispatch queue. All async and post run on the same thread this dispatch was created on.
+     * Note: Test Dispatch queues no not run with delays.
+     * @return test dispatch.
+     * */
+    @JvmStatic
+    val testDispatchQueue: Dispatch<Unit>
+        get() {
+            val handlerPair = Threader.getHandlerPairForThreadType(ThreadType.MAIN)
+            return createNewDispatch(
+                handler = handlerPair.first,
+                delayInMillis = 0,
+                closeHandler = handlerPair.second,
+                isIntervalDispatch = false,
+                isTestDispatch = true)
+        }
+
 
     private fun createNewDispatch(handler: Handler,
                                   delayInMillis: Long,
                                   closeHandler: Boolean,
-                                  isIntervalDispatch: Boolean): Dispatch<Unit> {
+                                  isIntervalDispatch: Boolean,
+                                  isTestDispatch: Boolean): Dispatch<Unit> {
         val dispatchQueueData = DispatchQueue(
             queueId = getNewQueueId(),
             isIntervalDispatch = isIntervalDispatch,
-            cancelOnComplete = !isIntervalDispatch
+            cancelOnComplete = !isIntervalDispatch,
+            isTestDispatchQueue = isTestDispatch
         )
         val newDispatch = DispatchImpl<Unit, Unit>(
             dispatchId = getNewDispatchId(),
