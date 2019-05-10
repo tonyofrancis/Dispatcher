@@ -772,4 +772,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
         return this
     }
 
+    override fun toString(): String {
+        return "Dispatch(dispatchId='$dispatchId', queueId='${dispatchQueue.queueId}')"
+    }
+
 }
