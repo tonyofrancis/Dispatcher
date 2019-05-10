@@ -295,8 +295,7 @@ object Dispatcher {
                 isIntervalDispatch = false,
                 isTestDispatch = true)
         }
-
-
+    
     private fun createNewDispatch(handler: Handler,
                                   delayInMillis: Long,
                                   closeHandler: Boolean,
