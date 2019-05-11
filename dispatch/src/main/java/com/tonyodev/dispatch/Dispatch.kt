@@ -197,24 +197,20 @@ interface Dispatch<R> {
     fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController, cancelType: CancelType): Dispatch<R>
 
     /**
-     * Zips this dispatch with the passed in dispatch and returns a paired result. Both dispatch objects
-     * are still controlled by their respective dispatch queues.
-     * If the passed in dispatch is not managed by a DispatchQueueController and the current dispatch is managed,
-     * the passed in dispatch will then be managed by this dispatch's DispatchQueueController.
-     * @param dispatch dispatch to zipWith with.
+     * Combines this dispatch with the passed in dispatch by cloning the passed in dispatch into this dispatch's queue. Returns a paired result.
+     * @param dispatch dispatch to combine with.
      * @return dispatch with result pair.
      * */
-    fun <U> zipWith(dispatch: Dispatch<U>): Dispatch<Pair<R, U>>
+    fun<U> zip(dispatch: Dispatch<U>): Dispatch<Pair<R, U>>
 
     /**
-     * Zips this dispatch with the passed in dispatches and returns a triple result.
-     * If the passed in dispatch objects are not managed by a DispatchQueueController and the current dispatch is managed,
-     * the passed in dispatch objects will then be managed by this dispatch's DispatchQueueController.
-     * @param dispatch dispatch to zipWith with.
-     * @param dispatch2 dispatch to zipWith with.
+     * Combines this dispatch with the passed in dispatches by cloning the passed in dispatches into this dispatch's queue.
+     * Returns a Triple result.
+     * @param dispatch dispatch to combine with.
+     * @param dispatch2 dispatch to combine with.
      * @return dispatch with result triple.
      * */
-    fun <U, T> zipWith(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
+    fun<U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
 
     /**
      * Zips this dispatch with the passed in dispatches and returns a triple result. A triple
@@ -226,7 +222,7 @@ interface Dispatch<R> {
      * @param dispatch2 dispatch to zipWith with.
      * @return dispatch with result triple.
      * */
-    fun <U, T> zipWithAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>>
+    fun <U, T> zipAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>>
 
     /**
      * Cancels the dispatch queue when all dispatch objects have been processed/handled. If a Dispatch

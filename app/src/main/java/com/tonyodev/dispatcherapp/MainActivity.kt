@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         Dispatcher.backgroundDispatchQueue
             .managedBy(this)
             .async { "66" }
-            .zipWith(service.getSampleJson())
+            .zip(service.getSampleJson())
             .async {
                 it.second
             }
