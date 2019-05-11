@@ -146,4 +146,9 @@ class DispatchObservable<R> constructor(private val handler: Handler,
         }
     }
 
+    /** Get all the observers attached to this observable*/
+    fun getObservers(): List<DispatchObserver<R>> {
+        return dispatchObserversSet.toList()
+    }
+
 }
