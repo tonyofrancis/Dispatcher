@@ -2,14 +2,16 @@ package com.tonyodev.dispatcherapp
 
 class TestJsonData {
 
+    var userId: Int = 0
+
     var id: Int = 0
 
-    var nm: String = ""
+    var title: String = ""
 
-    var cty: String = ""
+    var completed: String = ""
 
     override fun toString(): String {
-        return "TestJsonData(id=$id, nm='$nm', cty='$cty')"
+        return "TestJsonData(userId=$userId, id=$id, title='$title', completed='$completed')"
     }
 
 }

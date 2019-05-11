@@ -5,7 +5,7 @@ import retrofit2.http.GET
 
 interface TestService {
 
-    @GET("/api/data?list=englishmonarchs&format=json")
+    @GET("/todos")
     fun getSampleJson(): Dispatch<List<TestJsonData>>
 
 }

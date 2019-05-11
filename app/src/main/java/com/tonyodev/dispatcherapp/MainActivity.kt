@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         retrofit = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(DispatchCallAdapterFactory.create())
-            .baseUrl("http://mysafeinfo.com")
+            .baseUrl("https://jsonplaceholder.typicode.com")
             .build()
         service = retrofit.create(TestService::class.java)
 
