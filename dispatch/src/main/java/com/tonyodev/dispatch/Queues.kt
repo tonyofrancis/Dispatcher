@@ -50,3 +50,13 @@ val testDispatchQueue: Dispatch<Unit>
     get() {
         return Dispatcher.testDispatchQueue
     }
+
+/**
+ * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+ * The dispatch queue operates on a new handler/thread.
+ * @return new dispatch.
+ * */
+val newDispatchQueue: Dispatch<Unit>
+    get() {
+        return Dispatcher.createDispatchQueue(ThreadType.NEW)
+    }
