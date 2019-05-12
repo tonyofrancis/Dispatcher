@@ -70,7 +70,6 @@ class DispatchCallAdapterFactory constructor(
 
         override fun adapt(call: Call<R>): Dispatch<*> {
             return if (threadHandler == null) {
-                Dispatcher.testDispatchQueue
                 Dispatcher.createDispatchQueue(ThreadType.NETWORK)
             } else {
                 Dispatcher.createDispatchQueue(threadHandler)
