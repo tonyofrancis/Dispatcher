@@ -20,10 +20,6 @@ import java.lang.IllegalArgumentException
  */
 object Dispatcher {
 
-    init {
-      forceLoadAndroidClassesIfAvailable()
-    }
-
     /**
      * Enable or disable log warnings by the library.
      * */
@@ -49,6 +45,10 @@ object Dispatcher {
      * */
     @JvmStatic
     var logger: Logger = DefaultLogger()
+
+    init {
+        forceLoadAndroidClassesIfAvailable()
+    }
 
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
