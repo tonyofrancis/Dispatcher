@@ -74,7 +74,6 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                 isSleeping = true
                 sleep(threadSleepMillis)
                 threadSleepMillis *= 2
-                println("$threadName sleeping for $threadSleepMillis")
                 isSleeping = false
             } catch (e: InterruptedException) {
                 threadSleepMillis = defaultSleepTime

@@ -354,17 +354,14 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     }
 
     override fun <U> zip(dispatch: Dispatch<U>): Dispatch<Pair<R, U>> {
-        val workThreadHandlerInfo = when {
-            threadHandlerInfo.threadName == Threader.getHandlerThreadInfo(ThreadType.MAIN).threadName -> Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
-            else -> threadHandlerInfo
-        }
+
         val newDispatch = DispatchImpl<Pair<R, U>, Pair<R, U>>(
             dispatchId = getNewDispatchId(),
             delayInMillis = 0,
             worker = { it },
             dispatchQueue = dispatchQueue,
             dispatchType = DISPATCH_TYPE_NORMAL,
-            threadHandlerInfo = workThreadHandlerInfo)
+            threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND))
         newDispatch.dispatchSources.add(this)
         newDispatch.dispatchSources.add((dispatch as DispatchImpl<*, *>).cloneTo(dispatchQueue = dispatchQueue))
         dispatchQueue.queue.add(newDispatch)
@@ -378,17 +375,13 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     }
 
     override fun <U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>> {
-        val workThreadHandlerInfo = when {
-            threadHandlerInfo.threadName == Threader.getHandlerThreadInfo(ThreadType.MAIN).threadName -> Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
-            else -> threadHandlerInfo
-        }
         val newDispatch = DispatchImpl<Triple<R, U, T>, Triple<R, U, T>>(
             dispatchId = getNewDispatchId(),
             delayInMillis = 0,
             worker = { it },
             dispatchQueue = dispatchQueue,
             dispatchType = DISPATCH_TYPE_NORMAL,
-            threadHandlerInfo = workThreadHandlerInfo)
+            threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND))
         newDispatch.dispatchSources.add(this)
         newDispatch.dispatchSources.add((dispatch as DispatchImpl<*, *>).cloneTo(dispatchQueue = dispatchQueue))
         newDispatch.dispatchSources.add((dispatch2 as DispatchImpl<*, *>).cloneTo(dispatchQueue = dispatchQueue))
