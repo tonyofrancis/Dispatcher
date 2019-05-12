@@ -217,21 +217,13 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     private fun handleException(throwable: Throwable) {
         val mainErrorHandler = dispatchQueue.errorHandler
         if (mainErrorHandler != null) {
-            if (isTestDispatch) {
-                mainErrorHandler.invoke(throwable, this)
-            } else {
-                Threader.uiHandler.post(Runnable { mainErrorHandler.invoke(throwable, this) })
-            }
+            Threader.uiHandler.post(Runnable { mainErrorHandler.invoke(throwable, this) })
             cancel()
             return
         }
         val globalHandler = Dispatcher.globalErrorHandler
         if (globalHandler != null) {
-            if (isTestDispatch) {
-                globalHandler.invoke(throwable, this)
-            } else {
-                Threader.uiHandler.post(Runnable { globalHandler.invoke(throwable, this) })
-            }
+            Threader.uiHandler.post(Runnable { globalHandler.invoke(throwable, this) })
             cancel()
             return
         }
