@@ -33,7 +33,7 @@ object Dispatcher {
     var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
 
     /**
-     * Sets the Global thread handler factory that is responsible for creating thread handlers that the dispatch queues
+     * Sets the global thread handler factory that is responsible for creating thread handlers that the dispatch queues
      * will use to process work in the background.
      * */
     @JvmStatic

@@ -1,6 +1,5 @@
 package com.tonyodev.dispatchretrofit
 
-import android.os.Looper
 import com.tonyodev.dispatch.Dispatch
 import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
@@ -46,7 +45,7 @@ class DispatchCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun create(handler: ThreadHandler? = null, errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
-            if (handler?.threadName == Looper.getMainLooper().thread.name) {
+            if (handler?.threadName == Dispatcher.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
                 throw IllegalArgumentException("DispatchCallAdapterFactory: Handler cannot use the main thread for network operations.")
             }
             return DispatchCallAdapterFactory(handler, errorHandler)
