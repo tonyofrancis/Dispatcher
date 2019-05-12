@@ -5,9 +5,7 @@ import java.lang.IllegalStateException
 /**
  * The default Thread Handler. Performs it works on a plain old thread.
  * */
-class DefaultThreadHandler(threadName: String, val workerThread: Thread? = null): ThreadHandler {
-
-    constructor(threadName: String): this(threadName, null)
+class DefaultThreadHandler(threadName: String): ThreadHandler {
 
     @Volatile
     private var isCancelled = false

@@ -9,7 +9,6 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
 
     @Volatile
     private var newThreadCount = 0
-    private val mainThread = Thread.currentThread()
 
     override fun create(threadType: ThreadType): ThreadHandler {
         return when(threadType) {
@@ -18,7 +17,7 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
             ThreadType.NETWORK -> DefaultThreadHandler("dispatchNetwork")
             ThreadType.IO -> DefaultThreadHandler("dispatchIO")
             ThreadType.NEW -> getNewDispatchHandler()
-            ThreadType.MAIN -> DefaultThreadHandler("dispatchMain", mainThread)
+            ThreadType.MAIN -> DefaultThreadHandler("dispatchMain")
             ThreadType.TEST -> TestThreadHandler("dispatchTest")
         }
     }
