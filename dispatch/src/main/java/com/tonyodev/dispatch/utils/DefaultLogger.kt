@@ -1,31 +1,29 @@
 package com.tonyodev.dispatch.utils
 
-import android.util.Log
-
 class DefaultLogger: Logger {
 
     override fun print(tag: String, message: String) {
-        Log.d(tag, message)
+        println("$tag: $message")
     }
 
     override fun print(tag: String, throwable: Throwable) {
-        Log.d(tag, throwable.message, throwable)
+        println("$tag: ${throwable.message}: $throwable")
     }
 
     override fun print(tag: String, any: Any?) {
-        Log.d(tag, any?.toString())
+        println("$tag: $any")
     }
 
     override fun print(message: String) {
-        Log.d(TAG, message)
+        println("$TAG: $message")
     }
 
     override fun print(throwable: Throwable) {
-        Log.d(TAG, throwable.message, throwable)
+        println("$TAG: ${throwable.message}: $throwable")
     }
 
     override fun print(any: Any?) {
-        Log.d(TAG, any?.toString())
+        println("$TAG: $any")
     }
 
 }

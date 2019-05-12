@@ -1,8 +1,9 @@
-package com.tonyodev.dispatch.thread
+package com.tonyodev.dispatchandroid.thread
 
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import com.tonyodev.dispatch.thread.ThreadHandler
 
 /**
  * The default android thread handler that uses the android.os.Handler class to perform work.

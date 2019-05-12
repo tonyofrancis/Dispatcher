@@ -1,8 +1,6 @@
 package com.tonyodev.dispatch.internals
 
-import android.app.Activity
 import com.tonyodev.dispatch.*
-import com.tonyodev.dispatch.queuecontroller.ActivityDispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
@@ -39,6 +37,11 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     override val rootDispatch: Dispatch<*>
         get() {
             return dispatchQueue.rootDispatch
+        }
+
+    override val dispatchQueueController: DispatchQueueController?
+        get() {
+            return dispatchQueue.dispatchQueueController
         }
 
     private var results: Any? = INVALID_RESULT
@@ -235,11 +238,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             dispatchQueue.isCancelled = true
             val dispatchQueueController = dispatchQueue.dispatchQueueController
             dispatchQueue.dispatchQueueController = null
-            if (dispatchQueueController is ActivityDispatchQueueController) {
-                dispatchQueueController.unmanage(this)
-            } else {
-                dispatchQueueController?.unmanage(this)
-            }
+            dispatchQueueController?.unmanage(this)
             val iterator = dispatchQueue.queue.iterator()
             var dispatch: DispatchImpl<*, *>?
             var sourceIterator: Iterator<*>
@@ -289,20 +288,6 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
         oldDispatchQueueController?.unmanage(this)
         this.dispatchQueue.dispatchQueueController = lifecycleDispatchQueueController
         lifecycleDispatchQueueController.manage(this, cancelType)
-        return this
-    }
-
-    override fun managedBy(activity: Activity): Dispatch<R> {
-        return managedBy(activity, CancelType.DESTROYED)
-    }
-
-    override fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R> {
-        val oldDispatchQueueController = this.dispatchQueue.dispatchQueueController
-        this.dispatchQueue.dispatchQueueController = null
-        oldDispatchQueueController?.unmanage(this)
-        val dispatchQueueController = ActivityDispatchQueueController.getInstance(activity)
-        this.dispatchQueue.dispatchQueueController = dispatchQueueController
-        dispatchQueueController.manage(this, cancelType)
         return this
     }
 

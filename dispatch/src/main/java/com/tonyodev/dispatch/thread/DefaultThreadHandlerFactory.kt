@@ -1,7 +1,5 @@
 package com.tonyodev.dispatch.thread
 
-import android.os.Handler
-import android.os.Looper
 import com.tonyodev.dispatch.ThreadType
 
 /**
@@ -11,6 +9,7 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
 
     @Volatile
     private var newThreadCount = 0
+    private val mainThread = Thread.currentThread()
 
     override fun create(threadType: ThreadType): ThreadHandler {
         return when(threadType) {
@@ -19,7 +18,7 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
             ThreadType.NETWORK -> DefaultThreadHandler("dispatchNetwork")
             ThreadType.IO -> DefaultThreadHandler("dispatchIO")
             ThreadType.NEW -> getNewDispatchHandler()
-            ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))
+            ThreadType.MAIN -> DefaultThreadHandler("dispatchMain", mainThread)
             ThreadType.TEST -> TestThreadHandler("dispatchTest")
         }
     }

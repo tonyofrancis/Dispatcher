@@ -1,8 +1,9 @@
-package com.tonyodev.dispatch.queuecontroller
+package com.tonyodev.dispatchandroid.queueController
 
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
 
 /**
  * A DispatchQueueController that uses an activity's lifecycle to manage

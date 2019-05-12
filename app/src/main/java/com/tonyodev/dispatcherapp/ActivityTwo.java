@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.tonyodev.dispatch.queuecontroller.CancelType;
 import com.tonyodev.dispatch.Dispatcher;
+import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueController;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
 
@@ -14,10 +15,12 @@ import kotlin.jvm.functions.Function1;
 public class ActivityTwo extends AppCompatActivity {
 
     private TextView textView;
+    private ActivityDispatchQueueController activityDispatchQueueController;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        activityDispatchQueueController = ActivityDispatchQueueController.getInstance(this);
         setContentView(R.layout.activity_two);
         textView = findViewById(R.id.text_view);
     }
@@ -30,7 +33,7 @@ public class ActivityTwo extends AppCompatActivity {
 
     private void runIntervalTask() {
         Dispatcher.createIntervalDispatchQueue(10000)
-                .managedBy(this, CancelType.PAUSED)
+                .managedBy(activityDispatchQueueController, CancelType.PAUSED)
                 .async(new Function1<Unit, Integer>() {
                     @Override
                     public Integer invoke(Unit unit) {
@@ -38,12 +41,12 @@ public class ActivityTwo extends AppCompatActivity {
                     }
                 })
                 .async(2000, new Function1<Integer, String>() {
-            @Override
-            public String invoke(Integer integer) {
-                Log.d("dispatcherTest", "interval break");
-                return "hello world";
-            }
-        }).post(new Function1<String, Void>() {
+                    @Override
+                    public String invoke(Integer integer) {
+                        Log.d("dispatcherTest", "interval break");
+                        return "hello world";
+                    }
+                }).post(new Function1<String, Void>() {
             @Override
             public Void invoke(String s) {
                 textView.setText(s);

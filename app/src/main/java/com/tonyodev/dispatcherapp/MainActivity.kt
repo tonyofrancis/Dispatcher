@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.tonyodev.dispatch.Dispatcher
+import com.tonyodev.dispatchandroid.utils.managedBy
 import com.tonyodev.dispatchretrofit.DispatchCallAdapterFactory
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,6 +23,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ActivityTwo::class.java)
             startActivity(intent)
         }
+
         retrofit = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(DispatchCallAdapterFactory.create())
@@ -34,12 +36,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runTestService() {
-       service.getSampleJson()
-           .managedBy(this)
+        service.getSampleJson()
+            .managedBy(this)
             .async { data ->
                 Log.d("dispatcherTest", "data size is:${data.size}")
             }
-           .start()
+            .start()
         //or
         Dispatcher.backgroundDispatchQueue
             .managedBy(this)

@@ -1,6 +1,5 @@
 package com.tonyodev.dispatch
 
-import android.app.Activity
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
@@ -40,6 +39,11 @@ interface Dispatch<R> {
      * Checks if a dispatch queue has been cancelled.
      * */
     val isCancelled: Boolean
+
+    /**
+     * Gets the DispatchQueueController that is managing this dispatch queue. May be null.
+     * */
+    val dispatchQueueController: DispatchQueueController?
 
     /**
      * Posts work on the UI thread.
@@ -151,26 +155,6 @@ interface Dispatch<R> {
      * @return dispatch.
      * */
     fun managedBy(dispatchQueueController: DispatchQueueController): Dispatch<R>
-
-    /**
-     * Set's this dispatch queue to be managed by an Activity. The activity is wrapped in an instance
-     * of ActivityDispatchQueueController. ActivityDispatchQueueController is controlled by the activity's lifecycle.
-     * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
-     * @param activity the activity that will manage the dispatch queue. The cancel type is Destroyed. Cancellation
-     * occurs when the activity's onDestroy method is called.
-     * @return dispatch.
-     * */
-    fun managedBy(activity: Activity): Dispatch<R>
-
-    /**
-     * Set's this dispatch queue to be managed by an Activity. The activity is wrapped in an instance
-     * of ActivityDispatchQueueController. ActivityDispatchQueueController is controlled by the activity's lifecycle.
-     * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
-     * @param activity the activity that will manage the dispatch queue.
-     * @param cancelType the cancel type
-     * @return dispatch.
-     * */
-    fun managedBy(activity: Activity, cancelType: CancelType): Dispatch<R>
 
     /**
      * Set's this dispatch queue to be managed by a LifecycleDispatchQueueController.

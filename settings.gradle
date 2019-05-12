@@ -1,1 +1,1 @@
-include ':app', ':dispatch', ':dispatchretrofit'
+include ':app', ':dispatch', ':dispatchretrofit', ':dispatchandroid'
