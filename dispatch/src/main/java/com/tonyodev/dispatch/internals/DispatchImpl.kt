@@ -1,7 +1,6 @@
 package com.tonyodev.dispatch.internals
 
 import android.app.Activity
-import android.util.Log
 import com.tonyodev.dispatch.*
 import com.tonyodev.dispatch.queuecontroller.ActivityDispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.CancelType
@@ -184,7 +183,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             threadHandlerInfo.threadHandler.removeCallbacks(dispatcher)
             if (dispatchQueue.dispatchQueueController == null && Dispatcher.enableLogWarnings
                 && this == dispatchQueue.rootDispatch) {
-                Log.w(
+                Dispatcher.logger.print(
                     TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
                             "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
             }
@@ -206,7 +205,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
             dispatchQueue.rootDispatch.runDispatcher()
         } else {
             if (Dispatcher.enableLogWarnings) {
-                Log.d(TAG, "Start called on dispatch queue with id: $queueId after it has already been cancelled.")
+                Dispatcher.logger.print(TAG, "Start called on dispatch queue with id: $queueId after it has already been cancelled.")
             }
         }
         return this

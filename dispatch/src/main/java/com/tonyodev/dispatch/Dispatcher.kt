@@ -5,6 +5,7 @@ import com.tonyodev.dispatch.internals.DispatchQueue
 import com.tonyodev.dispatch.thread.DefaultThreadHandlerFactory
 import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandlerFactory
+import com.tonyodev.dispatch.utils.*
 import com.tonyodev.dispatch.utils.DISPATCH_TYPE_NORMAL
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
@@ -38,6 +39,12 @@ object Dispatcher {
      * */
     @JvmStatic
     var threadHandlerFactory: ThreadHandlerFactory = DefaultThreadHandlerFactory()
+
+    /**
+     * Sets the logger uses by the library to report warnings and messages.
+     * */
+    @JvmStatic
+    var logger: Logger = DefaultLogger()
 
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
