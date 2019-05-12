@@ -2,17 +2,19 @@ apply plugin: 'com.android.library'
 
 apply plugin: 'kotlin-android'
 
-android {
-    compileSdkVersion 28
+apply plugin: 'com.novoda.bintray-release'
 
+android {
+
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
+        versionCode library_version_code
+        versionName library_version
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }
 
@@ -23,16 +25,40 @@ android {
         }
     }
 
+    lintOptions {
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+        androidTest.java.srcDirs += 'src/androidTest/kotlin'
+    }
+
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
     implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-
-    implementation 'androidx.appcompat:appcompat:1.0.2'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test:runner:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
     api project(':dispatch')
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
+
+publish {
+    userOrg = 'tonyofrancis'
+    groupId = 'com.tonyodev.dispatch'
+    artifactId = 'android'
+    publishVersion = library_version
+    desc = 'Android Classes for Dispatch'
+    website = 'https://github.com/tonyofrancis/dispatcher'
+}
+
+tasks.withType(Javadoc).all {
+    enabled = false
 }

@@ -5,7 +5,7 @@ import java.lang.IllegalStateException
 /**
  * The default Thread Handler. Performs it works on a plain old thread.
  * */
-class DefaultThreadHandler(threadName: String): ThreadHandler {
+class DefaultThreadHandler(override val threadName: String): ThreadHandler {
 
     @Volatile
     private var isCancelled = false
@@ -15,8 +15,6 @@ class DefaultThreadHandler(threadName: String): ThreadHandler {
     private val queue = mutableListOf<QueueItem>()
     private var thread: Thread? = null
     private var looper: Runnable? = null
-
-    override val threadName: String = if (threadName == "dispatchMain") "main" else threadName
 
     private fun sleep() {
         try {
