@@ -5,75 +5,80 @@ import java.lang.IllegalStateException
 /**
  * The default Thread Handler. Performs it works on a plain old thread.
  * */
-class DefaultThreadHandler(override val threadName: String): ThreadHandler {
+class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHandler {
 
     @Volatile
     private var isCancelled = false
     @Volatile
-    private var isLooperSleeping = false
-    private var threadSleepMillis = DEFAULT_SLEEP_MILLIS
+    private var isSleeping = false
+    private val defaultSleepTime = 500L
+    private var threadSleepMillis = defaultSleepTime
     private val queue = mutableListOf<QueueItem>()
-    private var thread: Thread? = null
-    private var looper: Runnable? = null
 
-    private fun sleep() {
-        try {
-            if (!isCancelled) {
-                isLooperSleeping = true
-                Thread.sleep(threadSleepMillis)
-                threadSleepMillis *= 2
-                isLooperSleeping = false
+    init {
+        name = threadName
+        start()
+    }
+
+    override fun run() {
+        var index = 0
+        var queueItem: QueueItem? = null
+        while (!isCancelled) {
+            if(queue.isEmpty()) {
+                sleep()
+            } else {
+                if (!isCancelled) {
+                    synchronized(queue) {
+                        if (index < queue.size) {
+                            queueItem = queue[index]
+                        }
+                    }
+                    if (queueItem != null) {
+                        if (queueItem!!.isReady) {
+                            queueItem!!.runnable?.run()
+                            queueItem!!.recycle()
+                            if (!isCancelled) {
+                                if (queue.size > index) {
+                                    queue.removeAt(index)
+                                }
+                            }
+                            index = 0
+                        } else {
+                            synchronized(queue) {
+                                queueItem = queue.minBy { it.delay }
+                                index = queue.indexOf(queueItem)
+                                if (index == -1) {
+                                    index = 0
+                                }
+                            }
+                            if (queueItem == null) {
+                                index = 0
+                                threadSleepMillis = defaultSleepTime
+                                sleep()
+                            }
+                        }
+                        queueItem = null
+                    } else {
+                        index = 0
+                        threadSleepMillis = defaultSleepTime
+                        sleep()
+                    }
+                }
             }
-        } catch (e: InterruptedException) {
-            threadSleepMillis = DEFAULT_SLEEP_MILLIS
-            isLooperSleeping = false
         }
     }
 
-    private fun setLopper() {
-        looper = Runnable {
-            var index = 0
-            var queueItem: QueueItem?
-            var isQueueEmpty: Boolean
-            while (!isCancelled) {
-                synchronized(queue) { isQueueEmpty = queue.isEmpty() }
-                if(isQueueEmpty) {
-                    sleep()
-                } else {
-                    queueItem = synchronized(queue) { queue.getOrNull(index) }
-                    if (!isCancelled) {
-                        if (queueItem != null) {
-                            if (queueItem.isReady) {
-                                queueItem.runnable?.run()
-                                queueItem.recycle()
-                                if (!isCancelled) {
-                                    synchronized(queue) {
-                                        if (queue.size > index) {
-                                            queue.removeAt(index)
-                                        }
-                                    }
-                                    index = 0
-                                }
-                            } else {
-                                synchronized(queue) {
-                                    val item = queue.minBy { it.delay }
-                                    if (item != null) {
-                                        index = queue.indexOf(item)
-                                    } else {
-                                        index = 0
-                                        threadSleepMillis = DEFAULT_SLEEP_MILLIS
-                                        sleep()
-                                    }
-                                }
-                            }
-                            queueItem = null
-                        } else {
-                            index = 0
-                            threadSleepMillis = DEFAULT_SLEEP_MILLIS
-                            sleep()
-                        }
-                    }
-                }
+    private fun sleep() {
+        if (!isCancelled) {
+            try {
+                isSleeping = true
+                sleep(threadSleepMillis)
+                threadSleepMillis *= 2
+                println("$threadName sleeping for $threadSleepMillis")
+                isSleeping = false
+            } catch (e: InterruptedException) {
+                threadSleepMillis = defaultSleepTime
+                isSleeping = false
             }
         }
     }
@@ -83,20 +88,14 @@ class DefaultThreadHandler(override val threadName: String): ThreadHandler {
     }
 
     override fun postDelayed(delayInMilliseconds: Long, runnable: Runnable) {
+        if (isCancelled) {
+            throw IllegalStateException("Cannot post runnable because quit() was already called.")
+        }
         synchronized(queue) {
-            if (isCancelled) {
-                throw IllegalStateException("Cannot post runnable because quit() was already called.")
-            }
             queue.add(QueueItem.obtain(delayInMilliseconds, runnable))
-            if (thread == null) {
-                setLopper()
-                thread = Thread(looper)
-                thread?.name = threadName
-                thread?.start()
-            }
-            if (isLooperSleeping) {
-                thread?.interrupt()
-            }
+        }
+        if (isSleeping) {
+            interrupt()
         }
     }
 
@@ -116,12 +115,10 @@ class DefaultThreadHandler(override val threadName: String): ThreadHandler {
     override fun quit() {
         if (!isCancelled) {
             isCancelled = true
+            if (isSleeping) {
+                interrupt()
+            }
             synchronized(queue) {
-                if (isLooperSleeping) {
-                    thread?.interrupt()
-                    looper = null
-                    thread = null
-                }
                 queue.clear()
             }
         }
@@ -175,6 +172,7 @@ class DefaultThreadHandler(override val threadName: String): ThreadHandler {
                     } else {
                         queueItem = pool!!
                         pool = pool?.next
+                        queueItem.next = null
                         poolSize--
                     }
                     queueItem.delay = delayInMilliseconds
@@ -186,10 +184,6 @@ class DefaultThreadHandler(override val threadName: String): ThreadHandler {
 
         }
 
-    }
-
-    private companion object {
-        private const val DEFAULT_SLEEP_MILLIS = 500L
     }
 
 }
