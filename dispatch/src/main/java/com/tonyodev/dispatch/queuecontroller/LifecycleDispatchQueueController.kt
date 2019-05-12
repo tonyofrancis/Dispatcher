@@ -194,7 +194,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
 
     /**
      * Gets a copy of the destroyed managed queues.
-     * @return copy of the destoryed manged queues in a set.
+     * @return copy of the destroyed manged queues in a set.
      * */
     fun getMangedDestroyedQueueDispatches(): Set<Dispatch<*>> {
         return destroyQueueSet.toSet()
