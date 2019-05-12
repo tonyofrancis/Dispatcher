@@ -20,6 +20,10 @@ import java.lang.IllegalArgumentException
  */
 object Dispatcher {
 
+    init {
+      forceLoadAndroidClassesIfAvailable()
+    }
+
     /**
      * Enable or disable log warnings by the library.
      * */

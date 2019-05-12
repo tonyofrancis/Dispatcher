@@ -26,3 +26,13 @@ internal fun throwIfUsesMainThreadForBackgroundWork(threadType: ThreadType) {
                 "Pass in a handler that uses a different thread.")
     }
 }
+
+internal fun forceLoadAndroidClassesIfAvailable() {
+    try {
+        val clazz = Class.forName("com.tonyodev.dispatchandroid.AndroidFactoriesInitializer")
+        val method = clazz.getMethod("init")
+        method.invoke(null)
+    } catch (e: Exception) {
+
+    }
+}
