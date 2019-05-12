@@ -1,58 +1,56 @@
 package com.tonyodev.dispatch.utils
 
-import android.os.Handler
-import android.os.Looper
+import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
-import com.tonyodev.dispatch.thread.AndroidThreadHandler
-import com.tonyodev.dispatch.thread.DefaultThreadHandler
-import com.tonyodev.dispatch.thread.TestThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandler
 
 internal object Threader {
 
-    @Volatile
-    private var newThreadCount = 0
+    private val uiHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.MAIN) }
 
-    val uiHandler by lazy { AndroidThreadHandler(Handler(Looper.getMainLooper())) }
+    private val testHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.TEST) }
 
-    val testHandler by lazy { TestThreadHandler("dispatchTest") }
+    private val backgroundHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.BACKGROUND) }
 
-    val backgroundHandler by lazy { DefaultThreadHandler("dispatchBackground") }
+    private val backgroundSecondaryHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.BACKGROUND_SECONDARY) }
 
-    private val backgroundSecondaryHandler by lazy { DefaultThreadHandler("dispatchBackgroundSecondary") }
+    private val networkHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.NETWORK) }
 
-    private val networkHandler by lazy { DefaultThreadHandler("dispatchNetwork") }
+    private val ioHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.IO) }
 
-    private val ioHandler by lazy { DefaultThreadHandler("dispatchIO") }
+    private val backgroundThreadPair by lazy { ThreadHandlerInfo(backgroundHandler, false) }
 
-    fun getNewDispatchHandler(name: String? = null): ThreadHandler {
-        val threadName = if (name == null || name.isEmpty()) {
-            "dispatch${++newThreadCount}"
-        } else {
-            name
-        }
-        return DefaultThreadHandler(threadName)
-    }
+    private val backgroundSecondaryThreadPair by lazy { ThreadHandlerInfo(backgroundSecondaryHandler, false) }
 
-    private val backgroundThreadPair by lazy { Pair(backgroundHandler, false) }
+    private val networkThreadPair by lazy { ThreadHandlerInfo(networkHandler, false) }
 
-    private val backgroundSecondaryThreadPair by lazy { Pair(backgroundSecondaryHandler, false) }
+    private val uiThreadPair by lazy { ThreadHandlerInfo(uiHandler, false) }
 
-    private val networkThreadPair by lazy { Pair(networkHandler, false) }
+    private val ioThreadPair by lazy { ThreadHandlerInfo(ioHandler, false) }
 
-    private val uiThreadPair by lazy { Pair(uiHandler, false) }
+    private val testThreadPair by lazy { ThreadHandlerInfo(testHandler, false) }
 
-    private val ioThreadPair by lazy { Pair(ioHandler, false) }
-
-    fun getHandlerPairForThreadType(threadType: ThreadType): Pair<ThreadHandler, Boolean> {
+    fun getHandlerThreadInfo(threadType: ThreadType): ThreadHandlerInfo {
         return when(threadType) {
             ThreadType.BACKGROUND -> backgroundThreadPair
             ThreadType.BACKGROUND_SECONDARY -> backgroundSecondaryThreadPair
             ThreadType.IO -> ioThreadPair
             ThreadType.NETWORK -> networkThreadPair
             ThreadType.MAIN -> uiThreadPair
-            ThreadType.NEW -> Pair(getNewDispatchHandler(), true)
+            ThreadType.TEST -> testThreadPair
+            ThreadType.NEW -> ThreadHandlerInfo(Dispatcher.threadHandlerFactory.create(ThreadType.NEW), true)
         }
+    }
+
+    fun getHandlerThreadInfo(threadName: String): ThreadHandlerInfo {
+        return ThreadHandlerInfo(Dispatcher.threadHandlerFactory.create(threadName), true)
+    }
+
+    data class ThreadHandlerInfo(val threadHandler: ThreadHandler, val closeHandler: Boolean) {
+        val threadName: String
+            get() {
+                return threadHandler.threadName
+            }
     }
 
 }

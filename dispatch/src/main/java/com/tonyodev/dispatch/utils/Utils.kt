@@ -14,7 +14,7 @@ internal fun getNewDispatchId(): String {
 }
 
 internal fun throwIfUsesMainThreadForBackgroundWork(handler: ThreadHandler?) {
-    if (handler != null && handler.threadName == Threader.uiHandler.threadName) {
+    if (handler != null && handler.threadName == Threader.getHandlerThreadInfo(ThreadType.MAIN).threadName) {
         throw IllegalArgumentException("Dispatch handler cannot use the main thread to perform background work." +
                 "Pass in a handler that uses a different thread.")
     }

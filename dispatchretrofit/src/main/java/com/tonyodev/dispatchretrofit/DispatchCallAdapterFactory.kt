@@ -4,7 +4,6 @@ import android.os.Looper
 import com.tonyodev.dispatch.Dispatch
 import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
-import com.tonyodev.dispatch.thread.TestThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandler
 import okhttp3.Request
 import retrofit2.*
@@ -61,7 +60,7 @@ class DispatchCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun createTestFactory(errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
-            return DispatchCallAdapterFactory(TestThreadHandler(), errorHandler)
+            return DispatchCallAdapterFactory(Dispatcher.threadHandlerFactory.create(ThreadType.TEST), errorHandler)
         }
 
     }

@@ -13,12 +13,12 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
     /**
      * Notifies the attached Observers on the ui thread.
      * */
-    constructor(): this(Threader.uiHandler, true)
+    constructor(): this(Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler, true)
 
     /**
      * Set if the observers are notified on the threadHandler.
      * */
-    constructor(shouldNotifyOnHandler: Boolean): this(Threader.uiHandler, shouldNotifyOnHandler)
+    constructor(shouldNotifyOnHandler: Boolean): this(Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler, shouldNotifyOnHandler)
 
     /**
      * Notifies the attached Observers on the passed in threadHandler.

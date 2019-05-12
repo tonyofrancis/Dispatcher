@@ -2,6 +2,9 @@ package com.tonyodev.dispatch.thread
 
 import java.lang.IllegalStateException
 
+/**
+ * The default Thread Handler. Performs it works on a plain old thread.
+ * */
 class DefaultThreadHandler(override val threadName: String): ThreadHandler {
 
     @Volatile

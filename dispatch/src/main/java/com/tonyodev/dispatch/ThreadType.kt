@@ -24,6 +24,9 @@ enum class ThreadType {
     NEW,
 
     /** Uses the user interface thread.*/
-    MAIN;
+    MAIN,
+
+    /** Uses the default test thread handler*/
+    TEST;
 
 }

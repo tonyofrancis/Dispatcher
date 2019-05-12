@@ -208,18 +208,6 @@ interface Dispatch<R> {
     fun<U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>>
 
     /**
-     * Zips this dispatch with the passed in dispatches and returns a triple result. A triple
-     * result is returned when all or any of the dispatches gets processed. All dispatch objects
-     * are still controlled by their respective dispatch queues.
-     * If the passed in dispatch objects are not managed by a DispatchQueueController and the current dispatch is managed,
-     * the passed in dispatch objects will then be managed by this dispatch's DispatchQueueController.
-     * @param dispatch dispatch to zipWith with.
-     * @param dispatch2 dispatch to zipWith with.
-     * @return dispatch with result triple.
-     * */
-    fun <U, T> zipAny(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R?, U?, T?>>
-
-    /**
      * Cancels the dispatch queue when all dispatch objects have been processed/handled. If a Dispatch
      * Controller is managing the dispatch queue. This value has no effect. The DispatchQueueController will
      * handle the queue's cancellation.

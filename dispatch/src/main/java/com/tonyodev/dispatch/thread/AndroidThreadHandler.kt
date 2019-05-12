@@ -4,7 +4,13 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 
-class AndroidThreadHandler(val handler: Handler): ThreadHandler {
+/**
+ * The default android thread handler that uses the android.os.Handler class to perform work.
+ * */
+class AndroidThreadHandler (val handler: Handler): ThreadHandler {
+
+    @Volatile
+    private var isCancelled = false
 
     constructor(threadName: String): this({
         val handlerThread = HandlerThread(threadName)
@@ -18,22 +24,31 @@ class AndroidThreadHandler(val handler: Handler): ThreadHandler {
         }
 
     override fun post(runnable: Runnable) {
-        handler.post(runnable)
+        if (!isCancelled) {
+            handler.post(runnable)
+        }
     }
 
     override fun postDelayed(delayInMilliseconds: Long, runnable: Runnable) {
-        handler.postDelayed(runnable, delayInMilliseconds)
+        if (!isCancelled) {
+            handler.postDelayed(runnable, delayInMilliseconds)
+        }
     }
 
     override fun removeCallbacks(runnable: Runnable) {
-        handler.removeCallbacksAndMessages(runnable)
+        if (!isCancelled) {
+            handler.removeCallbacksAndMessages(runnable)
+        }
     }
 
     override fun quit() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            handler.looper.quitSafely()
-        } else {
-            handler.looper.quit()
+        if (!isCancelled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                handler.looper.quitSafely()
+            } else {
+                handler.looper.quit()
+            }
+            isCancelled = true
         }
     }
 
