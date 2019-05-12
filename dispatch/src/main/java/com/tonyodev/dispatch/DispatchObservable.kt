@@ -1,13 +1,13 @@
 package com.tonyodev.dispatch
 
-import android.os.Handler
+import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.Threader
 
 /**
  * Class that allows for the attaching of dispatch observers and publishing results to them.
  * */
-class DispatchObservable<R> constructor(private val handler: Handler,
+class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler,
                                         private val shouldNotifyOnHandler: Boolean) {
 
     /**
@@ -16,14 +16,14 @@ class DispatchObservable<R> constructor(private val handler: Handler,
     constructor(): this(Threader.uiHandler, true)
 
     /**
-     * Set if the observers are notified on the handler.
+     * Set if the observers are notified on the threadHandler.
      * */
     constructor(shouldNotifyOnHandler: Boolean): this(Threader.uiHandler, shouldNotifyOnHandler)
 
     /**
-     * Notifies the attached Observers on the passed in handler.
+     * Notifies the attached Observers on the passed in threadHandler.
      * */
-    constructor(handler: Handler): this(handler, true)
+    constructor(threadHandler: ThreadHandler): this(threadHandler, true)
 
     private val dispatchObserversSet = mutableSetOf<DispatchObserver<R>>()
     private var result: Any? = INVALID_RESULT
@@ -37,9 +37,7 @@ class DispatchObservable<R> constructor(private val handler: Handler,
         dispatchObserversSet.add(dispatchObserver)
         if (result != INVALID_RESULT) {
             if (shouldNotifyOnHandler) {
-                handler.post {
-                    notifyObserver(dispatchObserver)
-                }
+                threadHandler.post(Runnable { notifyObserver(dispatchObserver) })
             } else {
                 notifyObserver(dispatchObserver)
             }
@@ -56,11 +54,11 @@ class DispatchObservable<R> constructor(private val handler: Handler,
         dispatchObserversSet.addAll(dispatchObservers)
         if (result != INVALID_RESULT) {
             if (shouldNotifyOnHandler) {
-                handler.post {
+                threadHandler.post(Runnable {
                     for (dispatchObserver in dispatchObservers) {
                         notifyObserver(dispatchObserver)
                     }
-                }
+                })
             } else {
                 for (dispatchObserver in dispatchObservers) {
                     notifyObserver(dispatchObserver)
@@ -121,9 +119,7 @@ class DispatchObservable<R> constructor(private val handler: Handler,
      * */
     fun notify(result: R): DispatchObservable<R> {
         if (shouldNotifyOnHandler) {
-            handler.post {
-                notifyObservers(result)
-            }
+            threadHandler.post(Runnable { notifyObservers(result) })
         } else {
             notifyObservers(result)
         }

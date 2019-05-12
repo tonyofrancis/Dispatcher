@@ -1,8 +1,8 @@
 package com.tonyodev.dispatch
 
-import android.os.Handler
 import com.tonyodev.dispatch.internals.DispatchImpl
 import com.tonyodev.dispatch.internals.DispatchQueue
+import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.utils.DISPATCH_TYPE_NORMAL
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
@@ -12,14 +12,13 @@ import java.lang.IllegalArgumentException
 
 /**
  * Dispatcher is a simple and flexible work scheduler that schedulers work on a background or UI thread correctly
- * in the form of Dispatch objects in queues using the android.os.Handler class to handle threading.
+ * in the form of Dispatch objects in queues.
  * @see Dispatcher.createDispatchQueue() to get started.
  */
 object Dispatcher {
 
     /**
      * Enable or disable log warnings by the library.
-     * @param enabled value. Disabled by default.
      * */
     @JvmStatic
     var enableLogWarnings = false
@@ -27,7 +26,6 @@ object Dispatcher {
     /**
      * Sets the global error handler for Dispatch objects. This error handler is called only
      * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
-     * @param errorHandler the error handler. Notifies of the dispatch that throw the error and the error that was thrown.
      * */
     @JvmStatic
     var globalErrorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)? = null
@@ -43,8 +41,7 @@ object Dispatcher {
             handler = Threader.backgroundHandler,
             delayInMillis = 0,
             closeHandler = false,
-            isIntervalDispatch = false,
-            isTestDispatch = false)
+            isIntervalDispatch = false)
     }
 
     /**
@@ -54,14 +51,13 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatchQueue(backgroundHandler: Handler?): Dispatch<Unit> {
+    fun createDispatchQueue(backgroundHandler: ThreadHandler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createNewDispatch(
             handler = backgroundHandler ?: Threader.backgroundHandler,
             delayInMillis = 0,
             closeHandler = false,
-            isIntervalDispatch = false,
-            isTestDispatch = false)
+            isIntervalDispatch = false)
     }
 
     /**
@@ -80,8 +76,7 @@ object Dispatcher {
             handler = handlerPair.first,
             delayInMillis = 0,
             closeHandler = handlerPair.second,
-            isIntervalDispatch = false,
-            isTestDispatch = false)
+            isIntervalDispatch = false)
     }
 
     /**
@@ -97,8 +92,7 @@ object Dispatcher {
             handler = Threader.getNewDispatchHandler(handlerName),
             delayInMillis = 0,
             closeHandler = true,
-            isIntervalDispatch = false,
-            isTestDispatch = false)
+            isIntervalDispatch = false)
     }
 
     /**
@@ -113,8 +107,7 @@ object Dispatcher {
             handler = Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = true,
-            isIntervalDispatch = false,
-            isTestDispatch = false)
+            isIntervalDispatch = false)
     }
 
     /**
@@ -126,14 +119,13 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
+    fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createNewDispatch(
             handler = backgroundHandler ?: Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = backgroundHandler == null,
-            isIntervalDispatch = false,
-            isTestDispatch = false)
+            isIntervalDispatch = false)
     }
 
     /**
@@ -152,8 +144,7 @@ object Dispatcher {
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
             closeHandler = handlerPair.second,
-            isIntervalDispatch = false,
-            isTestDispatch = false)
+            isIntervalDispatch = false)
     }
 
     /**
@@ -168,8 +159,7 @@ object Dispatcher {
             handler = Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = true,
-            isIntervalDispatch = true,
-            isTestDispatch = false)
+            isIntervalDispatch = true)
     }
 
     /**
@@ -181,14 +171,13 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: Handler?): Dispatch<Unit> {
+    fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): Dispatch<Unit> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         return createNewDispatch(
             handler = backgroundHandler ?: Threader.getNewDispatchHandler(),
             delayInMillis = delayInMillis,
             closeHandler = backgroundHandler == null,
-            isIntervalDispatch = true,
-            isTestDispatch = false)
+            isIntervalDispatch = true)
     }
 
     /**
@@ -207,8 +196,7 @@ object Dispatcher {
             handler = handlerPair.first,
             delayInMillis = delayInMillis,
             closeHandler = handlerPair.second,
-            isIntervalDispatch = true,
-            isTestDispatch = false)
+            isIntervalDispatch = true)
     }
 
     /**
@@ -224,8 +212,7 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false,
-                isTestDispatch = false)
+                isIntervalDispatch = false)
         }
 
     /**
@@ -241,8 +228,7 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false,
-                isTestDispatch = false)
+                isIntervalDispatch = false)
         }
 
     /**
@@ -258,8 +244,7 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false,
-                isTestDispatch = false)
+                isIntervalDispatch = false)
         }
 
     /**
@@ -275,8 +260,7 @@ object Dispatcher {
                 handler = handlerPair.first,
                 delayInMillis = 0,
                 closeHandler = handlerPair.second,
-                isIntervalDispatch = false,
-                isTestDispatch = false)
+                isIntervalDispatch = false)
         }
 
     /**
@@ -287,29 +271,24 @@ object Dispatcher {
     @JvmStatic
     val testDispatchQueue: Dispatch<Unit>
         get() {
-            val handlerPair = Threader.getHandlerPairForThreadType(ThreadType.MAIN)
             return createNewDispatch(
-                handler = handlerPair.first,
+                handler = Threader.testHandler,
                 delayInMillis = 0,
-                closeHandler = handlerPair.second,
-                isIntervalDispatch = false,
-                isTestDispatch = true)
+                closeHandler = false,
+                isIntervalDispatch = false)
         }
-    
-    private fun createNewDispatch(handler: Handler,
+
+    private fun createNewDispatch(handler: ThreadHandler,
                                   delayInMillis: Long,
                                   closeHandler: Boolean,
-                                  isIntervalDispatch: Boolean,
-                                  isTestDispatch: Boolean): Dispatch<Unit> {
+                                  isIntervalDispatch: Boolean): Dispatch<Unit> {
         val dispatchQueueData = DispatchQueue(
             queueId = getNewQueueId(),
             isIntervalDispatch = isIntervalDispatch,
-            cancelOnComplete = !isIntervalDispatch,
-            isTestDispatchQueue = isTestDispatch
-        )
+            cancelOnComplete = !isIntervalDispatch)
         val newDispatch = DispatchImpl<Unit, Unit>(
             dispatchId = getNewDispatchId(),
-            handler = handler,
+            threadHandler = handler,
             delayInMillis = delayInMillis,
             worker = null,
             closeHandler = closeHandler,

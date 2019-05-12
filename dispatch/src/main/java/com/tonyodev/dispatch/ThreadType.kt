@@ -23,7 +23,7 @@ enum class ThreadType {
     /** Use a new background thread.*/
     NEW,
 
-    /** User the user interface thread.*/
+    /** Uses the user interface thread.*/
     MAIN;
 
 }

@@ -1,10 +1,10 @@
 package com.tonyodev.dispatch
 
 import android.app.Activity
-import android.os.Handler
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
+import com.tonyodev.dispatch.thread.ThreadHandler
 import java.lang.IllegalArgumentException
 
 /**
@@ -42,11 +42,6 @@ interface Dispatch<R> {
     val isCancelled: Boolean
 
     /**
-     * Checks if a dispatch queue is a test queue.
-     * */
-    val isTestDispatch: Boolean
-
-    /**
      * Posts work on the UI thread.
      * @param func the function.
      * @return the dispatch.
@@ -76,7 +71,7 @@ interface Dispatch<R> {
      * @throws IllegalArgumentException if the handler passed in uses the main thread.
      * @return the dispatch.
      * */
-    fun <U> async(backgroundHandler: Handler, func: (R) -> U): Dispatch<U>
+    fun <U> async(backgroundHandler: ThreadHandler, func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.
@@ -104,7 +99,7 @@ interface Dispatch<R> {
      * @param func the function.
      * @return the dispatch.
      * */
-    fun <U> async(backgroundHandler: Handler, delayInMillis: Long, func: (R) -> U): Dispatch<U>
+    fun <U> async(backgroundHandler: ThreadHandler, delayInMillis: Long, func: (R) -> U): Dispatch<U>
 
     /**
      * Perform work on the background thread.

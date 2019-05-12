@@ -6,8 +6,7 @@ import java.util.*
 
 internal class DispatchQueue(val queueId: Int,
                              val isIntervalDispatch: Boolean = false,
-                             var cancelOnComplete: Boolean,
-                             val isTestDispatchQueue: Boolean) {
+                             var cancelOnComplete: Boolean) {
     @Volatile
     var isCancelled = false
     @Volatile

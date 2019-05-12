@@ -1,10 +1,11 @@
 package com.tonyodev.dispatchretrofit
 
-import android.os.Handler
 import android.os.Looper
 import com.tonyodev.dispatch.Dispatch
 import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
+import com.tonyodev.dispatch.thread.TestThreadHandler
+import com.tonyodev.dispatch.thread.ThreadHandler
 import okhttp3.Request
 import retrofit2.*
 import java.lang.IllegalArgumentException
@@ -16,13 +17,11 @@ import java.lang.reflect.Type
  * */
 class DispatchCallAdapterFactory constructor(
     /** Optional handler used by the Dispatch objects created by this Factory.*/
-    private val handler: Handler? = null,
+    private val handler: ThreadHandler? = null,
     /** Optional error handler for network requests made by a DispatchCallAdapter instance.
      * Only called in an error occurred. Note: The errors will still be thrown inside the Dispatch.
      * This callback only allows for observing at a global level. Called on a background thread. */
-    private val errorHandler: ((HttpException, Request) -> Unit)?,
-    /** If true, all dispatches are created using the test dispatch queue. */
-    private val useTestDispatchQueue: Boolean = false): CallAdapter.Factory() {
+    private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter.Factory() {
 
     override fun get(returnType: Type, annotations: Array<Annotation>, retrofit: Retrofit): CallAdapter<*, *>? {
         val clazz = getRawType(returnType)
@@ -31,7 +30,7 @@ class DispatchCallAdapterFactory constructor(
                 throw IllegalArgumentException("Dispatch return type must be parameterized as Dispatch<Foo>")
             }
             val responseType = getParameterUpperBound(0, returnType)
-            return DispatchCallAdapter<Any>(responseType, handler, errorHandler, useTestDispatchQueue)
+            return DispatchCallAdapter<Any>(responseType, handler, errorHandler)
         }
         return null
     }
@@ -47,8 +46,8 @@ class DispatchCallAdapterFactory constructor(
          * */
         @JvmStatic
         @JvmOverloads
-        fun create(handler: Handler? = null, errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
-            if (handler?.looper?.thread?.name == Looper.getMainLooper().thread.name) {
+        fun create(handler: ThreadHandler? = null, errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
+            if (handler?.threadName == Looper.getMainLooper().thread.name) {
                 throw IllegalArgumentException("DispatchCallAdapterFactory: Handler cannot use the main thread for network operations.")
             }
             return DispatchCallAdapterFactory(handler, errorHandler)
@@ -62,23 +61,21 @@ class DispatchCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun createTestFactory(errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
-            return DispatchCallAdapterFactory(null, errorHandler, true)
+            return DispatchCallAdapterFactory(TestThreadHandler(), errorHandler)
         }
 
     }
 
     class DispatchCallAdapter<R>(private val responseType: Type,
-                                 private val handler: Handler?,
-                                 private val errorHandler: ((HttpException, Request) -> Unit)?,
-                                 private val useTestDispatchQueue: Boolean): CallAdapter<R, Dispatch<*>> {
+                                 private val threadHandler : ThreadHandler?,
+                                 private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter<R, Dispatch<*>> {
 
         override fun adapt(call: Call<R>): Dispatch<*> {
-            return if (useTestDispatchQueue) {
+            return if (threadHandler == null) {
                 Dispatcher.testDispatchQueue
-            } else if (handler == null) {
                 Dispatcher.createDispatchQueue(ThreadType.NETWORK)
             } else {
-                Dispatcher.createDispatchQueue(handler)
+                Dispatcher.createDispatchQueue(threadHandler)
             }.async {
                 val callClone = call.clone()
                 val response = callClone.execute()
