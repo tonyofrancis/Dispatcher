@@ -42,11 +42,13 @@ internal fun startThreadHandlerIfNotActive(threadHandler: ThreadHandler) {
 }
 
 internal fun forceLoadAndroidClassesIfAvailable() {
-    try {
-        val clazz = Class.forName("com.tonyodev.dispatchandroid.AndroidFactoriesInitializer")
-        val method = clazz.getMethod("init")
-        method.invoke(null)
-    } catch (e: Exception) {
+    if (LOAD_ANDROID_CLASSES) {
+        try {
+            val clazz = Class.forName("com.tonyodev.dispatchandroid.AndroidFactoriesInitializer")
+            val method = clazz.getMethod("init")
+            method.invoke(null)
+        } catch (e: Exception) {
 
+        }
     }
 }
