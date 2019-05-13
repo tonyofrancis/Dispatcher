@@ -45,6 +45,13 @@ object Dispatcher {
     @JvmStatic
     var logger: Logger = DefaultLogger()
 
+    /**
+     * Global setting for setting if non interval queues are cancelled when completed. The default is true.
+     * Note: If false, You will have to cancel the queue manually or have it managed by a DispatchQueueController.
+     * */
+    @JvmStatic
+    var cancelNonIntervalQueuesWhenCompleted = true
+
     init {
         forceLoadAndroidClassesIfAvailable()
     }
@@ -299,7 +306,7 @@ object Dispatcher {
         val dispatchQueueData = DispatchQueue(
             queueId = getNewQueueId(),
             isIntervalDispatch = isIntervalDispatchQueue,
-            cancelOnComplete = !isIntervalDispatchQueue)
+            cancelOnComplete = if (isIntervalDispatchQueue) false else cancelNonIntervalQueuesWhenCompleted)
         val newDispatch = DispatchImpl<Unit, Unit>(
             dispatchId = getNewDispatchId(),
             delayInMillis = delayInMillis,
