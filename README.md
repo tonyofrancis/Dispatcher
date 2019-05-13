@@ -1,7 +1,7 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.1.0) ](https://bintray.com/tonyofrancis/maven/dispatch/1.1.0/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.2.0) ](https://bintray.com/tonyofrancis/maven/dispatch/1.2.0/link)
 # Dispatch: A simple work scheduler for Android
 
-Dispatch is a simple and flexible work scheduler that schedulers work on a background or UI thread in the form of a dispatch queue.
+Dispatch is a simple and flexible work scheduler that schedulers work on a background or main thread in the form of a dispatch queue.
 
 ```java
 Dispatcher.backgroundDispatchQueue
@@ -22,8 +22,8 @@ Dispatcher.backgroundDispatchQueue
 ```
 Dispatch makes it very clear which thread your code is running on. Like what you see? Read on!
 
-One of the many problems with offloading work to a background thread on Android, is knowing the right time to cancel the work when it is no longer needed. Dispatch makes it very easy to cancel a dispatch queue. Simply call the `cancel()` method on the queue. If that is not good enough, allow your Activity’s life cycle to manage this for you.
-
+One of the many problems with offloading work to a background thread in Java and Android programming, is knowing the right time to cancel the work when it is no longer needed. Dispatch makes it very easy to cancel a dispatch queue. Simply call the `cancel()` method on the queue. If that is not good enough, allow your component's lifecycle to manage this for you.
+Android Activity Example:
 ```java
 class SimpleActivity: AppCompatActivity() {
 
@@ -101,6 +101,8 @@ Dispatcher.ioDispatchQueue
 Dispatcher.networkDispatchQueue
 
 Dispatcher.backgroundSecondaryDispatchQueue
+
+Dispatcher.testDispatchQueue - // Used specifically for testing
 ```
 These queues are generated only when you need/access them. You can also create you own dispatch queues via the many create methods on the Dispatcher object.
 ```java
@@ -180,7 +182,7 @@ class SimpleActivity: AppCompatActivity() {
 See how super easy it is to integrate Dispatch with Retrofit? All you need is a `DispatchCallAdapterFactory` instance, and set your Service methods to return the data wrapped in a Dispatch object.
 ### Zipping Queues
 
-There will be times when you would like to join the results of two or more queues. Call the zip methods to do this.
+There will be times when you would like to combine the results of two or more queues. Call the zip methods to do this.
 ```java
 class SimpleActivity: AppCompatActivity() {
 
@@ -350,15 +352,14 @@ Dispatcher.backgroundDispatchQueue
         //will be called after a 5 second delay
     }.start()
 ```
-### Android Handlers
+### Thread Handlers
 
-Sometimes you would like to dictate the thread that Dispatch uses to process blocks in the background. The library allows you to do so by providing your own Android Handlers.
+Sometimes you would like to dictate the thread that Dispatch uses to process blocks in the background. The library allows you to do so by providing your own Thread Handlers. Simply extend the ThreadHandler class, or use the DefaultThreadHandler and AndroidThreadHandler classes.
 ```java
-val handlerThread = HandlerThread("myThread")
-    handlerThread.start()
-val handler = Handler(handlerThread.looper)
+val threadHandler = DefaultThreadHandler("MyThreadHandler")
+val androidThreadHandler = AndroidThreadHandler("MyAndroidThreadHandler")
 
-Dispatcher.createDispatchQueue(handler)
+Dispatcher.createDispatchQueue(threadHandler)
     .async {
         //do work on my own thread
     }
@@ -366,7 +367,7 @@ Dispatcher.createDispatchQueue(handler)
 ```
 ### Understanding how Dispatch Works
 
-Now that you have seen many of library’s features, it is time to give you a short summary about how it really works. You can skip this section and head to the following section on how to add Dispatch to your Android projects.
+Now that you have seen many of library’s features, it is time to give you a short summary about how it really works. You can skip this section and head to the following section on how to add Dispatch to your java projects.
 
 ![alt text](https://cdn-images-1.medium.com/max/800/1*C8xQEB-0U35MbDQ1W6Pq5g.png "Simple Dispatch Diagram")
 
@@ -376,15 +377,18 @@ The above is a simple diagram on how a dispatch queue works. When you create a q
 **Note**: By default, once a Dispatch queue has completed its work, it is then cancelled and cannot be reused. To prevent a queue from cancelling automatically, call the cancelOnComplete(false) method and pass in false.
 ### Using Dispatch
 
-To use the Dispatch library in your Android project, add the following code to your project’s build.gradle file.
+To use the Dispatch library in your project, add the following code to your project’s build.gradle file.
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.1.0"
+implementation "com.tonyodev.dispatch:dispatch:1.2.0"
+```
+For Android also add:
+```java
+implementation "com.tonyodev.dispatch:android:1.2.0"
 ```
 To use Dispatch with Retrofit, add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.1.0"
+implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.2.0"
 ```
-View the project on GitHub. Hope you enjoyed reading this post. Until next time. Happy Dispatching!
 
 Contribute
 ----------
