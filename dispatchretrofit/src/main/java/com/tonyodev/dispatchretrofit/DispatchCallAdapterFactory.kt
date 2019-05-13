@@ -69,6 +69,9 @@ class DispatchCallAdapterFactory constructor(
                                  private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter<R, Dispatch<*>> {
 
         override fun adapt(call: Call<R>): Dispatch<*> {
+            if (!(threadHandler != null && threadHandler.isActive)) {
+                threadHandler?.start()
+            }
             return if (threadHandler == null) {
                 Dispatcher.createDispatchQueue(ThreadType.NETWORK)
             } else {
