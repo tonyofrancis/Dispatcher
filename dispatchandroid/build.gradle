@@ -53,7 +53,7 @@ dependencies {
 publish {
     userOrg = 'tonyofrancis'
     groupId = 'com.tonyodev.dispatch'
-    artifactId = 'android'
+    artifactId = 'dispatch-android'
     publishVersion = library_version
     desc = 'Android Classes for Dispatch'
     website = 'https://github.com/tonyofrancis/dispatcher'

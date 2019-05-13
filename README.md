@@ -383,7 +383,7 @@ implementation "com.tonyodev.dispatch:dispatch:1.2.0"
 ```
 For Android also add:
 ```java
-implementation "com.tonyodev.dispatch:android:1.2.0"
+implementation "com.tonyodev.dispatch:dispatch-android:1.2.0"
 ```
 To use Dispatch with Retrofit, add:
 ```java
