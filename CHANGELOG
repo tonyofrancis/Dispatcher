@@ -1,3 +1,11 @@
+Version 1.2.0
+- Android Specific Classes are now in a separate package and will require the com.tonyodev.dispatch:android:x.x.x" to be added to build files.
+- Improvements to using DispatchObservable
+- Removed renamed zipWith methods on Dispatch to zip
+- Removed zipAny method from Dispatch interface.
+- Lots of Kotlin friendly goodies.
+- Performance and Memory Improvements.
+
 Version 1.0.9
 - Improvements to using DispatchObservable
 
