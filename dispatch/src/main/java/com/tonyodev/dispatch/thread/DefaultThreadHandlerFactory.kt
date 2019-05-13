@@ -21,7 +21,9 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
             ThreadType.MAIN -> DefaultThreadHandler(THREAD_MAIN_NO_UI)
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
         }
-        threadHandler.start()
+        if (!threadHandler.isActive) {
+            threadHandler.start()
+        }
         return threadHandler
     }
 
