@@ -27,6 +27,12 @@ internal fun throwIfUsesMainThreadForBackgroundWork(threadType: ThreadType) {
     }
 }
 
+internal fun startThreadHandlerIfNotAlive(threadHandler: ThreadHandler) {
+    if (!threadHandler.isActive) {
+        threadHandler.start()
+    }
+}
+
 internal fun forceLoadAndroidClassesIfAvailable() {
     try {
         val clazz = Class.forName("com.tonyodev.dispatchandroid.AndroidFactoriesInitializer")

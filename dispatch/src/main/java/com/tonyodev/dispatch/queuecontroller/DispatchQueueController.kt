@@ -145,7 +145,7 @@ open class DispatchQueueController {
      * Gets a copy of the managed queues.
      * @return copy of the manged queues in a set.
      * */
-    fun getMangedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedQueueDispatches(): Set<Dispatch<*>> {
         return dispatchQueueSet.toSet()
     }
 

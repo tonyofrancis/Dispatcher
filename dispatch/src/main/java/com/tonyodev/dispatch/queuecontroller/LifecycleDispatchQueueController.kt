@@ -3,7 +3,7 @@ package com.tonyodev.dispatch.queuecontroller
 import com.tonyodev.dispatch.Dispatch
 
 /**
- * A DispatchQueueController that uses the Android's framework lifecycle events to manage
+ * A DispatchQueueController that uses lifecycle events to manage
  * Dispatch queues. It is a class that must be extended
  * and controlled by a lifecycle aware component.
  * */
@@ -180,7 +180,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * Gets a copy of the paused managed queues.
      * @return copy of the paused manged queues in a set.
      * */
-    fun getMangedPausedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedPausedQueueDispatches(): Set<Dispatch<*>> {
         return pausedQueueSet.toSet()
     }
 
@@ -188,7 +188,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * Gets a copy of the stopped managed queues.
      * @return copy of the stopped manged queues in a set.
      * */
-    fun getMangedStoppedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedStoppedQueueDispatches(): Set<Dispatch<*>> {
         return stoppedQueueSet.toSet()
     }
 
@@ -196,7 +196,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * Gets a copy of the destroyed managed queues.
      * @return copy of the destroyed manged queues in a set.
      * */
-    fun getMangedDestroyedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedDestroyedQueueDispatches(): Set<Dispatch<*>> {
         return destroyQueueSet.toSet()
     }
 

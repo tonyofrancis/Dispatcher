@@ -53,4 +53,13 @@ class AndroidThreadHandler (val handler: Handler): ThreadHandler {
         }
     }
 
+    override val isActive: Boolean
+        get() {
+            return !isCancelled
+        }
+
+    override fun start() {
+
+    }
+
 }

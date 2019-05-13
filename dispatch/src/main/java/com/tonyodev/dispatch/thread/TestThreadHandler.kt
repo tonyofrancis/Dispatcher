@@ -4,9 +4,7 @@ package com.tonyodev.dispatch.thread
 class TestThreadHandler(override val threadName: String): ThreadHandler {
 
     override fun post(runnable: Runnable) {
-        synchronized(this) {
-            runnable.run()
-        }
+        postDelayed(0, runnable)
     }
 
     override fun postDelayed(delayInMilliseconds: Long, runnable: Runnable) {
@@ -20,6 +18,12 @@ class TestThreadHandler(override val threadName: String): ThreadHandler {
     }
 
     override fun quit() {
+
+    }
+
+    override val isActive: Boolean = true
+
+    override fun start() {
 
     }
 

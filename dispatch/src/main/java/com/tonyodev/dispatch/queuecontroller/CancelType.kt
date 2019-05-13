@@ -2,22 +2,22 @@ package com.tonyodev.dispatch.queuecontroller
 
 /**
  * Cancel Type used with a Dispatch queues
- * that are being managed by an ActivityDispatchQueueController
+ * that are being managed by a LifecycleDispatchQueueController
  * */
 enum class CancelType {
 
     /**
-     * Reflects the activity's paused state.
+     * Reflects the paused state.
      * */
     PAUSED,
 
     /**
-     * Reflects the activity's stopped state.
+     * Reflects the stopped state.
      * */
     STOPPED,
 
     /**
-     * Reflects the activity's destroyed state.
+     * Reflects the destroyed state.
      * */
     DESTROYED;
 

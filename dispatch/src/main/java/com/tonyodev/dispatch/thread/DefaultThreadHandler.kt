@@ -11,60 +11,92 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
     private var isCancelled = false
     @Volatile
     private var isSleeping = false
-    private val defaultSleepTime = 500L
+    private val defaultSleepTime = 1000L
     private var threadSleepMillis = defaultSleepTime
     private val queue = mutableListOf<QueueItem>()
+    private var queueIndex = 0
+    private var queueItem: QueueItem? = null
+    private var isQueueEmpty = true
+
+    override val isActive: Boolean
+        get()  {
+            return isAlive
+        }
 
     init {
         name = threadName
-        start()
     }
 
     override fun run() {
-        var index = 0
-        var queueItem: QueueItem? = null
         while (!isCancelled) {
-            if(queue.isEmpty()) {
+            synchronized(queue) {
+                isQueueEmpty = queue.isEmpty()
+            }
+            if(isQueueEmpty) {
                 sleep()
             } else {
-                if (!isCancelled) {
-                    synchronized(queue) {
-                        if (index < queue.size) {
-                            queueItem = queue[index]
-                        }
-                    }
-                    if (queueItem != null) {
-                        if (queueItem!!.isReady) {
-                            queueItem!!.runnable?.run()
-                            queueItem!!.recycle()
-                            if (!isCancelled) {
-                                if (queue.size > index) {
-                                    queue.removeAt(index)
-                                }
-                            }
-                            index = 0
-                        } else {
-                            synchronized(queue) {
-                                queueItem = queue.minBy { it.delay }
-                                index = queue.indexOf(queueItem)
-                                if (index == -1) {
-                                    index = 0
-                                }
-                            }
-                            if (queueItem == null) {
-                                index = 0
-                                threadSleepMillis = defaultSleepTime
-                                sleep()
-                            }
-                        }
-                        queueItem = null
-                    } else {
-                        index = 0
-                        threadSleepMillis = defaultSleepTime
-                        sleep()
-                    }
+                processNextQueueItem()
+            }
+        }
+    }
+
+    private fun processNextQueueItem() {
+        if (!isCancelled) {
+            synchronized(queue) {
+                if (queueIndex < queue.size) {
+                    queueItem = queue[queueIndex]
                 }
             }
+            if (!isCancelled) {
+                if (queueItem != null) {
+                    if (queueItem!!.isReady) {
+                        if (!isCancelled) {
+                            queueItem!!.runnable?.run()
+                        }
+                        if (!isCancelled) {
+                            synchronized(queue) {
+                                if (queueIndex < queue.size) {
+                                    queue.removeAt(queueIndex)
+                                }
+                            }
+                        }
+                        queueItem!!.recycle()
+                        queueIndex = 0
+                    } else {
+                        val minIndex = findQueueMinIndex()
+                        if (minIndex > -1) {
+                            queueIndex = minIndex
+                        } else {
+                            queueIndex = 0
+                            threadSleepMillis = defaultSleepTime
+                            sleep()
+                        }
+                    }
+                    queueItem = null
+                } else {
+                    queueIndex = 0
+                    threadSleepMillis = defaultSleepTime
+                    sleep()
+                }
+            }
+        }
+    }
+
+    private fun findQueueMinIndex(): Int {
+        return synchronized(queue) {
+            var index = -1
+            var minDelay = -1L
+            var counter = 0
+            var queueItem: QueueItem
+            while (counter < queue.size) {
+                queueItem = queue[counter]
+                if (minDelay == -1L || queueItem.delay < minDelay) {
+                    index = counter
+                    minDelay = queueItem.delay
+                }
+                counter++
+            }
+            index
         }
     }
 
@@ -106,6 +138,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                 queueItem = iterator.next()
                 if (queueItem.runnable == runnable) {
                     iterator.remove()
+                    queueItem.recycle()
                 }
             }
         }
@@ -118,9 +151,20 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                 interrupt()
             }
             synchronized(queue) {
-                queue.clear()
+                val iterator = queue.iterator()
+                var queueItem: QueueItem
+                while (iterator.hasNext()) {
+                    queueItem = iterator.next()
+                    iterator.remove()
+                    queueItem.recycle()
+                }
             }
+            threadSleepMillis = defaultSleepTime
         }
+    }
+
+    override fun start() {
+        super.start()
     }
 
     private class QueueItem private constructor() {
@@ -131,6 +175,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
             private set
         private var startWaitTime = 0L
         private var next: QueueItem? = null
+        private var isRecycled = false
 
         val waitTime: Long
             get() {
@@ -139,18 +184,21 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
 
         val isReady: Boolean
             get() {
-                return delay < 1 || waitTime >= delay
+                return (delay < 1 || waitTime >= delay) && !isRecycled
             }
 
         fun recycle() {
             synchronized(poolSync) {
-                startWaitTime = 0
-                delay = 0
-                runnable = null
-                if (poolSize <= MAX_POOL_SIZE) {
-                    next = pool
-                    pool = this
-                    poolSize++
+                if (!isRecycled) {
+                    startWaitTime = 0
+                    delay = 0
+                    runnable = null
+                    isRecycled = true
+                    if (poolSize <= MAX_POOL_SIZE) {
+                        next = pool
+                        pool = this
+                        poolSize++
+                    }
                 }
             }
         }
@@ -172,6 +220,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                         queueItem = pool!!
                         pool = pool?.next
                         queueItem.next = null
+                        queueItem.isRecycled = false
                         poolSize--
                     }
                     queueItem.delay = delayInMilliseconds

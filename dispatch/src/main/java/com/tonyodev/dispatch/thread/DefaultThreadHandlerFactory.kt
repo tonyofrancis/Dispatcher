@@ -1,6 +1,7 @@
 package com.tonyodev.dispatch.thread
 
 import com.tonyodev.dispatch.ThreadType
+import com.tonyodev.dispatch.utils.*
 
 /**
  * The default ThreadHandler Factory used by the library.
@@ -11,19 +12,23 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
     private var newThreadCount = 0
 
     override fun create(threadType: ThreadType): ThreadHandler {
-        return when(threadType) {
-            ThreadType.BACKGROUND -> DefaultThreadHandler("dispatchBackground")
-            ThreadType.BACKGROUND_SECONDARY -> DefaultThreadHandler("dispatchBackgroundSecondary")
-            ThreadType.NETWORK -> DefaultThreadHandler("dispatchNetwork")
-            ThreadType.IO -> DefaultThreadHandler("dispatchIO")
+        val threadHandler = when(threadType) {
+            ThreadType.BACKGROUND -> DefaultThreadHandler(THREAD_BACKGROUND)
+            ThreadType.BACKGROUND_SECONDARY -> DefaultThreadHandler(THREAD_BACKGROUND_SECONDARY)
+            ThreadType.NETWORK -> DefaultThreadHandler(THREAD_NETWORK)
+            ThreadType.IO -> DefaultThreadHandler(THREAD_IO)
             ThreadType.NEW -> getNewDispatchHandler()
-            ThreadType.MAIN -> DefaultThreadHandler("dispatchMain")
-            ThreadType.TEST -> TestThreadHandler("dispatchTest")
+            ThreadType.MAIN -> DefaultThreadHandler(THREAD_MAIN_NO_UI)
+            ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
         }
+        threadHandler.start()
+        return threadHandler
     }
 
     override fun create(threadName: String?): ThreadHandler {
-        return getNewDispatchHandler(threadName)
+        val threadHandler = getNewDispatchHandler(threadName)
+        threadHandler.start()
+        return threadHandler
     }
 
     private fun getNewDispatchHandler(name: String? = null): ThreadHandler {
@@ -32,7 +37,9 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
         } else {
             name
         }
-        return DefaultThreadHandler(threadName)
+        val threadHandler = DefaultThreadHandler(threadName)
+        threadHandler.start()
+        return threadHandler
     }
 
 }

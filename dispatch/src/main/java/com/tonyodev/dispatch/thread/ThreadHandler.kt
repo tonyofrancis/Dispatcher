@@ -13,6 +13,11 @@ interface ThreadHandler {
     val threadName: String
 
     /**
+     * Checks if this threadHandler is alive.
+     * */
+    val isActive: Boolean
+
+    /**
      * Posts the runnable to the thread.
      * @param runnable the runnable to post.
      * */
@@ -35,5 +40,10 @@ interface ThreadHandler {
      * Terminate the underlining thread that is handling the runnable work.
      * */
     fun quit()
+
+    /**
+     * Starts the thread handler if it is not already started.
+     * */
+    fun start()
 
 }

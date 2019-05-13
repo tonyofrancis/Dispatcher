@@ -6,6 +6,7 @@ import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatch.thread.TestThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandlerFactory
+import com.tonyodev.dispatch.utils.*
 
 /**
  * The default ThreadHandler Factory used by the library.
@@ -17,13 +18,13 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
 
     override fun create(threadType: ThreadType): ThreadHandler {
         return when(threadType) {
-            ThreadType.BACKGROUND -> AndroidThreadHandler("dispatchBackground")
-            ThreadType.BACKGROUND_SECONDARY -> AndroidThreadHandler("dispatchBackgroundSecondary")
-            ThreadType.NETWORK -> AndroidThreadHandler("dispatchNetwork")
-            ThreadType.IO -> AndroidThreadHandler("dispatchIO")
+            ThreadType.BACKGROUND -> AndroidThreadHandler(THREAD_BACKGROUND)
+            ThreadType.BACKGROUND_SECONDARY -> AndroidThreadHandler(THREAD_BACKGROUND_SECONDARY)
+            ThreadType.NETWORK -> AndroidThreadHandler(THREAD_NETWORK)
+            ThreadType.IO -> AndroidThreadHandler(THREAD_IO)
             ThreadType.NEW -> getNewDispatchHandler()
             ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))
-            ThreadType.TEST -> TestThreadHandler("dispatchTest")
+            ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
         }
     }
 

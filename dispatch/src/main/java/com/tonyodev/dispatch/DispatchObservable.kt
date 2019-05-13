@@ -3,6 +3,7 @@ package com.tonyodev.dispatch
 import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.Threader
+import com.tonyodev.dispatch.utils.startThreadHandlerIfNotAlive
 
 /**
  * Class that allows for the attaching of dispatch observers and publishing results to them.
@@ -11,22 +12,23 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
                                         private val shouldNotifyOnHandler: Boolean) {
 
     /**
-     * Notifies the attached Observers on the ui thread.
-     * */
-    constructor(): this(Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler, true)
-
-    /**
-     * Set if the observers are notified on the threadHandler.
-     * */
-    constructor(shouldNotifyOnHandler: Boolean): this(Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler, shouldNotifyOnHandler)
-
-    /**
      * Notifies the attached Observers on the passed in threadHandler.
      * */
     constructor(threadHandler: ThreadHandler): this(threadHandler, true)
 
+    /**
+     * Notifies the attached Observers on the main thread.
+     * */
+    constructor(): this(Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler, true)
+
     private val dispatchObserversSet = mutableSetOf<DispatchObserver<R>>()
     private var result: Any? = INVALID_RESULT
+
+    init {
+        if (shouldNotifyOnHandler) {
+            startThreadHandlerIfNotAlive(threadHandler)
+        }
+    }
 
     /**
      * Adds a dispatch observer.

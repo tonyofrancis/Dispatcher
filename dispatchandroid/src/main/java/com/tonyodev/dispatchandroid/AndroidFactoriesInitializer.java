@@ -15,5 +15,4 @@ public final class AndroidFactoriesInitializer {
         Dispatcher.setThreadHandlerFactory(new AndroidThreadHandlerFactory());
     }
 
-
 }

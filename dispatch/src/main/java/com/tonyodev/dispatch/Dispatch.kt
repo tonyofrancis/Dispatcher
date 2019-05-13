@@ -46,14 +46,14 @@ interface Dispatch<R> {
     val dispatchQueueController: DispatchQueueController?
 
     /**
-     * Posts work on the UI thread.
+     * Posts work on the main thread.
      * @param func the function.
      * @return the dispatch.
      * */
     fun <U> post(func: (R) -> U): Dispatch<U>
 
     /**
-     * Posts work on the UI thread.
+     * Posts work on the main thread.
      * @param delayInMillis the delay in milliseconds before the dispatch runs the function.
      * Values less than 1 indicates that there are no delays.
      * @param func the function.
