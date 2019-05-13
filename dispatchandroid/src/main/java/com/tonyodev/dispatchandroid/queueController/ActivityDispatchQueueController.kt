@@ -10,7 +10,7 @@ import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
  * Dispatch queues. ActivityDispatchQueueController automatically cancels and unmanages
  * any dispatch queue that is not cancelled when the activity is destroyed.
  * */
-open class ActivityDispatchQueueController(private val activity: Activity): LifecycleDispatchQueueController() {
+open class ActivityDispatchQueueController(protected val activity: Activity): LifecycleDispatchQueueController() {
 
     private val activityLifecycleCallbacks = object: Application.ActivityLifecycleCallbacks {
 

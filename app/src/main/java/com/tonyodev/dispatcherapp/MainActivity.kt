@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.tonyodev.dispatch.Dispatcher
+import com.tonyodev.dispatch.backgroundDispatchQueue
 import com.tonyodev.dispatchandroid.utils.managedBy
 import com.tonyodev.dispatchretrofit.DispatchCallAdapterFactory
 import retrofit2.Retrofit
@@ -43,7 +44,7 @@ class MainActivity : AppCompatActivity() {
             }
             .start()
         //or
-        Dispatcher.backgroundDispatchQueue
+        backgroundDispatchQueue
             .managedBy(this)
             .async { "66" }
             .zip(service.getSampleJson())
