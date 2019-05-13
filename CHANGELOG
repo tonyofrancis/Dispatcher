@@ -1,3 +1,7 @@
+Version 1.2.1
+- Newly created queues now return Void? instead of kotlin.Unit
+- DispatchQueues are now synchronized.
+
 Version 1.2.0
 - Android Specific Classes are now in a separate package and will require the com.tonyodev.dispatch:android:x.x.x" to be added to build files.
 - Improvements to using DispatchObservable

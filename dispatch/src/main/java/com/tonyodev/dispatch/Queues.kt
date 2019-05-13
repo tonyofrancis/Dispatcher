@@ -6,7 +6,7 @@ package com.tonyodev.dispatch
  * The dispatch queue operates on the default background handler/thread.
  * @return new dispatch.
  * */
-val backgroundDispatchQueue: Dispatch<Unit>
+val backgroundDispatchQueue: Dispatch<Void?>
     get() {
         return Dispatcher.backgroundDispatchQueue
     }
@@ -16,7 +16,7 @@ val backgroundDispatchQueue: Dispatch<Unit>
  * The dispatch queue operates on the secondary background handler/thread.
  * @return new dispatch.
  * */
-val backgroundSecondaryDispatchQueue: Dispatch<Unit>
+val backgroundSecondaryDispatchQueue: Dispatch<Void?>
     get() {
         return Dispatcher.backgroundSecondaryDispatchQueue
     }
@@ -26,7 +26,7 @@ val backgroundSecondaryDispatchQueue: Dispatch<Unit>
  * The dispatch queue operates on the default network handler/thread.
  * @return new dispatch.
  * */
-val networkDispatchQueue: Dispatch<Unit>
+val networkDispatchQueue: Dispatch<Void?>
     get() {
         return Dispatcher.networkDispatchQueue
     }
@@ -36,7 +36,7 @@ val networkDispatchQueue: Dispatch<Unit>
  * The dispatch queue operates on the default io handler/thread.
  * @return new dispatch.
  * */
-val ioDispatchQueue: Dispatch<Unit>
+val ioDispatchQueue: Dispatch<Void?>
     get() {
         return Dispatcher.ioDispatchQueue
     }
@@ -46,7 +46,7 @@ val ioDispatchQueue: Dispatch<Unit>
  * Note: Test Dispatch queues do not run with delays.
  * @return test dispatch.
  * */
-val testDispatchQueue: Dispatch<Unit>
+val testDispatchQueue: Dispatch<Void?>
     get() {
         return Dispatcher.testDispatchQueue
     }
@@ -56,7 +56,7 @@ val testDispatchQueue: Dispatch<Unit>
  * The dispatch queue operates on a new handler/thread.
  * @return new dispatch.
  * */
-val newDispatchQueue: Dispatch<Unit>
+val newDispatchQueue: Dispatch<Void?>
     get() {
         return Dispatcher.createDispatchQueue(ThreadType.NEW)
     }

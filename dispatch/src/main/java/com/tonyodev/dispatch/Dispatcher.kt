@@ -62,7 +62,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatchQueue(): Dispatch<Unit> {
+    fun createDispatchQueue(): Dispatch<Void?> {
         return createNewDispatchQueue(
             delayInMillis = 0,
             isIntervalDispatchQueue = false,
@@ -76,7 +76,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatchQueue(backgroundHandler: ThreadHandler?): Dispatch<Unit> {
+    fun createDispatchQueue(backgroundHandler: ThreadHandler?): Dispatch<Void?> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         val threadHandlerInfo = if (backgroundHandler == null) {
             Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
@@ -99,7 +99,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatchQueue(threadType: ThreadType): Dispatch<Unit> {
+    fun createDispatchQueue(threadType: ThreadType): Dispatch<Void?> {
         throwIfUsesMainThreadForBackgroundWork(threadType)
         return createNewDispatchQueue(
             delayInMillis = 0,
@@ -115,7 +115,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createDispatchQueue(handlerName: String): Dispatch<Unit> {
+    fun createDispatchQueue(handlerName: String): Dispatch<Void?> {
         return createNewDispatchQueue(
             delayInMillis = 0,
             isIntervalDispatchQueue = false,
@@ -129,7 +129,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createTimerDispatchQueue(delayInMillis: Long): Dispatch<Unit> {
+    fun createTimerDispatchQueue(delayInMillis: Long): Dispatch<Void?> {
         return createNewDispatchQueue(
             delayInMillis = delayInMillis,
             isIntervalDispatchQueue = false,
@@ -145,7 +145,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): Dispatch<Unit> {
+    fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): Dispatch<Void?> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         val threadHandlerInfo = if (backgroundHandler == null) {
             Threader.getHandlerThreadInfo(ThreadType.NEW)
@@ -168,7 +168,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createTimerDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
+    fun createTimerDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Void?> {
         throwIfUsesMainThreadForBackgroundWork(threadType)
         return createNewDispatchQueue(
             delayInMillis = delayInMillis,
@@ -183,7 +183,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createIntervalDispatchQueue(delayInMillis: Long): Dispatch<Unit> {
+    fun createIntervalDispatchQueue(delayInMillis: Long): Dispatch<Void?> {
         return createNewDispatchQueue(
             delayInMillis = delayInMillis,
             isIntervalDispatchQueue = true,
@@ -199,7 +199,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): Dispatch<Unit> {
+    fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): Dispatch<Void?> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
         val threadHandlerInfo = if (backgroundHandler == null) {
             Threader.getHandlerThreadInfo(ThreadType.NEW)
@@ -222,7 +222,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    fun createIntervalDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Unit> {
+    fun createIntervalDispatchQueue(delayInMillis: Long, threadType: ThreadType): Dispatch<Void?> {
         throwIfUsesMainThreadForBackgroundWork(threadType)
         return createNewDispatchQueue(
             delayInMillis = delayInMillis,
@@ -236,7 +236,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val backgroundDispatchQueue: Dispatch<Unit>
+    val backgroundDispatchQueue: Dispatch<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -250,7 +250,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val backgroundSecondaryDispatchQueue: Dispatch<Unit>
+    val backgroundSecondaryDispatchQueue: Dispatch<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -264,7 +264,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val ioDispatchQueue: Dispatch<Unit>
+    val ioDispatchQueue: Dispatch<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -278,7 +278,7 @@ object Dispatcher {
      * @return new dispatch.
      * */
     @JvmStatic
-    val networkDispatchQueue: Dispatch<Unit>
+    val networkDispatchQueue: Dispatch<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -292,7 +292,7 @@ object Dispatcher {
      * @return test dispatch.
      * */
     @JvmStatic
-    val testDispatchQueue: Dispatch<Unit>
+    val testDispatchQueue: Dispatch<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -302,12 +302,12 @@ object Dispatcher {
 
     private fun createNewDispatchQueue(delayInMillis: Long,
                                        isIntervalDispatchQueue: Boolean,
-                                       threadHandlerInfo: Threader.ThreadHandlerInfo): Dispatch<Unit> {
+                                       threadHandlerInfo: Threader.ThreadHandlerInfo): Dispatch<Void?> {
         val dispatchQueueData = DispatchQueue(
             queueId = getNewQueueId(),
             isIntervalDispatch = isIntervalDispatchQueue,
             cancelOnComplete = if (isIntervalDispatchQueue) false else cancelNonIntervalQueuesWhenCompleted)
-        val newDispatch = DispatchImpl<Unit, Unit>(
+        val newDispatch = DispatchImpl<Void?, Void?>(
             dispatchId = getNewDispatchId(),
             delayInMillis = delayInMillis,
             worker = null,

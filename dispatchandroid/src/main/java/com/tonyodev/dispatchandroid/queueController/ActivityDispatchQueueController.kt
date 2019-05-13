@@ -49,11 +49,13 @@ open class ActivityDispatchQueueController(protected val activity: Activity): Li
 
     private fun release() {
         activity.application.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
-        val iterator = map.iterator()
-        while (iterator.hasNext()) {
-            if (iterator.next().key == activity) {
-                iterator.remove()
-                break
+        synchronized(map) {
+            val iterator = map.iterator()
+            while (iterator.hasNext()) {
+                if (iterator.next().key == activity) {
+                    iterator.remove()
+                    break
+                }
             }
         }
     }

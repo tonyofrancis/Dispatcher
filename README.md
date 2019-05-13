@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.2.0) ](https://bintray.com/tonyofrancis/maven/dispatch/1.2.0/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.2.1) ](https://bintray.com/tonyofrancis/maven/dispatch/1.2.1/link)
 # Dispatch: A simple work scheduler for Android
 
 Dispatch is a simple and flexible work scheduler that schedulers work on a background or main thread in the form of a dispatch queue.
@@ -379,15 +379,15 @@ The above is a simple diagram on how a dispatch queue works. When you create a q
 
 To use the Dispatch library in your project, add the following code to your project’s build.gradle file.
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.2.0"
+implementation "com.tonyodev.dispatch:dispatch:1.2.1"
 ```
 For Android also add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-android:1.2.0"
+implementation "com.tonyodev.dispatch:dispatch-android:1.2.1"
 ```
 To use Dispatch with Retrofit, add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.2.0"
+implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.2.1"
 ```
 
 Contribute

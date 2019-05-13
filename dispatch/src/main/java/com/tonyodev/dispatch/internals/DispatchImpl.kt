@@ -92,7 +92,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                         processNextDispatch()
                     }
                 } else {
-                    results = Unit
+                    results = null
                     notifyDispatchObservers()
                     processNextDispatch()
                 }

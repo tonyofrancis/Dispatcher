@@ -2,8 +2,8 @@
 
 buildscript {
     ext.kotlin_version = '1.3.31'
-    ext.library_version = '1.2.0'
-    ext.library_version_code = 12
+    ext.library_version = '1.2.1'
+    ext.library_version_code = 13
     ext.retrofit_version = '2.5.0'
     ext.gson_version = '2.8.5'
     ext.novoda_bintray_version = '0.9'
