@@ -1,8 +1,10 @@
 package com.tonyodev.dispatch.utils
 
 import com.tonyodev.dispatch.ThreadType
+import com.tonyodev.dispatch.internals.DispatchQueue
 import com.tonyodev.dispatch.thread.ThreadHandler
 import java.lang.IllegalArgumentException
+import java.lang.IllegalStateException
 import java.util.*
 
 internal fun getNewQueueId(): Int {
@@ -27,7 +29,13 @@ internal fun throwIfUsesMainThreadForBackgroundWork(threadType: ThreadType) {
     }
 }
 
-internal fun startThreadHandlerIfNotAlive(threadHandler: ThreadHandler) {
+internal fun throwIllegalStateExceptionIfCancelled(dispatchQueue: DispatchQueue) {
+    if (dispatchQueue.isCancelled) {
+        throw IllegalStateException("Dispatch Queue with id ${dispatchQueue.queueId} has already been cancelled. Cannot perform new operations.")
+    }
+}
+
+internal fun startThreadHandlerIfNotActive(threadHandler: ThreadHandler) {
     if (!threadHandler.isActive) {
         threadHandler.start()
     }

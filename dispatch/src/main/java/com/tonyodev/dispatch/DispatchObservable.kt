@@ -3,12 +3,12 @@ package com.tonyodev.dispatch
 import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.Threader
-import com.tonyodev.dispatch.utils.startThreadHandlerIfNotAlive
+import com.tonyodev.dispatch.utils.startThreadHandlerIfNotActive
 
 /**
  * Class that allows for the attaching of dispatch observers and publishing results to them.
  * */
-class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler,
+class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler?,
                                         private val shouldNotifyOnHandler: Boolean) {
 
     /**
@@ -25,8 +25,8 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
     private var result: Any? = INVALID_RESULT
 
     init {
-        if (shouldNotifyOnHandler) {
-            startThreadHandlerIfNotAlive(threadHandler)
+        if (shouldNotifyOnHandler && threadHandler != null) {
+            startThreadHandlerIfNotActive(threadHandler)
         }
     }
 
@@ -36,10 +36,12 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
      * @return the dispatchObservable.
      * */
     fun addObserver(dispatchObserver: DispatchObserver<R>): DispatchObservable<R> {
-        dispatchObserversSet.add(dispatchObserver)
+        synchronized(dispatchObserversSet) {
+            dispatchObserversSet.add(dispatchObserver)
+        }
         if (result != INVALID_RESULT) {
             if (shouldNotifyOnHandler) {
-                threadHandler.post(Runnable { notifyObserver(dispatchObserver) })
+                threadHandler?.post(Runnable { notifyObserver(dispatchObserver) })
             } else {
                 notifyObserver(dispatchObserver)
             }
@@ -53,10 +55,12 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
      * @return the dispatchObservable.
      * */
     fun addObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchObservable<R> {
-        dispatchObserversSet.addAll(dispatchObservers)
+        synchronized(dispatchObserversSet) {
+            dispatchObserversSet.addAll(dispatchObservers)
+        }
         if (result != INVALID_RESULT) {
             if (shouldNotifyOnHandler) {
-                threadHandler.post(Runnable {
+                threadHandler?.post(Runnable {
                     for (dispatchObserver in dispatchObservers) {
                         notifyObserver(dispatchObserver)
                     }
@@ -76,11 +80,13 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
      * @return the dispatchObservable.
      * */
     fun removeObserver(dispatchObserver: DispatchObserver<R>): DispatchObservable<R> {
-        val iterator = dispatchObserversSet.iterator()
-        while (iterator.hasNext()) {
-            if (dispatchObserver == iterator.next()) {
-                iterator.remove()
-                break
+        synchronized(dispatchObserversSet) {
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                if (dispatchObserver == iterator.next()) {
+                    iterator.remove()
+                    break
+                }
             }
         }
         return this
@@ -92,14 +98,16 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
      * @return the dispatchObservable.
      * */
     fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchObservable<R> {
-        val iterator = dispatchObserversSet.iterator()
-        var count = 0
-        while (iterator.hasNext()) {
-            if (dispatchObservers.contains(iterator.next())) {
-                iterator.remove()
-                ++count
-                if (count == dispatchObservers.size) {
-                    break
+        synchronized(dispatchObserversSet) {
+            val iterator = dispatchObserversSet.iterator()
+            var count = 0
+            while (iterator.hasNext()) {
+                if (dispatchObservers.contains(iterator.next())) {
+                    iterator.remove()
+                    ++count
+                    if (count == dispatchObservers.size) {
+                        break
+                    }
                 }
             }
         }
@@ -108,10 +116,12 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
 
     /** Removes all observers attached this observable.*/
     fun removeObservers() {
-        val iterator = dispatchObserversSet.iterator()
-        while (iterator.hasNext()) {
-            iterator.next()
-            iterator.remove()
+        synchronized(dispatchObserversSet) {
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                iterator.next()
+                iterator.remove()
+            }
         }
     }
 
@@ -121,7 +131,7 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
      * */
     fun notify(result: R): DispatchObservable<R> {
         if (shouldNotifyOnHandler) {
-            threadHandler.post(Runnable { notifyObservers(result) })
+            threadHandler?.post(Runnable { notifyObservers(result) })
         } else {
             notifyObservers(result)
         }
@@ -130,9 +140,11 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
 
     private fun notifyObservers(result: R) {
         this.result = result
-        val iterator = dispatchObserversSet.iterator()
-        while (iterator.hasNext()) {
-            iterator.next().onChanged(result)
+        synchronized(dispatchObserversSet) {
+            val iterator = dispatchObserversSet.iterator()
+            while (iterator.hasNext()) {
+                iterator.next().onChanged(result)
+            }
         }
     }
 
@@ -146,7 +158,7 @@ class DispatchObservable<R> constructor(private val threadHandler: ThreadHandler
 
     /** Get all the observers attached to this observable*/
     fun getObservers(): List<DispatchObserver<R>> {
-        return dispatchObserversSet.toList()
+        return synchronized(dispatchObserversSet) { dispatchObserversSet.toList() }
     }
 
 }

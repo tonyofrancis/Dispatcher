@@ -5,23 +5,21 @@ import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
 import com.tonyodev.dispatch.thread.ThreadHandler
-import com.tonyodev.dispatch.utils.DISPATCH_TYPE_ANY_RESULT
-import com.tonyodev.dispatch.utils.DISPATCH_TYPE_NORMAL
+import com.tonyodev.dispatch.utils.*
 import com.tonyodev.dispatch.utils.INVALID_RESULT
-import com.tonyodev.dispatch.utils.TAG
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
+import com.tonyodev.dispatch.utils.startThreadHandlerIfNotActive
 import com.tonyodev.dispatch.utils.throwIfUsesMainThreadForBackgroundWork
 
 internal class DispatchImpl<T, R>(override var dispatchId: String,
                                   private val delayInMillis: Long = 0,
-                                  private val worker: ((T) -> R)?,
+                                  private var worker: ((T) -> R)?,
                                   private val dispatchQueue: DispatchQueue,
-                                  private val dispatchType: Int,
                                   private val threadHandlerInfo: Threader.ThreadHandlerInfo): Dispatch<R> {
 
     private val dispatchSources = ArrayList<Dispatch<*>?>(3)
-    private val dispatchObservable = DispatchObservable<R>(threadHandlerInfo.threadHandler, false)
+    private val dispatchObservable = DispatchObservable<R>(null, false)
     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
     override val queueId: Int
@@ -56,16 +54,9 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                     val result3: Any?
                     val data = when (dispatchSources.size) {
                         3 -> {
-                            if (dispatchType == DISPATCH_TYPE_ANY_RESULT) {
-                                if ((dispatchSources[1] as DispatchImpl<*, *>).results == INVALID_RESULT
-                                    && (dispatchSources[2] as DispatchImpl<*, *>).results == INVALID_RESULT
-                                ) {
-                                    return@Runnable
-                                }
-                            }
-                            result1 = getSourceResult((dispatchSources[0] as DispatchImpl<*, *>))
-                            result2 = getSourceResult((dispatchSources[1] as DispatchImpl<*, *>))
-                            result3 = getSourceResult((dispatchSources[2] as DispatchImpl<*, *>))
+                            result1 = (dispatchSources[0] as DispatchImpl<*, *>).results
+                            result2 = (dispatchSources[1] as DispatchImpl<*, *>).results
+                            result3 = (dispatchSources[2] as DispatchImpl<*, *>).results
                             if (hasInvalidResult(result1, result2, result3)) {
                                 INVALID_RESULT
                             } else {
@@ -73,8 +64,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                             }
                         }
                         2 -> {
-                            result1 = getSourceResult((dispatchSources[0] as DispatchImpl<*, *>))
-                            result2 = getSourceResult((dispatchSources[1] as DispatchImpl<*, *>))
+                            result1 = (dispatchSources[0] as DispatchImpl<*, *>).results
+                            result2 = (dispatchSources[1] as DispatchImpl<*, *>).results
                             if (hasInvalidResult(result1, result2)) {
                                 INVALID_RESULT
                             } else {
@@ -82,7 +73,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                             }
                         }
                         else -> {
-                            result1 = getSourceResult((dispatchSources[0] as DispatchImpl<*, *>))
+                            result1 = (dispatchSources[0] as DispatchImpl<*, *>).results
                             if (hasInvalidResult(result1)) {
                                 INVALID_RESULT
                             } else {
@@ -91,7 +82,12 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                         }
                     }
                     if (data != INVALID_RESULT && !isCancelled) {
-                        results = worker.invoke(data as T)
+                        val func = worker
+                        if (func != null) {
+                            results = func.invoke(data as T)
+                        } else {
+                            results = INVALID_RESULT
+                        }
                         notifyDispatchObservers()
                         processNextDispatch()
                     }
@@ -124,18 +120,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
         }
     }
 
-    private fun getSourceResult(sourceDispatchImpl: DispatchImpl<*, *>): Any? {
-        var result = sourceDispatchImpl.results
-        if (dispatchType == DISPATCH_TYPE_ANY_RESULT && result == INVALID_RESULT) {
-            result = null
-        }
-        return result
-    }
-
     private fun hasInvalidResult(vararg results: Any?): Boolean {
-        if (dispatchType == DISPATCH_TYPE_ANY_RESULT) {
-            return false
-        }
         for (result in results) {
             if (result == INVALID_RESULT) {
                 return true
@@ -161,31 +146,32 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     }
 
     private fun getNextDispatchInfo(after: Dispatch<*>): DispatchImpl<*, *>? {
-        val iterator = dispatchQueue.queue.iterator()
-        var self: DispatchImpl<*, *>? = null
-        var nextDispatch: DispatchImpl<*, *>? = null
-        var dispatch: DispatchImpl<*, *>
-        while (iterator.hasNext() && !isCancelled) {
-            dispatch = iterator.next()
-            if (self != null) {
-                nextDispatch = dispatch
-                break
+        return synchronized(dispatchQueue.queue) {
+            val iterator = dispatchQueue.queue.iterator()
+            var self: DispatchImpl<*, *>? = null
+            var nextDispatch: DispatchImpl<*, *>? = null
+            var dispatch: DispatchImpl<*, *>
+            while (iterator.hasNext() && !isCancelled) {
+                dispatch = iterator.next()
+                if (self != null) {
+                    nextDispatch = dispatch
+                    break
+                }
+                if (dispatch == after) {
+                    self = dispatch
+                }
             }
-            if (dispatch == after) {
-                self = dispatch
+            if (isCancelled) {
+                nextDispatch = null
             }
+            nextDispatch
         }
-        if (isCancelled) {
-            nextDispatch = null
-        }
-        return nextDispatch
     }
 
     private fun runDispatcher() {
         if (!isCancelled) {
             threadHandlerInfo.threadHandler.removeCallbacks(dispatcher)
-            if (dispatchQueue.dispatchQueueController == null && Dispatcher.enableLogWarnings
-                && this == dispatchQueue.rootDispatch) {
+            if (dispatchQueue.dispatchQueueController == null && Dispatcher.enableLogWarnings && this == dispatchQueue.rootDispatch) {
                 Dispatcher.logger.print(
                     TAG, "No DispatchQueueController set for dispatch queue with id: $queueId. " +
                             "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
@@ -195,23 +181,6 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
                 else -> threadHandlerInfo.threadHandler.post(dispatcher)
             }
         }
-    }
-
-    override fun start(): Dispatch<R> {
-        return start(null)
-    }
-
-    override fun start(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?): Dispatch<R> {
-        dispatchQueue.errorHandler = errorHandler
-        if (!isCancelled) {
-            dispatchQueue.completedDispatchQueue = false
-            dispatchQueue.rootDispatch.runDispatcher()
-        } else {
-            if (Dispatcher.enableLogWarnings) {
-                Dispatcher.logger.print(TAG, "Start called on dispatch queue with id: $queueId after it has already been cancelled.")
-            }
-        }
-        return this
     }
 
     private fun handleException(throwable: Throwable) {
@@ -233,24 +202,49 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
         throw throwable
     }
 
+    override fun start(): Dispatch<R> {
+        return start(null)
+    }
+
+    override fun start(errorHandler: ((throwable: Throwable, dispatch: Dispatch<*>) -> Unit)?): Dispatch<R> {
+        if (!isCancelled) {
+            dispatchQueue.errorHandler = errorHandler
+            dispatchQueue.completedDispatchQueue = false
+            dispatchQueue.rootDispatch.runDispatcher()
+        } else {
+            throwIllegalStateExceptionIfCancelled(dispatchQueue)
+        }
+        return this
+    }
+
     override fun cancel(): Dispatch<R> {
         if (!isCancelled) {
             dispatchQueue.isCancelled = true
             val dispatchQueueController = dispatchQueue.dispatchQueueController
             dispatchQueue.dispatchQueueController = null
-            dispatchQueueController?.unmanage(this)
-            val iterator = dispatchQueue.queue.iterator()
-            var dispatch: DispatchImpl<*, *>?
-            var sourceIterator: Iterator<*>
-            while (iterator.hasNext()) {
-                dispatch = iterator.next()
-                dispatch.removeDispatcher()
-                sourceIterator = dispatch.dispatchSources.iterator()
-                while (sourceIterator.hasNext()) {
-                    sourceIterator.next()
-                    sourceIterator.remove()
+            if (dispatchQueueController is LifecycleDispatchQueueController) {
+                dispatchQueueController.unmanage(this)
+            } else {
+                dispatchQueueController?.unmanage(this)
+            }
+            synchronized(dispatchQueue.queue) {
+                val iterator = dispatchQueue.queue.iterator()
+                var dispatch: DispatchImpl<*, *>?
+                var sourceIterator: Iterator<*>
+                while (iterator.hasNext()) {
+                    dispatch = iterator.next()
+                    dispatch.removeDispatcher()
+                    sourceIterator = dispatch.dispatchSources.iterator()
+                    while (sourceIterator.hasNext()) {
+                        sourceIterator.next()
+                        sourceIterator.remove()
+                    }
+                    iterator.remove()
                 }
-                iterator.remove()
+                dispatchObservable.removeObservers()
+                doOnErrorWorker = null
+                worker = null
+                dispatchQueue.errorHandler = null
             }
         }
         return this
@@ -258,7 +252,6 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
 
     private fun removeDispatcher() {
         threadHandlerInfo.threadHandler.removeCallbacks(dispatcher)
-        dispatchObservable.removeObservers()
         if (threadHandlerInfo.closeHandler) {
             threadHandlerInfo.threadHandler.quit()
         }
@@ -275,6 +268,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
         oldDispatchQueueController?.unmanage(this)
         this.dispatchQueue.dispatchQueueController = dispatchQueueController
         dispatchQueueController.manage(this)
+        dispatchQueue.cancelOnComplete = false
         return this
     }
 
@@ -288,6 +282,7 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
         oldDispatchQueueController?.unmanage(this)
         this.dispatchQueue.dispatchQueueController = lifecycleDispatchQueueController
         lifecycleDispatchQueueController.manage(this, cancelType)
+        dispatchQueue.cancelOnComplete = false
         return this
     }
 
@@ -317,7 +312,8 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
 
     override fun <U> async(backgroundHandler: ThreadHandler, delayInMillis: Long, func: (R) -> U): Dispatch<U> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
-        return getNewDispatch(func, delayInMillis, Threader.ThreadHandlerInfo(backgroundHandler, backgroundHandler == threadHandlerInfo.threadHandler && threadHandlerInfo.closeHandler))
+        startThreadHandlerIfNotActive(backgroundHandler)
+        return getNewDispatch(func, delayInMillis, Threader.ThreadHandlerInfo(backgroundHandler, false))
     }
 
     override fun <U> async(threadType: ThreadType, func: (R) -> U): Dispatch<U> {
@@ -335,89 +331,108 @@ internal class DispatchImpl<T, R>(override var dispatchId: String,
     }
 
     private fun <T, R> getNewDispatch(worker: (T) -> R, delayInMillis: Long, threadHandlerInfo: Threader.ThreadHandlerInfo): Dispatch<R> {
-        val newDispatch = DispatchImpl(
-            dispatchId = getNewDispatchId(),
-            delayInMillis = delayInMillis,
-            worker = worker,
-            dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_NORMAL,
-            threadHandlerInfo = threadHandlerInfo)
-        newDispatch.dispatchSources.add(this)
-        dispatchQueue.queue.add(newDispatch)
-        if (!isCancelled) {
-            if (dispatchQueue.completedDispatchQueue) {
-                dispatchQueue.completedDispatchQueue = false
-                newDispatch.runDispatcher()
+        throwIllegalStateExceptionIfCancelled(dispatchQueue)
+        return synchronized(dispatchQueue.queue) {
+            val newDispatch = DispatchImpl(
+                dispatchId = getNewDispatchId(),
+                delayInMillis = delayInMillis,
+                worker = worker,
+                dispatchQueue = dispatchQueue,
+                threadHandlerInfo = threadHandlerInfo)
+            if (!isCancelled) {
+                newDispatch.dispatchSources.add(this)
+                throwIllegalStateExceptionIfCancelled(dispatchQueue)
+                dispatchQueue.queue.add(newDispatch)
+                if (dispatchQueue.completedDispatchQueue) {
+                    dispatchQueue.completedDispatchQueue = false
+                    newDispatch.runDispatcher()
+                }
+            } else {
+                throwIllegalStateExceptionIfCancelled(dispatchQueue)
             }
+            newDispatch
         }
-        return newDispatch
     }
 
     override fun <U> zip(dispatch: Dispatch<U>): Dispatch<Pair<R, U>> {
-
-        val newDispatch = DispatchImpl<Pair<R, U>, Pair<R, U>>(
-            dispatchId = getNewDispatchId(),
-            delayInMillis = 0,
-            worker = { it },
-            dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_NORMAL,
-            threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND))
-        newDispatch.dispatchSources.add(this)
-        newDispatch.dispatchSources.add((dispatch as DispatchImpl<*, *>).cloneTo(dispatchQueue = dispatchQueue))
-        dispatchQueue.queue.add(newDispatch)
-        if (!isCancelled) {
-            if (dispatchQueue.completedDispatchQueue) {
-                dispatchQueue.completedDispatchQueue = false
-                newDispatch.runDispatcher()
+        throwIllegalStateExceptionIfCancelled(dispatchQueue)
+        return synchronized(dispatchQueue.queue) {
+            val newDispatch = DispatchImpl<Pair<R, U>, Pair<R, U>>(
+                dispatchId = getNewDispatchId(),
+                delayInMillis = 0,
+                worker = { it },
+                dispatchQueue = dispatchQueue,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND))
+            if (!isCancelled) {
+                newDispatch.dispatchSources.add(this)
+                newDispatch.dispatchSources.add((dispatch as DispatchImpl<*, *>).cloneTo(newDispatchQueue = dispatchQueue))
+                throwIllegalStateExceptionIfCancelled(dispatchQueue)
+                dispatchQueue.queue.add(newDispatch)
+                if (dispatchQueue.completedDispatchQueue) {
+                    dispatchQueue.completedDispatchQueue = false
+                    newDispatch.runDispatcher()
+                }
+            } else {
+                throwIllegalStateExceptionIfCancelled(dispatchQueue)
             }
+            newDispatch
         }
-        return newDispatch
     }
 
     override fun <U, T> zip(dispatch: Dispatch<U>, dispatch2: Dispatch<T>): Dispatch<Triple<R, U, T>> {
-        val newDispatch = DispatchImpl<Triple<R, U, T>, Triple<R, U, T>>(
-            dispatchId = getNewDispatchId(),
-            delayInMillis = 0,
-            worker = { it },
-            dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_NORMAL,
-            threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND))
-        newDispatch.dispatchSources.add(this)
-        newDispatch.dispatchSources.add((dispatch as DispatchImpl<*, *>).cloneTo(dispatchQueue = dispatchQueue))
-        newDispatch.dispatchSources.add((dispatch2 as DispatchImpl<*, *>).cloneTo(dispatchQueue = dispatchQueue))
-        dispatchQueue.queue.add(newDispatch)
-        if (!isCancelled) {
-            if (dispatchQueue.completedDispatchQueue) {
-                dispatchQueue.completedDispatchQueue = false
-                newDispatch.runDispatcher()
+        throwIllegalStateExceptionIfCancelled(dispatchQueue)
+        return synchronized(dispatchQueue.queue) {
+            val newDispatch = DispatchImpl<Triple<R, U, T>, Triple<R, U, T>>(
+                dispatchId = getNewDispatchId(),
+                delayInMillis = 0,
+                worker = { it },
+                dispatchQueue = dispatchQueue,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND))
+            if (!isCancelled) {
+                newDispatch.dispatchSources.add(this)
+                newDispatch.dispatchSources.add((dispatch as DispatchImpl<*, *>).cloneTo(newDispatchQueue = dispatchQueue))
+                newDispatch.dispatchSources.add((dispatch2 as DispatchImpl<*, *>).cloneTo(newDispatchQueue = dispatchQueue))
+                throwIllegalStateExceptionIfCancelled(dispatchQueue)
+                dispatchQueue.queue.add(newDispatch)
+                if (dispatchQueue.completedDispatchQueue) {
+                    dispatchQueue.completedDispatchQueue = false
+                    newDispatch.runDispatcher()
+                }
+            } else {
+                throwIllegalStateExceptionIfCancelled(dispatchQueue)
             }
+            newDispatch
         }
-        return newDispatch
     }
 
-    private fun cloneTo(dispatchQueue: DispatchQueue): DispatchImpl<T, R> {
+    private fun cloneTo(newDispatchQueue: DispatchQueue): DispatchImpl<T, R> {
+        throwIllegalStateExceptionIfCancelled(this.dispatchQueue)
         val newDispatch = DispatchImpl(
             dispatchId = dispatchId,
             delayInMillis = delayInMillis,
             worker = worker,
-            dispatchQueue = dispatchQueue,
-            dispatchType = DISPATCH_TYPE_NORMAL,
+            dispatchQueue = newDispatchQueue,
             threadHandlerInfo = threadHandlerInfo)
         newDispatch.results = results
         newDispatch.doOnErrorWorker = doOnErrorWorker
         newDispatch.dispatchObservable.addObservers(dispatchObservable.getObservers())
         for (dispatchSource in dispatchSources) {
             val source = dispatchSource as DispatchImpl<*, *>
-            newDispatch.dispatchSources.add(source.cloneTo(dispatchQueue = dispatchQueue))
+            newDispatch.dispatchSources.add(source.cloneTo(newDispatchQueue = newDispatchQueue))
         }
-        dispatchQueue.queue.add(newDispatch)
+        synchronized(newDispatchQueue.queue) {
+            throwIllegalStateExceptionIfCancelled(newDispatchQueue)
+            newDispatchQueue.queue.add(newDispatch)
+        }
         return newDispatch
     }
 
     override fun cancelOnComplete(cancel: Boolean): Dispatch<R> {
-        dispatchQueue.cancelOnComplete = cancel
-        if (cancel && dispatchQueue.completedDispatchQueue) {
-            cancel()
+        if (dispatchQueue.dispatchQueueController == null) {
+            dispatchQueue.cancelOnComplete = cancel
+            if (cancel && dispatchQueue.completedDispatchQueue) {
+                cancel()
+            }
         }
         return this
     }

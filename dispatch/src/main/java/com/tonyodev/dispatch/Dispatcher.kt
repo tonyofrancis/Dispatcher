@@ -6,7 +6,6 @@ import com.tonyodev.dispatch.thread.DefaultThreadHandlerFactory
 import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandlerFactory
 import com.tonyodev.dispatch.utils.*
-import com.tonyodev.dispatch.utils.DISPATCH_TYPE_NORMAL
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
 import com.tonyodev.dispatch.utils.getNewQueueId
@@ -75,7 +74,7 @@ object Dispatcher {
         val threadHandlerInfo = if (backgroundHandler == null) {
             Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
         } else {
-            startThreadHandlerIfNotAlive(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
             Threader.ThreadHandlerInfo(backgroundHandler, false)
         }
         return createNewDispatchQueue(
@@ -144,7 +143,7 @@ object Dispatcher {
         val threadHandlerInfo = if (backgroundHandler == null) {
             Threader.getHandlerThreadInfo(ThreadType.NEW)
         } else {
-            startThreadHandlerIfNotAlive(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
             Threader.ThreadHandlerInfo(backgroundHandler, false)
         }
         return createNewDispatchQueue(
@@ -198,7 +197,7 @@ object Dispatcher {
         val threadHandlerInfo = if (backgroundHandler == null) {
             Threader.getHandlerThreadInfo(ThreadType.NEW)
         } else {
-            startThreadHandlerIfNotAlive(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
             Threader.ThreadHandlerInfo(backgroundHandler, false)
         }
         return createNewDispatchQueue(
@@ -306,7 +305,6 @@ object Dispatcher {
             delayInMillis = delayInMillis,
             worker = null,
             dispatchQueue = dispatchQueueData,
-            dispatchType = DISPATCH_TYPE_NORMAL,
             threadHandlerInfo = threadHandlerInfo)
         dispatchQueueData.rootDispatch = newDispatch
         dispatchQueueData.queue.add(newDispatch)
