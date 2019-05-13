@@ -23,7 +23,7 @@ enum class ThreadType {
     /** Use a new background thread.*/
     NEW,
 
-    /** On Android Uses the user interface thread. On other JVMs a new thread called dispatchMain is created.*/
+    /** On Android Uses the user interface thread. On other JVMs a thread called dispatchMain is created.*/
     MAIN,
 
     /** Uses the default test thread handler*/
