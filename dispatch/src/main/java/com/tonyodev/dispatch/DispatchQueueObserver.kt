@@ -1,16 +1,16 @@
 package com.tonyodev.dispatch
 
 /**
- * DispatchObservers listen for data changes on a dispatch object.
+ * DispatchQueueObservers listen for data changes on a dispatch queue object.
  * */
 @FunctionalInterface
-interface DispatchObserver<R> {
+interface DispatchQueueObserver<R> {
 
     /**
      * Method called when the data on the observing object has changed.
-     * Called on the thread that belongs to the dispatch object. If post
+     * Called on the thread that belongs to the dispatch queue object. If post
      * was called the onChanged will be called on the main thread. If async
-     * was called the onChange is called on the thread that the dispatch object uses.
+     * was called the onChange is called on the thread that the dispatch queue object uses.
      * @param data the data.
      * */
     fun onChanged(data: R)

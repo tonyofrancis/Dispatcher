@@ -156,41 +156,41 @@ interface DispatchQueue<R> {
     fun <T> map(func: (R) -> T): DispatchQueue<T>
 
     /**
-     * Gets the backing dispatch queue object DispatchObservable.
-     * @return DispatchObservable
+     * Gets the backing dispatch queue object DispatchQueueObservable.
+     * @return DispatchQueueObservable
      * */
-    fun getDispatchObservable(): DispatchObservable<R>
+    fun getDispatchQueueObservable(): DispatchQueueObservable<R>
 
     /**
-     * Adds a dispatch observer.
-     * @param dispatchObserver the observer.
+     * Adds a dispatch queue observer.
+     * @param dispatchQueueObserver the observer.
      * @return the dispatch queue.
      * */
-    fun addObserver(dispatchObserver: DispatchObserver<R>): DispatchQueue<R>
+    fun addObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueue<R>
 
     /**
-     * Adds a list of dispatch observers.
-     * @param dispatchObservers the list of observers.
+     * Adds a list of dispatch queue observers.
+     * @param dispatchQueueObservers the list of observers.
      * @return the dispatch queue.
      * */
-    fun addObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchQueue<R>
+    fun addObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R>
 
     /**
-     * Removes a dispatch observer.
-     * @param dispatchObserver the observer to be removed.
+     * Removes a dispatch queue observer.
+     * @param dispatchQueueObserver the observer to be removed.
      * @return the dispatch queue.
      * */
-    fun removeObserver(dispatchObserver: DispatchObserver<R>): DispatchQueue<R>
+    fun removeObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueue<R>
 
     /**
-     * Remove a list of dispatch observers.
-     * @param dispatchObservers the list of observers to be removed.
+     * Remove a list of dispatch queue observers.
+     * @param dispatchQueueObservers the list of observers to be removed.
      * @return the dispatch queue.
      * */
-    fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchQueue<R>
+    fun removeObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R>
 
     /**
-     * Removes all dispatch observers.
+     * Removes all dispatch queue observers.
      * @return the dispatch queue.
      * */
     fun removeObservers(): DispatchQueue<R>

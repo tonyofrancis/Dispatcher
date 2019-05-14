@@ -16,7 +16,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                                        private val threadHandlerInfo: Threader.ThreadHandlerInfo): DispatchQueue<R> {
 
     private val dispatchSources = ArrayList<DispatchQueue<*>?>(3)
-    private val dispatchObservable = DispatchObservable<R>(null, false)
+    private val dispatchQueueObservable = DispatchQueueObservable<R>(null, false)
     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
     override val id: Int
@@ -113,7 +113,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     @Suppress("UNCHECKED_CAST")
     private fun notifyDispatchObservers() {
         if (!isCancelled) {
-            dispatchObservable.notify(results as R)
+            dispatchQueueObservable.notify(results as R)
         }
     }
 
@@ -238,7 +238,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                     }
                     iterator.remove()
                 }
-                dispatchObservable.removeObservers()
+                dispatchQueueObservable.removeObservers()
                 doOnErrorWorker = null
                 worker = null
                 dispatchQueueInfo.errorHandler = null
@@ -385,7 +385,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             threadHandlerInfo = newDispatchQueueInfo.threadHandlerInfo)
         newDispatchQueue.results = results
         newDispatchQueue.doOnErrorWorker = doOnErrorWorker
-        newDispatchQueue.dispatchObservable.addObservers(dispatchObservable.getObservers())
+        newDispatchQueue.dispatchQueueObservable.addObservers(dispatchQueueObservable.getObservers())
         for (dispatchSource in dispatchSources) {
             val source = dispatchSource as DispatchQueueImpl<*, *>
             newDispatchQueue.dispatchSources.add(source.cloneTo(newDispatchQueueInfo = newDispatchQueueInfo))
@@ -397,33 +397,33 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return newDispatchQueue
     }
 
-    override fun addObserver(dispatchObserver: DispatchObserver<R>): DispatchQueue<R> {
-        dispatchObservable.addObserver(dispatchObserver)
+    override fun addObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueue<R> {
+        dispatchQueueObservable.addObserver(dispatchQueueObserver)
         return this
     }
 
-    override fun addObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchQueue<R> {
-        dispatchObservable.addObservers(dispatchObservers)
+    override fun addObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R> {
+        dispatchQueueObservable.addObservers(dispatchQueueObservers)
         return this
     }
 
-    override fun removeObserver(dispatchObserver: DispatchObserver<R>): DispatchQueue<R> {
-        dispatchObservable.removeObserver(dispatchObserver)
+    override fun removeObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueue<R> {
+        dispatchQueueObservable.removeObserver(dispatchQueueObserver)
         return this
     }
 
-    override fun removeObservers(dispatchObservers: List<DispatchObserver<R>>): DispatchQueue<R> {
-        dispatchObservable.removeObservers(dispatchObservers)
+    override fun removeObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R> {
+        dispatchQueueObservable.removeObservers(dispatchQueueObservers)
         return this
     }
 
     override fun removeObservers(): DispatchQueue<R> {
-        dispatchObservable.removeObservers()
+        dispatchQueueObservable.removeObservers()
         return this
     }
 
-    override fun getDispatchObservable(): DispatchObservable<R> {
-        return dispatchObservable
+    override fun getDispatchQueueObservable(): DispatchQueueObservable<R> {
+        return dispatchQueueObservable
     }
 
     override fun setBlockLabel(blockLabel: String): DispatchQueue<R> {
