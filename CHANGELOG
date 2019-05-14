@@ -1,3 +1,6 @@
+Version 1.3.1
+- Added methods
+
 Version 1.3.0
 - Renamed Dispatch to DispatchQueue
 - Renamed DispatchObserver and DispatchObservable to DispatchQueueObserver and DispatchQueueObservable
