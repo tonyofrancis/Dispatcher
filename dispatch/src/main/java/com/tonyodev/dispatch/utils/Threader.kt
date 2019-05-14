@@ -1,5 +1,6 @@
 package com.tonyodev.dispatch.utils
 
+import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatch.thread.ThreadHandler
 

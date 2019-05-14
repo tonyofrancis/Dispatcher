@@ -1,6 +1,7 @@
 package com.tonyodev.dispatchretrofit
 
 import com.tonyodev.dispatch.DispatchQueue
+import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatch.thread.ThreadHandler
 import okhttp3.Request
