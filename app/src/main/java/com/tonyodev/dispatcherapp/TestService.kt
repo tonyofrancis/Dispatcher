@@ -1,11 +1,11 @@
 package com.tonyodev.dispatcherapp
 
-import com.tonyodev.dispatch.Dispatch
+import com.tonyodev.dispatch.DispatchQueue
 import retrofit2.http.GET
 
 interface TestService {
 
     @GET("/todos")
-    fun getSampleJson(): Dispatch<List<TestJsonData>>
+    fun getSampleJson(): DispatchQueue<List<TestJsonData>>
 
 }

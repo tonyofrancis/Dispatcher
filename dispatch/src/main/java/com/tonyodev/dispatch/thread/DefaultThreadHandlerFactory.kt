@@ -17,7 +17,7 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
             ThreadType.BACKGROUND_SECONDARY -> DefaultThreadHandler(THREAD_BACKGROUND_SECONDARY)
             ThreadType.NETWORK -> DefaultThreadHandler(THREAD_NETWORK)
             ThreadType.IO -> DefaultThreadHandler(THREAD_IO)
-            ThreadType.NEW -> getNewDispatchHandler()
+            ThreadType.NEW -> getNewThreadHandler()
             ThreadType.MAIN -> DefaultThreadHandler(THREAD_MAIN_NO_UI)
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
         }
@@ -28,14 +28,14 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
     }
 
     override fun create(threadName: String?): ThreadHandler {
-        val threadHandler = getNewDispatchHandler(threadName)
+        val threadHandler = getNewThreadHandler(threadName)
         threadHandler.start()
         return threadHandler
     }
 
-    private fun getNewDispatchHandler(name: String? = null): ThreadHandler {
+    private fun getNewThreadHandler(name: String? = null): ThreadHandler {
         val threadName = if (name == null || name.isEmpty()) {
-            "dispatch${++newThreadCount}"
+            "dispatchQueue${++newThreadCount}"
         } else {
             name
         }

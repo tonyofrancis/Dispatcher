@@ -1,6 +1,6 @@
 package com.tonyodev.dispatchretrofit
 
-import com.tonyodev.dispatch.Dispatch
+import com.tonyodev.dispatch.DispatchQueue
 import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatch.thread.ThreadHandler
@@ -23,7 +23,7 @@ class DispatchCallAdapterFactory constructor(
 
     override fun get(returnType: Type, annotations: Array<Annotation>, retrofit: Retrofit): CallAdapter<*, *>? {
         val clazz = getRawType(returnType)
-        if (clazz == Dispatch::class.java) {
+        if (clazz == DispatchQueue::class.java) {
             if (returnType !is ParameterizedType) {
                 throw IllegalArgumentException("Dispatch return type must be parameterized as Dispatch<Foo>")
             }
@@ -66,9 +66,9 @@ class DispatchCallAdapterFactory constructor(
 
     class DispatchCallAdapter<R>(private val responseType: Type,
                                  private val threadHandler : ThreadHandler?,
-                                 private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter<R, Dispatch<*>> {
+                                 private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter<R, DispatchQueue<*>> {
 
-        override fun adapt(call: Call<R>): Dispatch<*> {
+        override fun adapt(call: Call<R>): DispatchQueue<*> {
             if (!(threadHandler != null && threadHandler.isActive)) {
                 threadHandler?.start()
             }

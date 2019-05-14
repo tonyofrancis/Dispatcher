@@ -1,7 +1,7 @@
 package com.tonyodev.dispatch.utils
 
 import com.tonyodev.dispatch.ThreadType
-import com.tonyodev.dispatch.internals.DispatchQueue
+import com.tonyodev.dispatch.internals.DispatchQueueInfo
 import com.tonyodev.dispatch.thread.ThreadHandler
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
@@ -29,9 +29,9 @@ internal fun throwIfUsesMainThreadForBackgroundWork(threadType: ThreadType) {
     }
 }
 
-internal fun throwIllegalStateExceptionIfCancelled(dispatchQueue: DispatchQueue) {
-    if (dispatchQueue.isCancelled) {
-        throw IllegalStateException("Dispatch Queue with id ${dispatchQueue.queueId} has already been cancelled. Cannot perform new operations.")
+internal fun throwIllegalStateExceptionIfCancelled(dispatchQueueInfo: DispatchQueueInfo) {
+    if (dispatchQueueInfo.isCancelled) {
+        throw IllegalStateException("Dispatch Queue with id ${dispatchQueueInfo.queueId} has already been cancelled. Cannot perform new operations.")
     }
 }
 

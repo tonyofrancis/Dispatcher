@@ -1,46 +1,44 @@
 package com.tonyodev.dispatch.queuecontroller
 
-import com.tonyodev.dispatch.Dispatch
+import com.tonyodev.dispatch.DispatchQueue
 
 /**
  * A DispatchQueueController manages dispatch queues and is
  * responsible for cancelling a dispatch queue at the appropriate time.
- * Note: DispatchQueueController only holds a strong reference to the root dispatch
  * */
 open class DispatchQueueController {
 
-    private val dispatchQueueSet = mutableSetOf<Dispatch<*>>()
+    private val dispatchQueueSet = mutableSetOf<DispatchQueue<*>>()
 
     /**
-     * Set this dispatch controller to manage the passed in dispatch's queue.
-     * It only holds the root dispatch.
-     * @param dispatch the dispatch who's queue will be managed.
+     * Set this dispatch queue controller to manage the passed in dispatch queue.
+     * @param dispatchQueue the dispatchQueue who's queue will be managed.
      * */
-    open fun manage(dispatch: Dispatch<*>) {
+    open fun manage(dispatchQueue: DispatchQueue<*>) {
         synchronized(dispatchQueueSet) {
-            dispatchQueueSet.add(dispatch.rootDispatch)
+            dispatchQueueSet.add(dispatchQueue.root)
         }
     }
 
     /**
-     * Set this dispatch controller to manage the passed in dispatch's queue.
-     * @param dispatchList a list of dispatch who's queue will be managed.
+     * Set this dispatch queue controller to manage the passed in dispatch queue.
+     * @param dispatchQueueList a list of dispatch who's queue will be managed.
      * */
-    open fun manage(dispatchList: List<Dispatch<*>>) {
-        for (dispatch in dispatchList) {
+    open fun manage(dispatchQueueList: List<DispatchQueue<*>>) {
+        for (dispatch in dispatchQueueList) {
             manage(dispatch)
         }
     }
 
     /**
-     * Stop managing the passed in dispatch's queue.
-     * @param dispatch the dispatch who's queue to unmanage.
+     * Stop managing the passed in dispatch queue.
+     * @param dispatchQueue the dispatch queue to unmanage.
      * */
-    open fun unmanage(dispatch: Dispatch<*>) {
+    open fun unmanage(dispatchQueue: DispatchQueue<*>) {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
             while (iterator.hasNext()) {
-                if (iterator.next() == dispatch.rootDispatch) {
+                if (iterator.next() == dispatchQueue.root) {
                     iterator.remove()
                 }
             }
@@ -48,18 +46,18 @@ open class DispatchQueueController {
     }
 
     /**
-     * Stop managing the passed in list dispatch's queue.
-     * @param dispatchList the list of dispatch who's queue to unmanage.
+     * Stop managing the passed in list dispatch queues.
+     * @param dispatchQueueList the list of dispatch queues to unmanage.
      * */
-    open fun unmanage(dispatchList: List<Dispatch<*>>) {
+    open fun unmanage(dispatchQueueList: List<DispatchQueue<*>>) {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
             var count = 0
             while (iterator.hasNext()) {
-                if (dispatchList.contains(iterator.next().rootDispatch)) {
+                if (dispatchQueueList.contains(iterator.next().root)) {
                     iterator.remove()
                     ++count
-                    if (count == dispatchList.size) {
+                    if (count == dispatchQueueList.size) {
                         break
                     }
                 }
@@ -71,10 +69,10 @@ open class DispatchQueueController {
      * Cancels all the dispatch queues that are being managed by this
      * instance of DispatchQueueController. All the dispatch queues will then be unmanaged.
      * */
-    open fun cancelAllDispatch() {
+    open fun cancelAllDispatchQueues() {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
-            var dispatch: Dispatch<*>
+            var dispatch: DispatchQueue<*>
             while (iterator.hasNext()) {
                 dispatch = iterator.next()
                 iterator.remove()
@@ -87,30 +85,30 @@ open class DispatchQueueController {
      * Cancels all dispatch queues being managed by this
      * instance of DispatchQueueController if it is in the passed in array.
      * The dispatch queue will no longer be managed.
-     * @param arrayOfDispatch dispatch objects.
+     * @param arrayOfDispatchQueues dispatch queue objects.
      * */
-    open fun cancelDispatch(vararg arrayOfDispatch: Dispatch<*>) {
-        cancelDispatch(arrayOfDispatch.map { it.rootDispatch })
+    open fun cancelDispatchQueues(vararg arrayOfDispatchQueues: DispatchQueue<*>) {
+        cancelDispatchQueues(arrayOfDispatchQueues.map { it.root })
     }
 
     /**
      * Cancels all dispatch queues being managed by this
      * instance of DispatchQueueController if it is in the passed in collection.
      * The dispatch queue will no longer be managed.
-     * @param dispatchCollection dispatch objects.
+     * @param dispatchQueueCollection dispatch queues.
      * */
-    open fun cancelDispatch(dispatchCollection: Collection<Dispatch<*>>) {
+    open fun cancelDispatchQueues(dispatchQueueCollection: Collection<DispatchQueue<*>>) {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
-            var dispatch: Dispatch<*>
+            var dispatch: DispatchQueue<*>
             var count = 0
             while (iterator.hasNext()) {
                 dispatch = iterator.next()
-                if (dispatchCollection.contains(dispatch)) {
+                if (dispatchQueueCollection.contains(dispatch)) {
                     iterator.remove()
                     dispatch.cancel()
                     ++count
-                    if (count == dispatchCollection.size) {
+                    if (count == dispatchQueueCollection.size) {
                         break
                     }
                 }
@@ -124,14 +122,14 @@ open class DispatchQueueController {
      * The dispatch queue will no longer be managed.
      * @param dispatchQueueIds the dispatch queue ids.
      * */
-    open fun cancelDispatch(dispatchQueueIds: List<Int>) {
+    open fun cancelDispatchQueues(dispatchQueueIds: List<Int>) {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
-            var dispatch: Dispatch<*>
+            var dispatch: DispatchQueue<*>
             var count = 0
             while (iterator.hasNext()) {
                 dispatch = iterator.next()
-                if (dispatchQueueIds.contains(dispatch.queueId)) {
+                if (dispatchQueueIds.contains(dispatch.id)) {
                     iterator.remove()
                     dispatch.cancel()
                     ++count
@@ -144,20 +142,20 @@ open class DispatchQueueController {
     }
 
     /**
-     * Cancels dispatch queue being managed by this
+     * Cancels the dispatch queue being managed by this
      * instance of DispatchQueueController if it's queue id is in the passed in array.
-     * The dispatch objects will no longer be managed.
+     * The dispatch queues will no longer be managed.
      * @param arrayOfDispatchQueueId the dispatch objects queue ids.
      * */
-    open fun cancelDispatch(vararg arrayOfDispatchQueueId: Int) {
-        cancelDispatch(arrayOfDispatchQueueId.toList())
+    open fun cancelDispatchQueues(vararg arrayOfDispatchQueueId: Int) {
+        cancelDispatchQueues(arrayOfDispatchQueueId.toList())
     }
 
     /**
      * Gets a copy of the managed queues.
      * @return copy of the manged queues in a set.
      * */
-    fun getManagedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedDispatchQueues(): Set<DispatchQueue<*>> {
         return synchronized(dispatchQueueSet) { dispatchQueueSet.toSet() }
     }
 

@@ -1,7 +1,7 @@
 package com.tonyodev.dispatchandroid.utils
 
 import android.app.Activity
-import com.tonyodev.dispatch.Dispatch
+import com.tonyodev.dispatch.DispatchQueue
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueController
 
@@ -13,7 +13,7 @@ import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueControl
  * occurs when the activity's onDestroy method is called.
  * @return dispatch.
  * */
-fun<R> Dispatch<R>.managedBy(activity: Activity): Dispatch<R> {
+fun<R> DispatchQueue<R>.managedBy(activity: Activity): DispatchQueue<R> {
     return managedBy(activity, CancelType.DESTROYED)
 }
 
@@ -25,8 +25,8 @@ fun<R> Dispatch<R>.managedBy(activity: Activity): Dispatch<R> {
  * @param cancelType the cancel type
  * @return dispatch.
  * */
-fun<R> Dispatch<R>.managedBy(activity: Activity, cancelType: CancelType): Dispatch<R> {
-    val oldDispatchQueueController = dispatchQueueController
+fun<R> DispatchQueue<R>.managedBy(activity: Activity, cancelType: CancelType): DispatchQueue<R> {
+    val oldDispatchQueueController = controller
     oldDispatchQueueController?.unmanage(this)
     val dispatchQueueController = ActivityDispatchQueueController.getInstance(activity)
     managedBy(dispatchQueueController, cancelType)

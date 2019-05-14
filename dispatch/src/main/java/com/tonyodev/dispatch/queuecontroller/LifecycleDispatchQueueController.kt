@@ -1,6 +1,6 @@
 package com.tonyodev.dispatch.queuecontroller
 
-import com.tonyodev.dispatch.Dispatch
+import com.tonyodev.dispatch.DispatchQueue
 
 /**
  * A DispatchQueueController that uses lifecycle events to manage
@@ -9,18 +9,18 @@ import com.tonyodev.dispatch.Dispatch
  * */
 open class LifecycleDispatchQueueController: DispatchQueueController() {
 
-    private val pausedQueueSet = mutableSetOf<Dispatch<*>>()
+    private val pausedQueueSet = mutableSetOf<DispatchQueue<*>>()
 
-    private val stoppedQueueSet = mutableSetOf<Dispatch<*>>()
+    private val stoppedQueueSet = mutableSetOf<DispatchQueue<*>>()
 
-    private val destroyQueueSet = mutableSetOf<Dispatch<*>>()
+    private val destroyQueueSet = mutableSetOf<DispatchQueue<*>>()
 
     /**
      * Cancels all dispatch queues that are being managed by this
      * DispatchQueueController with a cancel type of CancelType.PAUSED.
      * */
     open fun cancelAllPaused() {
-        super.cancelDispatch(pausedQueueSet)
+        super.cancelDispatchQueues(pausedQueueSet)
         synchronized(pausedQueueSet) {
             val iterator = pausedQueueSet.iterator()
             while (iterator.hasNext()) {
@@ -35,7 +35,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * DispatchQueueController with a cancel type of CancelType.STOPPED.
      * */
     open fun cancelAllStopped() {
-        super.cancelDispatch(stoppedQueueSet)
+        super.cancelDispatchQueues(stoppedQueueSet)
         synchronized(stoppedQueueSet) {
             val iterator = stoppedQueueSet.iterator()
             while (iterator.hasNext()) {
@@ -50,7 +50,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * DispatchQueueController with a cancel type of CancelType.DESTROYED.
      * */
     open fun cancelAllDestroyed() {
-        super.cancelAllDispatch()
+        super.cancelAllDispatchQueues()
         cancelAllPaused()
         cancelAllStopped()
         synchronized(destroyQueueSet) {
@@ -62,13 +62,13 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         }
     }
 
-    override fun unmanage(dispatch: Dispatch<*>) {
-        super.unmanage(dispatch)
-        var iterator: MutableIterator<Dispatch<*>>
+    override fun unmanage(dispatchQueue: DispatchQueue<*>) {
+        super.unmanage(dispatchQueue)
+        var iterator: MutableIterator<DispatchQueue<*>>
         synchronized(pausedQueueSet) {
             iterator = pausedQueueSet.iterator()
             while (iterator.hasNext()) {
-                if (iterator.next() == dispatch.rootDispatch) {
+                if (iterator.next() == dispatchQueue.root) {
                     iterator.remove()
                     return
                 }
@@ -77,7 +77,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         synchronized(stoppedQueueSet) {
             iterator = stoppedQueueSet.iterator()
             while (iterator.hasNext()) {
-                if (iterator.next() == dispatch.rootDispatch) {
+                if (iterator.next() == dispatchQueue.root) {
                     iterator.remove()
                     return
                 }
@@ -86,7 +86,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         synchronized(destroyQueueSet) {
             iterator = destroyQueueSet.iterator()
             while (iterator.hasNext()) {
-                if (iterator.next() == dispatch.rootDispatch) {
+                if (iterator.next() == dispatchQueue.root) {
                     iterator.remove()
                     break
                 }
@@ -94,66 +94,66 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         }
     }
 
-    override fun unmanage(dispatchList: List<Dispatch<*>>) {
-        for (dispatch in dispatchList) {
+    override fun unmanage(dispatchQueueList: List<DispatchQueue<*>>) {
+        for (dispatch in dispatchQueueList) {
             unmanage(dispatch)
         }
     }
 
-    override fun manage(dispatch: Dispatch<*>) {
-        manage(dispatch, CancelType.DESTROYED)
+    override fun manage(dispatchQueue: DispatchQueue<*>) {
+        manage(dispatchQueue, CancelType.DESTROYED)
     }
 
     /**
-     * Set this dispatch controller to manage the passed in dispatch's queue with
+     * Set this dispatch queue controller to manage the passed in dispatch queue with
      * the passed in cancelType.
-     * @param dispatch the dispatch who's queue will be managed.
+     * @param dispatchQueue the dispatchQueue who's queue will be managed.
      * @param cancelType the cancel type.
      * */
-    fun manage(dispatch: Dispatch<*>, cancelType: CancelType) {
-        super.manage(dispatch)
+    fun manage(dispatchQueue: DispatchQueue<*>, cancelType: CancelType) {
+        super.manage(dispatchQueue)
         when(cancelType) {
-            CancelType.PAUSED -> synchronized(pausedQueueSet) { pausedQueueSet.add(dispatch.rootDispatch) }
-            CancelType.STOPPED -> synchronized(stoppedQueueSet) { stoppedQueueSet.add(dispatch.rootDispatch) }
-            CancelType.DESTROYED -> synchronized(destroyQueueSet) { destroyQueueSet.add(dispatch.rootDispatch) }
+            CancelType.PAUSED -> synchronized(pausedQueueSet) { pausedQueueSet.add(dispatchQueue.root) }
+            CancelType.STOPPED -> synchronized(stoppedQueueSet) { stoppedQueueSet.add(dispatchQueue.root) }
+            CancelType.DESTROYED -> synchronized(destroyQueueSet) { destroyQueueSet.add(dispatchQueue.root) }
         }
     }
 
-    override fun manage(dispatchList: List<Dispatch<*>>) {
-        for (dispatch in dispatchList) {
+    override fun manage(dispatchQueueList: List<DispatchQueue<*>>) {
+        for (dispatch in dispatchQueueList) {
             manage(dispatch, CancelType.DESTROYED)
         }
     }
 
-    override fun cancelAllDispatch() {
+    override fun cancelAllDispatchQueues() {
         cancelAllDestroyed()
     }
 
-    override fun cancelDispatch(vararg arrayOfDispatch: Dispatch<*>) {
-        super.cancelDispatch(*arrayOfDispatch)
-        for (dispatch in arrayOfDispatch) {
-            remove(dispatch.queueId)
+    override fun cancelDispatchQueues(vararg arrayOfDispatchQueues: DispatchQueue<*>) {
+        super.cancelDispatchQueues(*arrayOfDispatchQueues)
+        for (dispatch in arrayOfDispatchQueues) {
+            remove(dispatch.id)
         }
     }
 
-    override fun cancelDispatch(dispatchQueueIds: List<Int>) {
-        super.cancelDispatch(dispatchQueueIds)
+    override fun cancelDispatchQueues(dispatchQueueIds: List<Int>) {
+        super.cancelDispatchQueues(dispatchQueueIds)
         for (queueId in dispatchQueueIds) {
             remove(queueId)
         }
     }
 
-    override fun cancelDispatch(vararg arrayOfDispatchQueueId: Int) {
-        super.cancelDispatch(*arrayOfDispatchQueueId)
+    override fun cancelDispatchQueues(vararg arrayOfDispatchQueueId: Int) {
+        super.cancelDispatchQueues(*arrayOfDispatchQueueId)
         for (queueId in arrayOfDispatchQueueId) {
             remove(queueId)
         }
     }
 
-    override fun cancelDispatch(dispatchCollection: Collection<Dispatch<*>>) {
-        for (dispatch in dispatchCollection) {
-            super.cancelDispatch(dispatch)
-            remove(dispatch.queueId)
+    override fun cancelDispatchQueues(dispatchQueueCollection: Collection<DispatchQueue<*>>) {
+        for (dispatch in dispatchQueueCollection) {
+            super.cancelDispatchQueues(dispatch)
+            remove(dispatch.id)
         }
     }
 
@@ -161,7 +161,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         synchronized(pausedQueueSet) {
             val iterator = pausedQueueSet.iterator()
             while (iterator.hasNext()) {
-                if (iterator.next().queueId == queueId) {
+                if (iterator.next().id == queueId) {
                     iterator.remove()
                     return
                 }
@@ -170,7 +170,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         synchronized(stoppedQueueSet) {
             val iterator = stoppedQueueSet.iterator()
             while (iterator.hasNext()) {
-                if (iterator.next().queueId == queueId) {
+                if (iterator.next().id == queueId) {
                     iterator.remove()
                     return
                 }
@@ -179,7 +179,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         synchronized(destroyQueueSet) {
             val iterator = destroyQueueSet.iterator()
             while (iterator.hasNext()) {
-                if (iterator.next().queueId == queueId) {
+                if (iterator.next().id == queueId) {
                     iterator.remove()
                     break
                 }
@@ -191,7 +191,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * Gets a copy of the paused managed queues.
      * @return copy of the paused manged queues in a set.
      * */
-    fun getManagedPausedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedPausedDispatchQueues(): Set<DispatchQueue<*>> {
         return synchronized(pausedQueueSet) { pausedQueueSet.toSet() }
     }
 
@@ -199,7 +199,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * Gets a copy of the stopped managed queues.
      * @return copy of the stopped manged queues in a set.
      * */
-    fun getManagedStoppedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedStoppedDispatchQueues(): Set<DispatchQueue<*>> {
         return synchronized(stoppedQueueSet) { stoppedQueueSet.toSet() }
     }
 
@@ -207,7 +207,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * Gets a copy of the destroyed managed queues.
      * @return copy of the destroyed manged queues in a set.
      * */
-    fun getManagedDestroyedQueueDispatches(): Set<Dispatch<*>> {
+    fun getManagedDestroyedDispatchQueues(): Set<DispatchQueue<*>> {
         return synchronized(destroyQueueSet) { destroyQueueSet.toSet() }
     }
 
