@@ -249,7 +249,7 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
 
     private fun removeDispatcher() {
         threadHandlerInfo.threadHandler.removeCallbacks(dispatcher)
-        if (threadHandlerInfo.closeHandler) {
+        if (threadHandlerInfo.closeThreadHandler) {
             threadHandlerInfo.threadHandler.quit()
         }
     }

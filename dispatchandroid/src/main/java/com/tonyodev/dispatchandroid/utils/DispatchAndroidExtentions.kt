@@ -11,7 +11,7 @@ import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueControl
  * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
  * @param activity the activity that will manage the dispatch queue. The cancel type is Destroyed. Cancellation
  * occurs when the activity's onDestroy method is called.
- * @return dispatch.
+ * @return dispatch queue.
  * */
 fun<R> DispatchQueue<R>.managedBy(activity: Activity): DispatchQueue<R> {
     return managedBy(activity, CancelType.DESTROYED)
@@ -23,7 +23,7 @@ fun<R> DispatchQueue<R>.managedBy(activity: Activity): DispatchQueue<R> {
  * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
  * @param activity the activity that will manage the dispatch queue.
  * @param cancelType the cancel type
- * @return dispatch.
+ * @return dispatch queue.
  * */
 fun<R> DispatchQueue<R>.managedBy(activity: Activity, cancelType: CancelType): DispatchQueue<R> {
     val oldDispatchQueueController = controller

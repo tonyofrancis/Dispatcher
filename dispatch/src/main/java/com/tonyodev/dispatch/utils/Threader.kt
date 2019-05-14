@@ -46,7 +46,7 @@ internal object Threader {
         return ThreadHandlerInfo(Dispatcher.threadHandlerFactory.create(threadName), true)
     }
 
-    data class ThreadHandlerInfo(val threadHandler: ThreadHandler, val closeHandler: Boolean) {
+    data class ThreadHandlerInfo(val threadHandler: ThreadHandler, val closeThreadHandler: Boolean) {
         val threadName: String
             get() {
                 return threadHandler.threadName

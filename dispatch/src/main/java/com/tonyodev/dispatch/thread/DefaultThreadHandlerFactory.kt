@@ -21,21 +21,17 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
             ThreadType.MAIN -> DefaultThreadHandler(THREAD_MAIN_NO_UI)
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
         }
-        if (!threadHandler.isActive) {
-            threadHandler.start()
-        }
+        startThreadHandlerIfNotActive(threadHandler)
         return threadHandler
     }
 
     override fun create(threadName: String?): ThreadHandler {
-        val threadHandler = getNewThreadHandler(threadName)
-        threadHandler.start()
-        return threadHandler
+        return getNewThreadHandler(threadName)
     }
 
     private fun getNewThreadHandler(name: String? = null): ThreadHandler {
         val threadName = if (name == null || name.isEmpty()) {
-            "dispatchQueue${++newThreadCount}"
+            "DispatchQueue${++newThreadCount}"
         } else {
             name
         }

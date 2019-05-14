@@ -9,7 +9,7 @@ import com.tonyodev.dispatch.thread.ThreadHandlerFactory
 import com.tonyodev.dispatch.utils.*
 
 /**
- * The default ThreadHandler Factory used by the library.
+ * The Default Android Handler based ThreadHandler Factory used by the library.
  * */
 class AndroidThreadHandlerFactory: ThreadHandlerFactory {
 
@@ -22,19 +22,19 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
             ThreadType.BACKGROUND_SECONDARY -> AndroidThreadHandler(THREAD_BACKGROUND_SECONDARY)
             ThreadType.NETWORK -> AndroidThreadHandler(THREAD_NETWORK)
             ThreadType.IO -> AndroidThreadHandler(THREAD_IO)
-            ThreadType.NEW -> getNewDispatchHandler()
+            ThreadType.NEW -> getNewDispatchQueueHandler()
             ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
         }
     }
 
     override fun create(threadName: String?): ThreadHandler {
-        return getNewDispatchHandler(threadName)
+        return getNewDispatchQueueHandler(threadName)
     }
 
-    private fun getNewDispatchHandler(name: String? = null): ThreadHandler {
+    private fun getNewDispatchQueueHandler(name: String? = null): ThreadHandler {
         val threadName = if (name == null || name.isEmpty()) {
-            "dispatch${++newThreadCount}"
+            "DispatchQueue${++newThreadCount}"
         } else {
             name
         }

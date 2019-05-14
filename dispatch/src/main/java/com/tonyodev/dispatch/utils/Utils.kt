@@ -15,23 +15,23 @@ internal fun getNewDispatchId(): String {
     return UUID.randomUUID().toString()
 }
 
-internal fun throwIfUsesMainThreadForBackgroundWork(handler: ThreadHandler?) {
-    if (handler != null && handler.threadName == Threader.getHandlerThreadInfo(ThreadType.MAIN).threadName) {
-        throw IllegalArgumentException("Dispatch handler cannot use the main thread to perform background work." +
-                "Pass in a handler that uses a different thread.")
+internal fun throwIfUsesMainThreadForBackgroundWork(threadHandler: ThreadHandler?) {
+    if (threadHandler != null && threadHandler.threadName == Threader.getHandlerThreadInfo(ThreadType.MAIN).threadName) {
+        throw IllegalArgumentException("DispatchQueue cannot use the main threadHandler to perform background work." +
+                "Pass in a threadHandler that uses a different thread.")
     }
 }
 
 internal fun throwIfUsesMainThreadForBackgroundWork(threadType: ThreadType) {
     if (threadType == ThreadType.MAIN) {
-        throw IllegalArgumentException("Dispatch handler cannot use the main thread to perform background work." +
-                "Pass in a handler that uses a different thread.")
+        throw IllegalArgumentException("DispatchQueue cannot use the main threadHandler to perform background work." +
+                "Pass in a threadHandler that uses a different thread.")
     }
 }
 
 internal fun throwIllegalStateExceptionIfCancelled(dispatchQueueInfo: DispatchQueueInfo) {
     if (dispatchQueueInfo.isCancelled) {
-        throw IllegalStateException("Dispatch Queue with id ${dispatchQueueInfo.queueId} has already been cancelled. Cannot perform new operations.")
+        throw IllegalStateException("DispatchQueue with id: ${dispatchQueueInfo.queueId} has already been cancelled. Cannot perform new operations.")
     }
 }
 

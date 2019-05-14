@@ -25,8 +25,10 @@ open class DispatchQueueController {
      * @param dispatchQueueList a list of dispatch who's queue will be managed.
      * */
     open fun manage(dispatchQueueList: List<DispatchQueue<*>>) {
-        for (dispatch in dispatchQueueList) {
-            manage(dispatch)
+        synchronized(dispatchQueueSet) {
+            for (dispatchQueue in dispatchQueueList) {
+                dispatchQueueSet.add(dispatchQueue.root)
+            }
         }
     }
 
@@ -72,11 +74,11 @@ open class DispatchQueueController {
     open fun cancelAllDispatchQueues() {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
-            var dispatch: DispatchQueue<*>
+            var dispatchQueue: DispatchQueue<*>
             while (iterator.hasNext()) {
-                dispatch = iterator.next()
+                dispatchQueue = iterator.next()
                 iterator.remove()
-                dispatch.cancel()
+                dispatchQueue.cancel()
             }
         }
     }
@@ -100,13 +102,13 @@ open class DispatchQueueController {
     open fun cancelDispatchQueues(dispatchQueueCollection: Collection<DispatchQueue<*>>) {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
-            var dispatch: DispatchQueue<*>
+            var dispatchQueue: DispatchQueue<*>
             var count = 0
             while (iterator.hasNext()) {
-                dispatch = iterator.next()
-                if (dispatchQueueCollection.contains(dispatch)) {
+                dispatchQueue = iterator.next()
+                if (dispatchQueueCollection.contains(dispatchQueue)) {
                     iterator.remove()
-                    dispatch.cancel()
+                    dispatchQueue.cancel()
                     ++count
                     if (count == dispatchQueueCollection.size) {
                         break
@@ -125,13 +127,13 @@ open class DispatchQueueController {
     open fun cancelDispatchQueues(dispatchQueueIds: List<Int>) {
         synchronized(dispatchQueueSet) {
             val iterator = dispatchQueueSet.iterator()
-            var dispatch: DispatchQueue<*>
+            var dispatchQueue: DispatchQueue<*>
             var count = 0
             while (iterator.hasNext()) {
-                dispatch = iterator.next()
-                if (dispatchQueueIds.contains(dispatch.id)) {
+                dispatchQueue = iterator.next()
+                if (dispatchQueueIds.contains(dispatchQueue.id)) {
                     iterator.remove()
-                    dispatch.cancel()
+                    dispatchQueue.cancel()
                     ++count
                     if (count == dispatchQueueIds.size) {
                         break

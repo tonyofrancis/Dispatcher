@@ -73,9 +73,7 @@ open class ActivityDispatchQueueController(protected val activity: Activity): Li
         @JvmStatic
         fun getInstance(activity: Activity): ActivityDispatchQueueController {
            return synchronized(map) {
-               val controller = map[activity] ?: ActivityDispatchQueueController(
-                   activity
-               )
+               val controller = map[activity] ?: ActivityDispatchQueueController(activity)
                map[activity] = controller
                controller
            }

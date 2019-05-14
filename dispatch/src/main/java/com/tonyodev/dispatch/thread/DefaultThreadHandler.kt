@@ -122,8 +122,9 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
         if (isCancelled) {
             throw IllegalStateException("Cannot post runnable because quit() was already called.")
         }
+        val queueItem = QueueItem.obtain(delayInMilliseconds, runnable)
         synchronized(queue) {
-            queue.add(QueueItem.obtain(delayInMilliseconds, runnable))
+            queue.add(queueItem)
         }
         if (isSleeping) {
             interrupt()
@@ -131,6 +132,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
     }
 
     override fun removeCallbacks(runnable: Runnable) {
+        var recycleQueueItem: QueueItem? = null
         synchronized(queue) {
             val iterator = queue.iterator()
             var queueItem: QueueItem
@@ -138,10 +140,11 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                 queueItem = iterator.next()
                 if (queueItem.runnable == runnable) {
                     iterator.remove()
-                    queueItem.recycle()
+                    recycleQueueItem = queueItem
                 }
             }
         }
+        recycleQueueItem?.recycle()
     }
 
     override fun quit() {
@@ -150,14 +153,18 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
             if (isSleeping) {
                 interrupt()
             }
+            val recycleList = mutableListOf<QueueItem>()
             synchronized(queue) {
                 val iterator = queue.iterator()
                 var queueItem: QueueItem
                 while (iterator.hasNext()) {
                     queueItem = iterator.next()
                     iterator.remove()
-                    queueItem.recycle()
+                    recycleList.add(queueItem)
                 }
+            }
+            for (queueItem in recycleList) {
+                queueItem.recycle()
             }
             threadSleepMillis = defaultSleepTime
         }
