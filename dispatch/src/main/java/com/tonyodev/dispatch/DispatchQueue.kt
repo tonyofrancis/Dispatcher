@@ -312,9 +312,9 @@ interface DispatchQueue<R> {
          * The dispatch queue operates on the default background handler/thread.
          * @return new dispatch queue.
          * */
-        val backgroundDispatchQueue: DispatchQueue<Void?>
+        val background: DispatchQueue<Void?>
             get() {
-                return Dispatcher.backgroundDispatchQueue
+                return Dispatcher.background
             }
 
         /**
@@ -322,9 +322,9 @@ interface DispatchQueue<R> {
          * The dispatch queue operates on the secondary background handler/thread.
          * @return new dispatch queue.
          * */
-        val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
+        val backgroundSecondary: DispatchQueue<Void?>
             get() {
-                return Dispatcher.backgroundSecondaryDispatchQueue
+                return Dispatcher.backgroundSecondary
             }
 
         /**
@@ -332,9 +332,9 @@ interface DispatchQueue<R> {
          * The dispatch queue operates on the default io handler/thread.
          * @return new dispatch queue.
          * */
-        val ioDispatchQueue: DispatchQueue<Void?>
+        val io: DispatchQueue<Void?>
             get() {
-                return Dispatcher.ioDispatchQueue
+                return Dispatcher.io
             }
 
         /**
@@ -342,9 +342,9 @@ interface DispatchQueue<R> {
          * The dispatch queue operates on the default network handler/thread.
          * @return new dispatch queue.
          * */
-        val networkDispatchQueue: DispatchQueue<Void?>
+        val network: DispatchQueue<Void?>
             get() {
-                return Dispatcher.networkDispatchQueue
+                return Dispatcher.network
             }
 
         /**
@@ -352,9 +352,18 @@ interface DispatchQueue<R> {
          * Note: Test Dispatch queues do not run with delays.
          * @return test dispatch queue.
          * */
-        val testDispatchQueue: DispatchQueue<Void?>
+        val test: DispatchQueue<Void?>
             get() {
-                return Dispatcher.testDispatchQueue
+                return Dispatcher.test
+            }
+
+        /**
+         * Creates a new main dispatch queue. All async and post run on the main thread.
+         * @return main dispatch queue.
+         * */
+        val main: DispatchQueue<Void?>
+            get() {
+                return Dispatcher.main
             }
 
     }

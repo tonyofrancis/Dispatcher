@@ -8,7 +8,7 @@ package com.tonyodev.dispatch
  * */
 val backgroundDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.backgroundDispatchQueue
+        return Dispatcher.background
     }
 
 /**
@@ -18,7 +18,7 @@ val backgroundDispatchQueue: DispatchQueue<Void?>
  * */
 val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.backgroundSecondaryDispatchQueue
+        return Dispatcher.backgroundSecondary
     }
 
 /**
@@ -28,7 +28,7 @@ val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
  * */
 val networkDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.networkDispatchQueue
+        return Dispatcher.network
     }
 
 /**
@@ -38,7 +38,7 @@ val networkDispatchQueue: DispatchQueue<Void?>
  * */
 val ioDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.ioDispatchQueue
+        return Dispatcher.io
     }
 
 /**
@@ -48,7 +48,7 @@ val ioDispatchQueue: DispatchQueue<Void?>
  * */
 val testDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.testDispatchQueue
+        return Dispatcher.test
     }
 
 /**
@@ -59,4 +59,13 @@ val testDispatchQueue: DispatchQueue<Void?>
 val newDispatchQueue: DispatchQueue<Void?>
     get() {
         return Dispatcher.createDispatchQueue(ThreadType.NEW)
+    }
+
+/**
+ * Creates a new main dispatch queue. All async and post run on the main thread.
+ * @return main dispatch queue.
+ * */
+val mainDispatchQueue: DispatchQueue<Void?>
+    get() {
+        return Dispatcher.main
     }

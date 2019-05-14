@@ -215,7 +215,7 @@ object Dispatcher {
      * @return new dispatch queue.
      * */
     @JvmStatic
-    val backgroundDispatchQueue: DispatchQueue<Void?>
+    val background: DispatchQueue<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -229,7 +229,7 @@ object Dispatcher {
      * @return new dispatch queue.
      * */
     @JvmStatic
-    val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
+    val backgroundSecondary: DispatchQueue<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -243,7 +243,7 @@ object Dispatcher {
      * @return new dispatch queue.
      * */
     @JvmStatic
-    val ioDispatchQueue: DispatchQueue<Void?>
+    val io: DispatchQueue<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -257,7 +257,7 @@ object Dispatcher {
      * @return new dispatch queue.
      * */
     @JvmStatic
-    val networkDispatchQueue: DispatchQueue<Void?>
+    val network: DispatchQueue<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
@@ -271,12 +271,25 @@ object Dispatcher {
      * @return test dispatch queue.
      * */
     @JvmStatic
-    val testDispatchQueue: DispatchQueue<Void?>
+    val test: DispatchQueue<Void?>
         get() {
             return createNewDispatchQueue(
                 delayInMillis = 0,
                 isIntervalDispatchQueue = false,
                 threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.TEST))
+        }
+
+    /**
+     * Creates a new main dispatch queue. All async and post run on the main thread.
+     * @return main dispatch queue.
+     * */
+    @JvmStatic
+    val main: DispatchQueue<Void?>
+        get() {
+            return createNewDispatchQueue(
+                delayInMillis = 0,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.MAIN))
         }
 
     private fun createNewDispatchQueue(delayInMillis: Long,
