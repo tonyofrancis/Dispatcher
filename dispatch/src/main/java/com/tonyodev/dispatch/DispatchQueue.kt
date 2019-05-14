@@ -3,6 +3,7 @@ package com.tonyodev.dispatch
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
+import com.tonyodev.dispatch.thread.ThreadHandler
 
 /**
  * A DispatchQueue is used to perform work and return data on the right thread at the right time.
@@ -193,5 +194,169 @@ interface DispatchQueue<R> {
      * @return the dispatch queue.
      * */
     fun removeObservers(): DispatchQueue<R>
+
+    companion object {
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * The dispatch object returned will use the default background handler to schedule work in the background.
+         * @return new dispatch queue.
+         * */
+        fun createDispatchQueue(): DispatchQueue<Void?> {
+            return Dispatcher.createDispatchQueue()
+        }
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * @param backgroundHandler the background handler used to schedule work in the background.
+         * @throws Exception throws exception if backgroundHandler thread passed in uses the ui thread.
+         * @return new dispatch queue.
+         * */
+        fun createDispatchQueue(backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
+            return Dispatcher.createDispatchQueue(backgroundHandler)
+        }
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * The returned dispatch queue will have a handler of the thread type
+         * @param threadType the default threadType to use.
+         * handler is used.
+         * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
+         * @return new dispatch queue.
+         * */
+        fun createDispatchQueue(threadType: ThreadType): DispatchQueue<Void?> {
+            return Dispatcher.createDispatchQueue(threadType)
+        }
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * The returned dispatch will have a newly created handler that will handle background work.
+         * @param handlerName the name used by the handler.
+         * handler is used.
+         * @return new dispatch queue.
+         * */
+        fun createDispatchQueue(handlerName: String): DispatchQueue<Void?> {
+            return Dispatcher.createDispatchQueue(handlerName)
+        }
+
+        /**
+         * Creates a new timer dispatch queue. A new handler thread is created to start the timer dispatch queue.
+         * @param delayInMillis the delay in milliseconds before the handler runs the dispatch.
+         * Values less than 1 indicates that there are no delays.
+         * @return new dispatch queue.
+         * */
+        fun createTimerDispatchQueue(delayInMillis: Long): DispatchQueue<Void?> {
+            return Dispatcher.createTimerDispatchQueue(delayInMillis)
+        }
+
+        /**
+         * Creates a new timer dispatch queue.
+         * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
+         * Values less than 1 indicates that there are no delays.
+         * @param backgroundHandler the background handler used for the timer task.
+         * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+         * @return new dispatch queue.
+         * */
+        fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
+            return Dispatcher.createTimerDispatchQueue(delayInMillis, backgroundHandler)
+        }
+
+        /**
+         * Creates a new timer dispatch queue.
+         * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
+         * Values less than 1 indicates that there are no delays.
+         * @param threadType the thread type.
+         * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
+         * @return new dispatch queue.
+         * */
+        fun createTimerDispatchQueue(delayInMillis: Long, threadType: ThreadType): DispatchQueue<Void?> {
+            return Dispatcher.createTimerDispatchQueue(delayInMillis, threadType)
+        }
+
+        /**
+         * Creates a new interval dispatch queue that fires every x time. A new handler thread is created to start the interval dispatch.
+         * @param delayInMillis the delay in milliseconds before the handler runs the worker.
+         * Values less than 1 indicates that there are no delays.
+         * @return new dispatch queue.
+         * */
+        fun createIntervalDispatchQueue(delayInMillis: Long): DispatchQueue<Void?> {
+            return Dispatcher.createIntervalDispatchQueue(delayInMillis)
+        }
+
+        /**
+         * Creates a new interval dispatch queue that fires every x time.
+         * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
+         * Values less than 1 indicates that there are no delays.
+         * @param backgroundHandler the background handler used for the timer task. If null, a new backgroundHandler is created.
+         * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+         * @return new dispatch queue.
+         * */
+        fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
+            return Dispatcher.createIntervalDispatchQueue(delayInMillis, backgroundHandler)
+        }
+
+        /**
+         * Creates a new interval dispatch queue that fires every x time.
+         * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
+         * Values less than 1 indicates that there are no delays.
+         * @param threadType the thread type.
+         * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
+         * @return new dispatch queue.
+         * */
+        fun createIntervalDispatchQueue(delayInMillis: Long, threadType: ThreadType): DispatchQueue<Void?> {
+            return Dispatcher.createIntervalDispatchQueue(delayInMillis, threadType)
+        }
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * The dispatch queue operates on the default background handler/thread.
+         * @return new dispatch queue.
+         * */
+        val backgroundDispatchQueue: DispatchQueue<Void?>
+            get() {
+                return Dispatcher.backgroundDispatchQueue
+            }
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * The dispatch queue operates on the secondary background handler/thread.
+         * @return new dispatch queue.
+         * */
+        val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
+            get() {
+                return Dispatcher.backgroundSecondaryDispatchQueue
+            }
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * The dispatch queue operates on the default io handler/thread.
+         * @return new dispatch queue.
+         * */
+        val ioDispatchQueue: DispatchQueue<Void?>
+            get() {
+                return Dispatcher.ioDispatchQueue
+            }
+
+        /**
+         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * The dispatch queue operates on the default network handler/thread.
+         * @return new dispatch queue.
+         * */
+        val networkDispatchQueue: DispatchQueue<Void?>
+            get() {
+                return Dispatcher.networkDispatchQueue
+            }
+
+        /**
+         * Creates a new test dispatch queue. All async and post run on the same thread this dispatch queue was created on.
+         * Note: Test Dispatch queues do not run with delays.
+         * @return test dispatch queue.
+         * */
+        val testDispatchQueue: DispatchQueue<Void?>
+            get() {
+                return Dispatcher.testDispatchQueue
+            }
+
+    }
 
 }
