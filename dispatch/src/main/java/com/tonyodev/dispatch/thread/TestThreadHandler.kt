@@ -9,7 +9,9 @@ class TestThreadHandler(override val threadName: String): ThreadHandler {
 
     override fun postDelayed(delayInMilliseconds: Long, runnable: Runnable) {
         synchronized(this) {
-            runnable.run()
+            if (isActive) {
+                runnable.run()
+            }
         }
     }
 
@@ -18,13 +20,17 @@ class TestThreadHandler(override val threadName: String): ThreadHandler {
     }
 
     override fun quit() {
-
+        synchronized(this) {
+            isActive = false
+        }
     }
 
-    override val isActive: Boolean = true
+    override var isActive: Boolean = false
 
     override fun start() {
-
+        synchronized(this) {
+            isActive = true
+        }
     }
 
 }

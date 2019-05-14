@@ -1,6 +1,6 @@
 package com.tonyodev.dispatch.utils
 
-const val TAG = "com.tonyodev.dispatchQueue"
+const val TAG = "DispatchQueue"
 internal val INVALID_RESULT = InvalidResult()
 const val THREAD_BACKGROUND = "DispatchQueueBackground"
 const val THREAD_BACKGROUND_SECONDARY = "DispatchQueueBackgroundSecondary"

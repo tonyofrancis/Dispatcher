@@ -23,9 +23,9 @@ interface DispatchQueue<R> {
     val id: Int
 
     /***
-     * The dispatch queue object id.
+     * The async or post label.
      * */
-    val dispatchId: String
+    val blockLabel: String
 
     /**
      * The first dispatch queue object in the queue.
@@ -76,7 +76,7 @@ interface DispatchQueue<R> {
 
     /**
      * Triggers the dispatch queue to start.
-     * @param errorHandler the error handler for the dispatch queue. Notifies of the dispatch that throw the error and the error that was thrown. Only called
+     * @param errorHandler the error handler for the dispatch queue. Notifies of the async or post block via its label that throw the error and the error that was thrown. Only called
      * if the dispatch queue object who throw the error does not handle it's error within its doOnError method. The error handler is called on the main thread.
      * @return dispatch queue.
      * */
@@ -141,10 +141,10 @@ interface DispatchQueue<R> {
     fun<U, T> zip(dispatchQueue: DispatchQueue<U>, dispatchQueue2: DispatchQueue<T>): DispatchQueue<Triple<R, U, T>>
 
     /**
-     * Sets the dispatch queue object dispatchId. Use this dispatchId to identify where errors occur in the dispatch queue.
-     * @param dispatchId the dispatch object dispatchId.
+     * Sets the dispatch queue object blockLabel. Use this blockLabel to identify where errors occur in the dispatch queue.
+     * @param blockLabel the dispatch object block Label.
      * */
-    fun setDispatchId(dispatchId: String): DispatchQueue<R>
+    fun setBlockLabel(blockLabel: String): DispatchQueue<R>
 
     /**
      * Transforms the data from the previous dispatch queue object to a another

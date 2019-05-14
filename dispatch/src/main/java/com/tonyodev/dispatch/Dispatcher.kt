@@ -14,7 +14,7 @@ import java.lang.IllegalArgumentException
 
 /**
  * Dispatcher is a simple and flexible work scheduler that schedulers work on a background or UI thread correctly
- * in the form of Dispatch objects in queues.
+ * in the form of DispatchQueues.
  * @see Dispatcher.createDispatchQueue() to get started.
  */
 object Dispatcher {
@@ -53,7 +53,7 @@ object Dispatcher {
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * The dispatch object returned will use the default background handler to schedule work in the background.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     fun createDispatchQueue(): DispatchQueue<Void?> {
@@ -65,23 +65,18 @@ object Dispatcher {
 
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
-     * @param backgroundHandler the background handler used to schedule work in the background. If null, the default background handler is used.
+     * @param backgroundHandler the background handler used to schedule work in the background.
      * @throws Exception throws exception if backgroundHandler thread passed in uses the ui thread.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
-    fun createDispatchQueue(backgroundHandler: ThreadHandler?): DispatchQueue<Void?> {
+    fun createDispatchQueue(backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
-        val threadHandlerInfo = if (backgroundHandler == null) {
-            Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
-        } else {
-            startThreadHandlerIfNotActive(backgroundHandler)
-            Threader.ThreadHandlerInfo(backgroundHandler, false)
-        }
+        startThreadHandlerIfNotActive(backgroundHandler)
         return createNewDispatchQueue(
             delayInMillis = 0,
             isIntervalDispatchQueue = false,
-            threadHandlerInfo = threadHandlerInfo)
+            threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false))
     }
 
     /**
@@ -90,7 +85,7 @@ object Dispatcher {
      * @param threadType the default threadType to use.
      * handler is used.
      * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     fun createDispatchQueue(threadType: ThreadType): DispatchQueue<Void?> {
@@ -106,7 +101,7 @@ object Dispatcher {
      * The returned dispatch will have a newly created handler that will handle background work.
      * @param handlerName the name used by the handler.
      * handler is used.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     fun createDispatchQueue(handlerName: String): DispatchQueue<Void?> {
@@ -120,7 +115,7 @@ object Dispatcher {
      * Creates a new timer dispatch queue. A new handler thread is created to start the timer dispatch queue.
      * @param delayInMillis the delay in milliseconds before the handler runs the dispatch.
      * Values less than 1 indicates that there are no delays.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     fun createTimerDispatchQueue(delayInMillis: Long): DispatchQueue<Void?> {
@@ -134,23 +129,18 @@ object Dispatcher {
      * Creates a new timer dispatch queue.
      * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
      * Values less than 1 indicates that there are no delays.
-     * @param backgroundHandler the background handler used for the timer task. If null, a new backgroundHandler is created.
+     * @param backgroundHandler the background handler used for the timer task.
      * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
-    fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): DispatchQueue<Void?> {
+    fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
-        val threadHandlerInfo = if (backgroundHandler == null) {
-            Threader.getHandlerThreadInfo(ThreadType.NEW)
-        } else {
-            startThreadHandlerIfNotActive(backgroundHandler)
-            Threader.ThreadHandlerInfo(backgroundHandler, false)
-        }
+        startThreadHandlerIfNotActive(backgroundHandler)
         return createNewDispatchQueue(
             delayInMillis = delayInMillis,
             isIntervalDispatchQueue = false,
-            threadHandlerInfo = threadHandlerInfo)
+            threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false))
     }
 
     /**
@@ -159,7 +149,7 @@ object Dispatcher {
      * Values less than 1 indicates that there are no delays.
      * @param threadType the thread type.
      * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     fun createTimerDispatchQueue(delayInMillis: Long, threadType: ThreadType): DispatchQueue<Void?> {
@@ -174,7 +164,7 @@ object Dispatcher {
      * Creates a new interval dispatch queue that fires every x time. A new handler thread is created to start the interval dispatch.
      * @param delayInMillis the delay in milliseconds before the handler runs the worker.
      * Values less than 1 indicates that there are no delays.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     fun createIntervalDispatchQueue(delayInMillis: Long): DispatchQueue<Void?> {
@@ -190,21 +180,16 @@ object Dispatcher {
      * Values less than 1 indicates that there are no delays.
      * @param backgroundHandler the background handler used for the timer task. If null, a new backgroundHandler is created.
      * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
-    fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler?): DispatchQueue<Void?> {
+    fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
         throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
-        val threadHandlerInfo = if (backgroundHandler == null) {
-            Threader.getHandlerThreadInfo(ThreadType.NEW)
-        } else {
-            startThreadHandlerIfNotActive(backgroundHandler)
-            Threader.ThreadHandlerInfo(backgroundHandler, false)
-        }
+        startThreadHandlerIfNotActive(backgroundHandler)
         return createNewDispatchQueue(
             delayInMillis = delayInMillis,
             isIntervalDispatchQueue = true,
-            threadHandlerInfo = threadHandlerInfo)
+            threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false))
     }
 
     /**
@@ -213,7 +198,7 @@ object Dispatcher {
      * Values less than 1 indicates that there are no delays.
      * @param threadType the thread type.
      * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     fun createIntervalDispatchQueue(delayInMillis: Long, threadType: ThreadType): DispatchQueue<Void?> {
@@ -227,7 +212,7 @@ object Dispatcher {
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * The dispatch queue operates on the default background handler/thread.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     val backgroundDispatchQueue: DispatchQueue<Void?>
@@ -241,7 +226,7 @@ object Dispatcher {
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * The dispatch queue operates on the secondary background handler/thread.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
@@ -255,7 +240,7 @@ object Dispatcher {
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * The dispatch queue operates on the default io handler/thread.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     val ioDispatchQueue: DispatchQueue<Void?>
@@ -269,7 +254,7 @@ object Dispatcher {
     /**
      * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
      * The dispatch queue operates on the default network handler/thread.
-     * @return new dispatch.
+     * @return new dispatch queue.
      * */
     @JvmStatic
     val networkDispatchQueue: DispatchQueue<Void?>
@@ -281,9 +266,9 @@ object Dispatcher {
         }
 
     /**
-     * Creates a new test dispatch queue. All async and post run on the same thread this dispatch was created on.
+     * Creates a new test dispatch queue. All async and post run on the same thread this dispatch queue was created on.
      * Note: Test Dispatch queues do not run with delays.
-     * @return test dispatch.
+     * @return test dispatch queue.
      * */
     @JvmStatic
     val testDispatchQueue: DispatchQueue<Void?>
@@ -301,15 +286,15 @@ object Dispatcher {
             queueId = getNewQueueId(),
             isIntervalDispatch = isIntervalDispatchQueue,
             threadHandlerInfo = threadHandlerInfo)
-        val newDispatch = DispatchQueueImpl<Void?, Void?>(
-            dispatchId = getNewDispatchId(),
+        val newDispatchQueue = DispatchQueueImpl<Void?, Void?>(
+            blockLabel = getNewDispatchId(),
             delayInMillis = delayInMillis,
             worker = null,
             dispatchQueueInfo = dispatchQueueInfo,
             threadHandlerInfo = threadHandlerInfo)
-        dispatchQueueInfo.rootDispatchQueue = newDispatch
-        dispatchQueueInfo.queue.add(newDispatch)
-        return newDispatch
+        dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
+        dispatchQueueInfo.queue.add(newDispatchQueue)
+        return newDispatchQueue
     }
 
 }

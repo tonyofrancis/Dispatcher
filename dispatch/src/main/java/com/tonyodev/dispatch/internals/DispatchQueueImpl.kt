@@ -9,7 +9,7 @@ import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
 
-internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
+internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                                        private val delayInMillis: Long = 0,
                                        private var worker: ((T) -> R)?,
                                        private val dispatchQueueInfo: DispatchQueueInfo,
@@ -86,12 +86,12 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
                             results = INVALID_RESULT
                         }
                         notifyDispatchObservers()
-                        processNextDispatch()
+                        processNextDispatchQueue()
                     }
                 } else {
                     results = null
                     notifyDispatchObservers()
-                    processNextDispatch()
+                    processNextDispatchQueue()
                 }
             }
         } catch (err: Exception) {
@@ -100,7 +100,7 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
                 try {
                     results = doOnErrorWorker.invoke(err)
                     notifyDispatchObservers()
-                    processNextDispatch()
+                    processNextDispatchQueue()
                 } catch (e: Exception) {
                     handleException(e)
                 }
@@ -126,11 +126,11 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
         return false
     }
 
-    private fun processNextDispatch() {
+    private fun processNextDispatchQueue() {
         if (!isCancelled) {
-            val nextDispatch = getNextDispatchInfo(this)
+            val nextDispatchQueue = getNextDispatchQueueInfo(this)
             when {
-                nextDispatch != null -> nextDispatch.runDispatcher()
+                nextDispatchQueue != null -> nextDispatchQueue.runDispatcher()
                 dispatchQueueInfo.isIntervalDispatch -> dispatchQueueInfo.rootDispatchQueue.runDispatcher()
                 else -> {
                     dispatchQueueInfo.completedDispatchQueue = true
@@ -142,16 +142,16 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
         }
     }
 
-    private fun getNextDispatchInfo(after: DispatchQueue<*>): DispatchQueueImpl<*, *>? {
+    private fun getNextDispatchQueueInfo(after: DispatchQueue<*>): DispatchQueueImpl<*, *>? {
         return synchronized(dispatchQueueInfo.queue) {
             val iterator = dispatchQueueInfo.queue.iterator()
             var self: DispatchQueueImpl<*, *>? = null
-            var nextDispatch: DispatchQueueImpl<*, *>? = null
+            var nextDispatchQueue: DispatchQueueImpl<*, *>? = null
             var dispatch: DispatchQueueImpl<*, *>
             while (iterator.hasNext() && !isCancelled) {
                 dispatch = iterator.next()
                 if (self != null) {
-                    nextDispatch = dispatch
+                    nextDispatchQueue = dispatch
                     break
                 }
                 if (dispatch == after) {
@@ -159,9 +159,9 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
                 }
             }
             if (isCancelled) {
-                nextDispatch = null
+                nextDispatchQueue = null
             }
-            nextDispatch
+            nextDispatchQueue
         }
     }
 
@@ -184,14 +184,14 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
         val mainErrorHandler = dispatchQueueInfo.errorHandler
         if (mainErrorHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable { mainErrorHandler.invoke(throwable, this.dispatchId) })
+                .threadHandler.post(Runnable { mainErrorHandler.invoke(throwable, this.blockLabel) })
             cancel()
             return
         }
         val globalHandler = Dispatcher.globalErrorHandler
         if (globalHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable { globalHandler.invoke(throwable, this, this.dispatchId) })
+                .threadHandler.post(Runnable { globalHandler.invoke(throwable, this, this.blockLabel) })
             cancel()
             return
         }
@@ -226,12 +226,12 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
             }
             synchronized(dispatchQueueInfo.queue) {
                 val iterator = dispatchQueueInfo.queue.iterator()
-                var dispatch: DispatchQueueImpl<*, *>?
+                var dispatchQueue: DispatchQueueImpl<*, *>?
                 var sourceIterator: Iterator<*>
                 while (iterator.hasNext()) {
-                    dispatch = iterator.next()
-                    dispatch.removeDispatcher()
-                    sourceIterator = dispatch.dispatchSources.iterator()
+                    dispatchQueue = iterator.next()
+                    dispatchQueue.removeDispatcher()
+                    sourceIterator = dispatchQueue.dispatchSources.iterator()
                     while (sourceIterator.hasNext()) {
                         sourceIterator.next()
                         sourceIterator.remove()
@@ -305,7 +305,7 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         return synchronized(dispatchQueueInfo.queue) {
             val newDispatchQueue = DispatchQueueImpl(
-                dispatchId = getNewDispatchId(),
+                blockLabel = getNewDispatchId(),
                 delayInMillis = delayInMillis,
                 worker = worker,
                 dispatchQueueInfo = dispatchQueueInfo,
@@ -329,7 +329,7 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         return synchronized(dispatchQueueInfo.queue) {
             val newDispatch = DispatchQueueImpl<Pair<R, U>, Pair<R, U>>(
-                dispatchId = getNewDispatchId(),
+                blockLabel = getNewDispatchId(),
                 delayInMillis = 0,
                 worker = { it },
                 dispatchQueueInfo = dispatchQueueInfo,
@@ -354,7 +354,7 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         return synchronized(dispatchQueueInfo.queue) {
             val newDispatchQueue = DispatchQueueImpl<Triple<R, U, T>, Triple<R, U, T>>(
-                dispatchId = getNewDispatchId(),
+                blockLabel = getNewDispatchId(),
                 delayInMillis = 0,
                 worker = { it },
                 dispatchQueueInfo = dispatchQueueInfo,
@@ -378,7 +378,7 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
 
     private fun cloneTo(newDispatchQueueInfo: DispatchQueueInfo): DispatchQueueImpl<T, R> {
         val newDispatchQueue = DispatchQueueImpl(
-            dispatchId = dispatchId,
+            blockLabel = blockLabel,
             delayInMillis = delayInMillis,
             worker = worker,
             dispatchQueueInfo = newDispatchQueueInfo,
@@ -426,13 +426,13 @@ internal class DispatchQueueImpl<T, R>(override var dispatchId: String,
         return dispatchObservable
     }
 
-    override fun setDispatchId(dispatchId: String): DispatchQueue<R> {
-        this.dispatchId = dispatchId
+    override fun setBlockLabel(blockLabel: String): DispatchQueue<R> {
+        this.blockLabel = blockLabel
         return this
     }
 
     override fun toString(): String {
-        return "DispatchQueue(dispatchId='$dispatchId', id='${dispatchQueueInfo.queueId}')"
+        return "DispatchQueue(blockLabel='$blockLabel', id='${dispatchQueueInfo.queueId}')"
     }
 
 }
