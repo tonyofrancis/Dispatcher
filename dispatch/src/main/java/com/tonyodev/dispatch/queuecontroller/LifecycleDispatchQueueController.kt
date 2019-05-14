@@ -120,8 +120,11 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
     }
 
     override fun manage(dispatchQueueList: List<DispatchQueue<*>>) {
-        for (dispatch in dispatchQueueList) {
-            manage(dispatch, CancelType.DESTROYED)
+        synchronized(destroyQueueSet) {
+            for (dispatchQueue in dispatchQueueList) {
+                super.manage(dispatchQueue)
+                destroyQueueSet.add(dispatchQueue.root)
+            }
         }
     }
 
