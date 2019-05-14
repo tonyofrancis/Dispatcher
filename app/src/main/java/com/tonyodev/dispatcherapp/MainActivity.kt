@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.backgroundDispatchQueue
 import com.tonyodev.dispatchandroid.utils.managedBy
-import com.tonyodev.dispatchretrofit.DispatchCallAdapterFactory
+import com.tonyodev.dispatchretrofit.DispatchQueueCallAdapterFactory
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
         retrofit = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(DispatchCallAdapterFactory.create())
+            .addCallAdapterFactory(DispatchQueueCallAdapterFactory.create())
             .baseUrl("https://jsonplaceholder.typicode.com")
             .build()
         service = retrofit.create(TestService::class.java)

@@ -11,13 +11,13 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
 /**
- * Dispatch Call Adapter Factory for Retrofit.
+ * Dispatch Queue Call Adapter Factory for Retrofit.
  * */
-class DispatchCallAdapterFactory constructor(
-    /** Optional handler used by the Dispatch objects created by this Factory.*/
-    private val handler: ThreadHandler? = null,
-    /** Optional error handler for network requests made by a DispatchCallAdapter instance.
-     * Only called in an error occurred. Note: The errors will still be thrown inside the Dispatch.
+class DispatchQueueCallAdapterFactory constructor(
+    /** Optional threadHandler used by the DispatchQueues created by this Factory.*/
+    private val threadHandler: ThreadHandler? = null,
+    /** Optional error threadHandler for network requests made by a DispatchQueueCallAdapter instance.
+     * Only called in an error occurred. Note: The errors will still be thrown inside the DispatchQueue.
      * This callback only allows for observing at a global level. Called on a background thread. */
     private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter.Factory() {
 
@@ -25,10 +25,10 @@ class DispatchCallAdapterFactory constructor(
         val clazz = getRawType(returnType)
         if (clazz == DispatchQueue::class.java) {
             if (returnType !is ParameterizedType) {
-                throw IllegalArgumentException("Dispatch return type must be parameterized as Dispatch<Foo>")
+                throw IllegalArgumentException("DispatchQueue return type must be parameterized as DispatchQueue<Foo>")
             }
             val responseType = getParameterUpperBound(0, returnType)
-            return DispatchCallAdapter<Any>(responseType, handler, errorHandler)
+            return DispatchQueueCallAdapter<Any>(responseType, threadHandler, errorHandler)
         }
         return null
     }
@@ -36,41 +36,41 @@ class DispatchCallAdapterFactory constructor(
     companion object {
 
         /**
-         * Creates an instance of DispatchCallAdapterFactory
-         * @param handler Optional handler used to start this dispatch object.
-         * @param errorHandler Optional global error handler. Called on a background thread.
-         * @throws IllegalArgumentException is the passed in handler uses the main thread to do background work.
-         * @return new instance of DispatchCallAdapterFactory.
+         * Creates an instance of DispatchQueueCallAdapterFactory
+         * @param threadHandler Optional threadHandler used to start this dispatch object.
+         * @param errorHandler Optional global error threadHandler. Called on a background thread.
+         * @throws IllegalArgumentException is the passed in threadHandler uses the main thread to do background work.
+         * @return new instance of DispatchQueueCallAdapterFactory.
          * */
         @JvmStatic
         @JvmOverloads
-        fun create(handler: ThreadHandler? = null, errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
-            if (handler?.threadName == Dispatcher.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
-                throw IllegalArgumentException("DispatchCallAdapterFactory: Handler cannot use the main thread for network operations.")
+        fun create(threadHandler: ThreadHandler? = null, errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchQueueCallAdapterFactory {
+            if (threadHandler?.threadName == Dispatcher.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
+                throw IllegalArgumentException("DispatchQueueCallAdapterFactory: ThreadHandler cannot be the main thread for network operations.")
             }
-            return DispatchCallAdapterFactory(handler, errorHandler)
+            return DispatchQueueCallAdapterFactory(threadHandler, errorHandler)
         }
 
         /**
-         * Creates an instance of DispatchCallAdapterFactory that uses a test dispatch queue to perform network requests.
-         * @param errorHandler Optional global error handler.
-         * @return new instance of DispatchCallAdapterFactory for test.
+         * Creates an instance of DispatchQueueCallAdapterFactory that uses a test dispatch queue to perform network requests.
+         * @param errorHandler Optional global error threadHandler.
+         * @return new instance of DispatchQueueCallAdapterFactory for test.
          * */
         @JvmStatic
         @JvmOverloads
-        fun createTestFactory(errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchCallAdapterFactory {
-            return DispatchCallAdapterFactory(Dispatcher.threadHandlerFactory.create(ThreadType.TEST), errorHandler)
+        fun createTestFactory(errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchQueueCallAdapterFactory {
+            return DispatchQueueCallAdapterFactory(Dispatcher.threadHandlerFactory.create(ThreadType.TEST), errorHandler)
         }
 
     }
 
-    class DispatchCallAdapter<R>(private val responseType: Type,
-                                 private val threadHandler : ThreadHandler?,
-                                 private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter<R, DispatchQueue<*>> {
+    class DispatchQueueCallAdapter<R>(private val responseType: Type,
+                                      private val threadHandler : ThreadHandler?,
+                                      private val errorHandler: ((HttpException, Request) -> Unit)?): CallAdapter<R, DispatchQueue<*>> {
 
         override fun adapt(call: Call<R>): DispatchQueue<*> {
-            if (!(threadHandler != null && threadHandler.isActive)) {
-                threadHandler?.start()
+            if (threadHandler != null && !threadHandler.isActive) {
+                threadHandler.start()
             }
             return if (threadHandler == null) {
                 Dispatcher.createDispatchQueue(ThreadType.NETWORK)
