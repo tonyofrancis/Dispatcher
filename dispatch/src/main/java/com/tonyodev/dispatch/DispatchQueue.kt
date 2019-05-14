@@ -81,7 +81,7 @@ interface DispatchQueue<R> {
      * if the dispatch queue object who throw the error does not handle it's error within its doOnError method. The error handler is called on the main thread.
      * @return dispatch queue.
      * */
-    fun start(errorHandler: ((Throwable, String) -> Unit)?): DispatchQueue<R>
+    fun start(errorHandler: ((Throwable, DispatchQueue<*>, String) -> Unit)?): DispatchQueue<R>
 
     /**
      * Triggers the dispatch queue to start.

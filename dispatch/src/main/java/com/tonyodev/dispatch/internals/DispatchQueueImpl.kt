@@ -184,7 +184,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         val mainErrorHandler = dispatchQueueInfo.errorHandler
         if (mainErrorHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable { mainErrorHandler.invoke(throwable, this.blockLabel) })
+                .threadHandler.post(Runnable { mainErrorHandler.invoke(throwable, this, this.blockLabel) })
             cancel()
             return
         }
@@ -203,7 +203,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return start(null)
     }
 
-    override fun start(errorHandler: ((throwable: Throwable, dispatchId: String) -> Unit)?): DispatchQueue<R> {
+    override fun start(errorHandler: ((throwable: Throwable, dispatchQueue: DispatchQueue<*>, blockLabel: String) -> Unit)?): DispatchQueue<R> {
         if (!isCancelled) {
             dispatchQueueInfo.errorHandler = errorHandler
             dispatchQueueInfo.completedDispatchQueue = false
