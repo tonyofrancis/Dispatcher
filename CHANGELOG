@@ -1,3 +1,8 @@
+Version 1.3.0
+- Renamed Dispatch to DispatchQueue
+- Renamed DispatchObserver and DispatchObservable to DispatchQueueObserver and DispatchQueueObservable
+- Performance improvements. Document updates
+
 Version 1.2.1
 - Newly created queues now return Void? instead of kotlin.Unit
 - DispatchQueues are now synchronized.

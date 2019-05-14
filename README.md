@@ -1,10 +1,10 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.2.1) ](https://bintray.com/tonyofrancis/maven/dispatch/1.2.1/link)
-# Dispatch: A simple work scheduler for Android
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.3.0) ](https://bintray.com/tonyofrancis/maven/dispatch/1.3.0/link)
+# DispatchQueue: A simple work scheduler for Java, Kotlin and Android
 
-Dispatch is a simple and flexible work scheduler that schedulers work on a background or main thread in the form of a dispatch queue.
+DispatchQueue is a simple and flexible work scheduler that schedulers work on a background or main thread in the form of a dispatch queue.
 
 ```java
-Dispatcher.backgroundDispatchQueue
+Dispatcher.background
     .async {
         //do background work here
         val sb = StringBuilder()
@@ -20,16 +20,16 @@ Dispatcher.backgroundDispatchQueue
     }
     .start()
 ```
-Dispatch makes it very clear which thread your code is running on. Like what you see? Read on!
+DispatchQueue makes it very clear which thread your code is running on. Like what you see? Read on!
 
-One of the many problems with offloading work to a background thread in Java and Android programming, is knowing the right time to cancel the work when it is no longer needed. Dispatch makes it very easy to cancel a dispatch queue. Simply call the `cancel()` method on the queue. If that is not good enough, allow your component's lifecycle to manage this for you.
+One of the many problems with offloading work to a background thread in Java and Android programming, is knowing the right time to cancel the work when it is no longer needed. DispatchQueue makes it very easy to cancel a dispatch queue. Simply call the `cancel()` method on the queue. If that is not good enough, allow your component's lifecycle to manage this for you.
 Android Activity Example:
 ```java
 class SimpleActivity: AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Dispatcher.networkDispatchQueue
+        Dispatcher.network
             .managedBy(this)
             .async {
                 //do work in background
@@ -48,7 +48,7 @@ class SimpleActivity: AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Dispatcher.networkDispatchQueue
+        Dispatcher.network
             .managedBy(this, CancelType.PAUSED)
             .async {
                 //do work in background
@@ -71,7 +71,7 @@ class SimpleActivity: AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Dispatcher.networkDispatchQueue
+        Dispatcher.network
             .managedBy(dispatchQueueController)
             .async {
                 //do work in background
@@ -94,17 +94,20 @@ Managing queues could not be easier.
 
 Dispatch comes with many pre-exiting queues:
 ```java
-Dispatcher.backgroundDispatchQueue
+Dispatcher.background
 
-Dispatcher.ioDispatchQueue
+Dispatcher.io
 
-Dispatcher.networkDispatchQueue
+Dispatcher.network
 
-Dispatcher.backgroundSecondaryDispatchQueue
+Dispatcher.background
 
-Dispatcher.testDispatchQueue - // Used specifically for testing
+Dispatcher.test - // Used specifically for testing
+
+Dispatcher.main
+
 ```
-These queues are generated only when you need/access them. You can also create you own dispatch queues via the many create methods on the Dispatcher object.
+These queues are generated only when you need/access them. You can also create you own dispatch queues via the many create methods on the Dispatcher object. If using Kotlin you call call any of the `DispatchQueue.create` methods.
 ```java
 Dispatcher.createDispatchQueue()
 
@@ -179,7 +182,7 @@ class SimpleActivity: AppCompatActivity() {
 
 }
 ```
-See how super easy it is to integrate Dispatch with Retrofit? All you need is a `DispatchCallAdapterFactory` instance, and set your Service methods to return the data wrapped in a Dispatch object.
+See how super easy it is to integrate DispatchQueue with Retrofit? All you need is a `DispatchCallAdapterFactory` instance, and set your Service methods to return the data wrapped in a DispatchQueue object.
 ### Zipping Queues
 
 There will be times when you would like to combine the results of two or more queues. Call the zip methods to do this.
@@ -190,12 +193,12 @@ class SimpleActivity: AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Dispatcher.backgroundDispatchQueue
+        Dispatcher.background
             .managedBy(lifecycleDispatchQueueController, CancelType.PAUSED)
             .async {
                 mapOf(0 to "cat", 1 to "bat")
             }
-            .zipWith(getDataDispatch()) // combine two queue results
+            .zipWith(getDataDispatchQueue()) // combine two queue results
             .async { results ->
                 for ((key, value) in results.first) {
                     println("$key:$value")
@@ -207,8 +210,8 @@ class SimpleActivity: AppCompatActivity() {
             .start()
     }
 
-    private fun getDataDispatch(): Dispatch<List<String>> {
-        return Dispatcher.backgroundDispatchQueue
+    private fun getDataDispatchQueue(): DispatchQueue<List<String>> {
+        return Dispatcher.background
             .async {
                 listOf("hat", "sat")
             }
@@ -223,7 +226,7 @@ class SimpleActivity: AppCompatActivity() {
 ```
 ### Handling Errors
 
-Dispatch allows you to handles errors in many ways. One way is setting an error handler for the queue by passing it to the start method.
+DispatchQueue allows you to handles errors in many ways. One way is setting an error handler for the queue by passing it to the start method.
 ```java
 Dispatcher.createDispatchQueue()
     .async {
@@ -235,7 +238,7 @@ Dispatcher.createDispatchQueue()
     .post { number ->
         println("number is $number")
     }
-    .start { throwable, dispatch ->
+    .start { throwable, dispatchQueue, blockLabel ->
         //handle queue error here.
         Log.e("errorTest",
             "queue with id ${dispatch.queueId} throw error:", throwable)
@@ -268,20 +271,20 @@ In the above example, the `doOnError` block handles the exception for the preced
 
 If an error handler is not provided for the queue, the exception will be thrown causing the application to crash. To prevent this, the library allows you to provide a global error handler that will catch all exceptions thrown when using any dispatch queue. It is best practice to handle errors locally close to the location where they originated. Set the global error handler like this:
 ```java
-Dispatcher.setGlobalErrorHandler { throwable, dispatch ->
+Dispatcher.setGlobalErrorHandler { throwable, dispatchQueue, blockLabel ->
     //handle errors
 }
 ```
 
 ### Debugging
 
-Figuring out where an error occurred is not always easy. This is one of the areas Dispatch shines. Dispatch allows you to set the id for each post and async block via the `setDispatchId(stringId)` method. When an error does occur, the error handler provides the dispatch in which the error occurred. With this information, you can check the dispatch id and know exactly where the issue occurred. The following example shows how this is done.
+Figuring out where an error occurred is not always easy. This is one of the areas DispatchQueue shines. DispatchQueue allows you to set the block label for each post and async block via the `setBlockLabel(label)` method. With this information, you can check the dispatch queue id and know exactly where the issue occurred. The following example shows how this is done.
 ```java
 class SimpleActivity: AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Dispatcher.backgroundDispatchQueue
+        Dispatcher.background
             .managedBy(this)
             .async {
                 //do work
@@ -289,13 +292,13 @@ class SimpleActivity: AppCompatActivity() {
                 throw Exception("silly exception")
                 number
             }
-            .setDispatchId("numberAsync")
+                .setBlockLabel("numberAsync")
             .post { number ->
                 println("number is $number")
             }
             .setDispatchId("printAsync")
-            .start { throwable, dispatch ->
-                if (dispatch.dispatchId == "numberAsync") {
+            .start { throwable, dispatchQueue, blockLabel ->
+                if (blockLabel == "numberAsync") {
                     //error occurred in first async block.
                 }
             }
@@ -307,17 +310,17 @@ You can also enable logging in the library. This will warm you when you forget t
 ```java
 Dispatcher.setEnableLogWarnings(true)
 ```
-### Dispatch Observers
+### Dispatch Queue Observers
 
 Hey kids! Here! Have more ice-cream!
 
-Dispatch does not stop at solving threading problems. Introducing `DispatchObserver`! Every now and then you would like a callback from the dispatch that returns a result without it being directly available. That’s where DispatchObservers come into play. You can attach a `DispatchObserver` to a dispatch object and get a callback when the return value is available.
+DispatchQueue does not stop at solving threading problems. Introducing `DispatchQueueObserver`! Every now and then you would like a callback from the dispatch queue object that returns a result without it being directly available. That’s where DispatchQueueObservers come into play. You can attach a `DispatchQueueObserver` to a dispatch queue object and get a callback when the return value is available.
 ```java
 class SimpleActivity: AppCompatActivity() {
 
     private var n = 0
 
-    private val dispatchObserver = object: DispatchObserver<Int> {
+    private val dispatchQueueObserver = object: DispatchQueueObserver<Int> {
         override fun onChanged(data: Int) {
             print("Factorial of $n is: $data")
         }
@@ -327,12 +330,12 @@ class SimpleActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         n = 16
 
-        Dispatcher.backgroundDispatchQueue
+        Dispatcher.background
             .managedBy(this)
             .async {
                 factorial(n)
             }
-            .addObserver(dispatchObserver)
+            .addObserver(dispatchQueueObserver)
             .start()
     }
 
@@ -354,7 +357,7 @@ Dispatcher.backgroundDispatchQueue
 ```
 ### Thread Handlers
 
-Sometimes you would like to dictate the thread that Dispatch uses to process blocks in the background. The library allows you to do so by providing your own Thread Handlers. Simply extend the ThreadHandler class, or use the DefaultThreadHandler and AndroidThreadHandler classes.
+Sometimes you would like to dictate the thread that DispatchQueue uses to process blocks in the background. The library allows you to do so by providing your own Thread Handlers. Simply extend the ThreadHandler class, or use the DefaultThreadHandler and AndroidThreadHandler classes.
 ```java
 val threadHandler = DefaultThreadHandler("MyThreadHandler")
 val androidThreadHandler = AndroidThreadHandler("MyAndroidThreadHandler")
@@ -365,29 +368,29 @@ Dispatcher.createDispatchQueue(threadHandler)
     }
     .start()
 ```
-### Understanding how Dispatch Works
+### Understanding how DispatchQueue Works
 
-Now that you have seen many of library’s features, it is time to give you a short summary about how it really works. You can skip this section and head to the following section on how to add Dispatch to your java projects.
+Now that you have seen many of library’s features, it is time to give you a short summary about how it really works. You can skip this section and head to the following section on how to add DispatchQueue to your java projects.
 
 ![alt text](https://cdn-images-1.medium.com/max/800/1*C8xQEB-0U35MbDQ1W6Pq5g.png "Simple Dispatch Diagram")
 
 
-The above is a simple diagram on how a dispatch queue works. When you create a queue it returns a dispatch object. The dispatch object is responsible for the thread it performs its work on, performing the work, and returning the results. The async, post and map blocks each create a new dispatch object and adds it to the dispatch queue when called. Hence the reason you are able to chain dispatch objects and pass along their results to the next dispatch block in the queue. The overhead for creating dispatch objects are minimal. Each dispatch object can have its own `doOnError` handler block and manage its own DispatchObservers.
+The above is a simple diagram on how a dispatch queue works. When you create a queue it returns a dispatch queue object. The dispatch queue object is responsible for the thread it performs its work on, performing the work, and returning the results. The async, post and map blocks each create a new dispatch queue object and adds it to the dispatch queue when called. Hence the reason you are able to chain dispatch queue objects and pass along their results to the next dispatch queue block in the queue. The overhead for creating dispatch objects are minimal. Each dispatch queue object can have its own `doOnError` handler block and manage its own DispatchQueueObservers.
 
-**Note**: By default, once a Dispatch queue has completed its work, it is then cancelled and cannot be reused. To prevent a queue from cancelling automatically, call the cancelOnComplete(false) method and pass in false.
+**Note**: Once a Dispatch queue has completed its work, it is then cancelled and cannot be reused.
 ### Using Dispatch
 
-To use the Dispatch library in your project, add the following code to your project’s build.gradle file.
+To use the DispatchQueue library in your project, add the following code to your project’s build.gradle file.
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.2.1"
+implementation "com.tonyodev.dispatch:dispatch:1.3.0"
 ```
 For Android also add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-android:1.2.1"
+implementation "com.tonyodev.dispatch:dispatch-android:1.3.0"
 ```
 To use Dispatch with Retrofit, add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.2.1"
+implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.3.0"
 ```
 
 Contribute
