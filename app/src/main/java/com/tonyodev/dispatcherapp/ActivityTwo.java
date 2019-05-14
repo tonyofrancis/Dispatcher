@@ -8,8 +8,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.tonyodev.dispatch.queuecontroller.CancelType;
 import com.tonyodev.dispatch.Dispatcher;
 import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueController;
-import com.tonyodev.dispatchandroid.thread.AndroidThreadHandler;
-import com.tonyodev.dispatchretrofit.DispatchQueueCallAdapterFactory;
 import kotlin.jvm.functions.Function1;
 
 

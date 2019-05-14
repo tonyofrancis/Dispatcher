@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import com.tonyodev.dispatch.Dispatcher
+import com.tonyodev.dispatch.DispatchQueue
 import com.tonyodev.dispatch.backgroundDispatchQueue
 import com.tonyodev.dispatchandroid.utils.managedBy
 import com.tonyodev.dispatchretrofit.DispatchQueueCallAdapterFactory
@@ -46,7 +46,9 @@ class MainActivity : AppCompatActivity() {
         //or
         backgroundDispatchQueue
             .managedBy(this)
-            .async { "66" }
+            .async {
+                "66"
+            }
             .zip(service.getSampleJson())
             .async {
                 it.second
@@ -58,8 +60,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runTestTimer() {
-        Dispatcher.createTimerDispatchQueue(5000)
+        DispatchQueue.createTimerDispatchQueue(5000)
             .managedBy(this)
+            .async {
+                "do work here"
+            }
+            .post {
+                "do work here"
+            }
+            .async {
+                "do more work here"
+            }
             .post {
                 Log.d("dispatcherTest","Test timer after 5000 millis. data is $it")
             }
