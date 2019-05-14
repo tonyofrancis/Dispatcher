@@ -3,7 +3,11 @@ package com.tonyodev.dispatch
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
+import com.tonyodev.dispatch.thread.DefaultThreadHandlerFactory
 import com.tonyodev.dispatch.thread.ThreadHandler
+import com.tonyodev.dispatch.thread.ThreadHandlerFactory
+import com.tonyodev.dispatch.utils.DefaultLogger
+import com.tonyodev.dispatch.utils.Logger
 
 /**
  * A DispatchQueue is used to perform work and return data on the right thread at the right time.
@@ -366,6 +370,51 @@ interface DispatchQueue<R> {
                 return Dispatcher.main
             }
 
+        /**
+         * Enable or disable log warnings by the library.
+         * */
+        var enableLogWarnings: Boolean
+            set(value) {
+                Dispatcher.enableLogWarnings = value
+            }
+            get() {
+                return Dispatcher.enableLogWarnings
+            }
+
+        /**
+         * Sets the global error handler for Dispatch objects. This error handler is called only
+         * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
+         * */
+        var globalErrorHandler: ((throwable: Throwable, dispatch: DispatchQueue<*>, String) -> Unit)?
+            set(value) {
+                Dispatcher.globalErrorHandler = value
+            }
+            get() {
+                return Dispatcher.globalErrorHandler
+            }
+
+        /**
+         * Sets the global thread handler factory that is responsible for creating thread handlers that the dispatch queues
+         * will use to process work in the background.
+         * */
+        var threadHandlerFactory: ThreadHandlerFactory
+            set(value) {
+                Dispatcher.threadHandlerFactory = value
+            }
+            get() {
+                return Dispatcher.threadHandlerFactory
+            }
+
+        /**
+         * Sets the logger uses by the library to report warnings and messages.
+         * */
+        var logger: Logger
+            set(value) {
+                Dispatcher.logger = value
+            }
+            get() {
+                return Dispatcher.logger
+            }
     }
 
 }
