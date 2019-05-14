@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.3.0) ](https://bintray.com/tonyofrancis/maven/dispatch/1.3.0/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.3.1) ](https://bintray.com/tonyofrancis/maven/dispatch/1.3.1/link)
 # DispatchQueue: A simple work scheduler for Java, Kotlin and Android
 
 DispatchQueue is a simple and flexible work scheduler that schedulers work on a background or main thread in the form of a dispatch queue.
@@ -143,7 +143,7 @@ class TestJsonData {
 interface TestService {
 
     @GET("/api/data?list=englishmonarchs&format=json")
-    fun getSampleJson(): Dispatch<List<TestJsonData>>
+    fun getSampleJson(): DispatchQueue<List<TestJsonData>>
 
 }
 ```
@@ -157,11 +157,11 @@ class SimpleActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val dispatchCallAdapterFactory = DispatchCallAdapterFactory.create()
+        val dispatchQueueCallAdapterFactory = DispatchQueueCallAdapterFactory.create()
 
         retrofit = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(dispatchCallAdapterFactory)
+            .addCallAdapterFactory(dispatchQueueCallAdapterFactory)
             .baseUrl("http://mysafeinfo.com")
             .build()
         service = retrofit.create(TestService::class.java)
@@ -182,7 +182,7 @@ class SimpleActivity: AppCompatActivity() {
 
 }
 ```
-See how super easy it is to integrate DispatchQueue with Retrofit? All you need is a `DispatchCallAdapterFactory` instance, and set your Service methods to return the data wrapped in a DispatchQueue object.
+See how super easy it is to integrate DispatchQueue with Retrofit? All you need is a `DispatchQueueCallAdapterFactory` instance, and set your Service methods to return the data wrapped in a DispatchQueue object.
 ### Zipping Queues
 
 There will be times when you would like to combine the results of two or more queues. Call the zip methods to do this.
@@ -292,11 +292,11 @@ class SimpleActivity: AppCompatActivity() {
                 throw Exception("silly exception")
                 number
             }
-                .setBlockLabel("numberAsync")
+            .setBlockLabel("numberAsync")
             .post { number ->
                 println("number is $number")
             }
-            .setDispatchId("printAsync")
+            .setBlockLabel("printAsync")
             .start { throwable, dispatchQueue, blockLabel ->
                 if (blockLabel == "numberAsync") {
                     //error occurred in first async block.
@@ -350,7 +350,7 @@ class SimpleActivity: AppCompatActivity() {
 
 Both the async and post methods allow you to specify a delay in milliseconds before the block is executed.
 ```java
-Dispatcher.backgroundDispatchQueue
+Dispatcher.background
     .post(5000) {
         //will be called after a 5 second delay
     }.start()
@@ -382,15 +382,15 @@ The above is a simple diagram on how a dispatch queue works. When you create a q
 
 To use the DispatchQueue library in your project, add the following code to your project’s build.gradle file.
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.3.0"
+implementation "com.tonyodev.dispatch:dispatch:1.3.1"
 ```
 For Android also add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-android:1.3.0"
+implementation "com.tonyodev.dispatch:dispatch-android:1.3.1"
 ```
 To use Dispatch with Retrofit, add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.3.0"
+implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.3.1"
 ```
 
 Contribute
