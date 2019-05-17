@@ -452,8 +452,4 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return "DispatchQueue(blockLabel='$blockLabel', id='${dispatchQueueInfo.queueId}')"
     }
 
-    fun finalize() {
-        println("is finalize")
-    }
-
 }
