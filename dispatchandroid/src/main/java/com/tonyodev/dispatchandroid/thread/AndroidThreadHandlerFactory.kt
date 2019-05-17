@@ -20,7 +20,6 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
         return when(threadType) {
             ThreadType.BACKGROUND -> AndroidThreadHandler(THREAD_BACKGROUND)
             ThreadType.BACKGROUND_SECONDARY -> AndroidThreadHandler(THREAD_BACKGROUND_SECONDARY)
-            ThreadType.NETWORK -> AndroidThreadHandler(THREAD_NETWORK)
             ThreadType.IO -> AndroidThreadHandler(THREAD_IO)
             ThreadType.NEW -> getNewDispatchQueueHandler()
             ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))

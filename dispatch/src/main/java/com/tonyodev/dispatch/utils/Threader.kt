@@ -14,15 +14,11 @@ internal object Threader {
 
     private val backgroundSecondaryHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.BACKGROUND_SECONDARY) }
 
-    private val networkHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.NETWORK) }
-
     private val ioHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.IO) }
 
     private val backgroundThreadHandlerInfo by lazy { ThreadHandlerInfo(backgroundHandler, false) }
 
     private val backgroundSecondaryThreadHandlerInfo by lazy { ThreadHandlerInfo(backgroundSecondaryHandler, false) }
-
-    private val networkThreadHandlerInfo by lazy { ThreadHandlerInfo(networkHandler, false) }
 
     private val uiThreadHandlerInfo by lazy { ThreadHandlerInfo(uiHandler, false) }
 
@@ -35,7 +31,6 @@ internal object Threader {
             ThreadType.BACKGROUND -> backgroundThreadHandlerInfo
             ThreadType.BACKGROUND_SECONDARY -> backgroundSecondaryThreadHandlerInfo
             ThreadType.IO -> ioThreadHandlerInfo
-            ThreadType.NETWORK -> networkThreadHandlerInfo
             ThreadType.MAIN -> uiThreadHandlerInfo
             ThreadType.TEST -> testThreadHandlerInfo
             ThreadType.NEW -> ThreadHandlerInfo(Dispatcher.threadHandlerFactory.create(ThreadType.NEW), true)

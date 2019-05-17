@@ -252,20 +252,6 @@ object Dispatcher {
         }
 
     /**
-     * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
-     * The dispatch queue operates on the default network handler/thread.
-     * @return new dispatch queue.
-     * */
-    @JvmStatic
-    val network: DispatchQueue<Void?>
-        get() {
-            return createNewDispatchQueue(
-                delayInMillis = 0,
-                isIntervalDispatchQueue = false,
-                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.NETWORK))
-        }
-
-    /**
      * Creates a new test dispatch queue. All async and post run on the same thread this dispatch queue was created on.
      * Note: Test Dispatch queues do not run with delays.
      * @return test dispatch queue.

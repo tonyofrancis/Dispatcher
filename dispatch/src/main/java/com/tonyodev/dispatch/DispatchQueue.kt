@@ -342,16 +342,6 @@ interface DispatchQueue<R> {
             }
 
         /**
-         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
-         * The dispatch queue operates on the default network handler/thread.
-         * @return new dispatch queue.
-         * */
-        val network: DispatchQueue<Void?>
-            get() {
-                return Dispatcher.network
-            }
-
-        /**
          * Creates a new test dispatch queue. All async and post run on the same thread this dispatch queue was created on.
          * Note: Test Dispatch queues do not run with delays.
          * @return test dispatch queue.

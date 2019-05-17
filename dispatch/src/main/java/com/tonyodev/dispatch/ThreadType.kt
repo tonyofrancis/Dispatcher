@@ -9,9 +9,6 @@ enum class ThreadType {
     /** Use default IO thread.*/
     IO,
 
-    /** Use default Network thread.*/
-    NETWORK,
-
     /** Use default Background thread.*/
     BACKGROUND,
 

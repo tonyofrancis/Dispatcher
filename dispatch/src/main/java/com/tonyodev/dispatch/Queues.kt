@@ -23,16 +23,6 @@ val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
 
 /**
  * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
- * The dispatch queue operates on the default network handler/thread.
- * @return new dispatch queue.
- * */
-val networkDispatchQueue: DispatchQueue<Void?>
-    get() {
-        return Dispatcher.network
-    }
-
-/**
- * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
  * The dispatch queue operates on the default io handler/thread.
  * @return new dispatch queue.
  * */
