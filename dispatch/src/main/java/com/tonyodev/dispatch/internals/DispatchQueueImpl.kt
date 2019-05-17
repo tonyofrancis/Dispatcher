@@ -41,71 +41,75 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     private var results: Any? = INVALID_RESULT
 
+    private var dispatcher: Runnable? = null
+
     @Suppress("UNCHECKED_CAST")
-    private val dispatcher = Runnable {
-        try {
-            if (!isCancelled) {
-                if (worker != null && dispatchSources.isNotEmpty()) {
-                    val result1: Any?
-                    val result2: Any?
-                    val result3: Any?
-                    val data = when (dispatchSources.size) {
-                        3 -> {
-                            result1 = (dispatchSources[0] as DispatchQueueImpl<*, *>).results
-                            result2 = (dispatchSources[1] as DispatchQueueImpl<*, *>).results
-                            result3 = (dispatchSources[2] as DispatchQueueImpl<*, *>).results
-                            if (hasInvalidResult(result1, result2, result3)) {
-                                INVALID_RESULT
-                            } else {
-                                Triple(result1, result2, result3)
+    private fun getDispatcher(): Runnable {
+        return Runnable {
+            try {
+                if (!isCancelled) {
+                    if (worker != null && dispatchSources.isNotEmpty()) {
+                        val result1: Any?
+                        val result2: Any?
+                        val result3: Any?
+                        val data = when (dispatchSources.size) {
+                            3 -> {
+                                result1 = (dispatchSources[0] as DispatchQueueImpl<*, *>).results
+                                result2 = (dispatchSources[1] as DispatchQueueImpl<*, *>).results
+                                result3 = (dispatchSources[2] as DispatchQueueImpl<*, *>).results
+                                if (hasInvalidResult(result1, result2, result3)) {
+                                    INVALID_RESULT
+                                } else {
+                                    Triple(result1, result2, result3)
+                                }
+                            }
+                            2 -> {
+                                result1 = (dispatchSources[0] as DispatchQueueImpl<*, *>).results
+                                result2 = (dispatchSources[1] as DispatchQueueImpl<*, *>).results
+                                if (hasInvalidResult(result1, result2)) {
+                                    INVALID_RESULT
+                                } else {
+                                    Pair(result1, result2)
+                                }
+                            }
+                            else -> {
+                                result1 = (dispatchSources[0] as DispatchQueueImpl<*, *>).results
+                                if (hasInvalidResult(result1)) {
+                                    INVALID_RESULT
+                                } else {
+                                    result1
+                                }
                             }
                         }
-                        2 -> {
-                            result1 = (dispatchSources[0] as DispatchQueueImpl<*, *>).results
-                            result2 = (dispatchSources[1] as DispatchQueueImpl<*, *>).results
-                            if (hasInvalidResult(result1, result2)) {
-                                INVALID_RESULT
+                        if (data != INVALID_RESULT && !isCancelled) {
+                            val func = worker
+                            if (func != null) {
+                                results = func.invoke(data as T)
                             } else {
-                                Pair(result1, result2)
+                                results = INVALID_RESULT
                             }
+                            notifyDispatchObservers()
+                            processNextDispatchQueue()
                         }
-                        else -> {
-                            result1 = (dispatchSources[0] as DispatchQueueImpl<*, *>).results
-                            if (hasInvalidResult(result1)) {
-                                INVALID_RESULT
-                            } else {
-                                result1
-                            }
-                        }
-                    }
-                    if (data != INVALID_RESULT && !isCancelled) {
-                        val func = worker
-                        if (func != null) {
-                            results = func.invoke(data as T)
-                        } else {
-                            results = INVALID_RESULT
-                        }
+                    } else {
+                        results = null
                         notifyDispatchObservers()
                         processNextDispatchQueue()
                     }
+                }
+            } catch (err: Exception) {
+                val doOnErrorWorker = doOnErrorWorker
+                if (doOnErrorWorker != null && !isCancelled) {
+                    try {
+                        results = doOnErrorWorker.invoke(err)
+                        notifyDispatchObservers()
+                        processNextDispatchQueue()
+                    } catch (e: Exception) {
+                        handleException(e)
+                    }
                 } else {
-                    results = null
-                    notifyDispatchObservers()
-                    processNextDispatchQueue()
+                    handleException(err)
                 }
-            }
-        } catch (err: Exception) {
-            val doOnErrorWorker = doOnErrorWorker
-            if (doOnErrorWorker != null && !isCancelled) {
-                try {
-                    results = doOnErrorWorker.invoke(err)
-                    notifyDispatchObservers()
-                    processNextDispatchQueue()
-                } catch (e: Exception) {
-                    handleException(e)
-                }
-            } else {
-                handleException(err)
             }
         }
     }
@@ -167,15 +171,21 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     private fun runDispatcher() {
         if (!isCancelled) {
-            threadHandlerInfo.threadHandler.removeCallbacks(dispatcher)
+            var dispatcherRunnable = dispatcher
+            if (dispatcherRunnable != null) {
+                threadHandlerInfo.threadHandler.removeCallbacks(dispatcherRunnable)
+                dispatcher = null
+            }
+            dispatcherRunnable = getDispatcher()
+            dispatcher = dispatcherRunnable
             if (dispatchQueueInfo.dispatchQueueController == null && Dispatcher.enableLogWarnings && this == dispatchQueueInfo.rootDispatchQueue) {
                 Dispatcher.logger.print(
                     TAG, "No DispatchQueueController set for dispatch queue with id: $id. " +
                             "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
             }
             when {
-                delayInMillis >= 1 -> threadHandlerInfo.threadHandler.postDelayed(delayInMillis, dispatcher)
-                else -> threadHandlerInfo.threadHandler.post(dispatcher)
+                delayInMillis >= 1 -> threadHandlerInfo.threadHandler.postDelayed(delayInMillis, dispatcherRunnable)
+                else -> threadHandlerInfo.threadHandler.post(dispatcherRunnable)
             }
         }
     }
@@ -239,6 +249,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                     iterator.remove()
                 }
                 dispatchQueueObservable.removeObservers()
+                dispatchQueueObservable.resetResult()
+                results = INVALID_RESULT
+                dispatcher = null
                 doOnErrorWorker = null
                 worker = null
                 dispatchQueueInfo.errorHandler = null
@@ -248,7 +261,11 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     private fun removeDispatcher() {
-        threadHandlerInfo.threadHandler.removeCallbacks(dispatcher)
+        val dispatcherRunnable = dispatcher
+        dispatcher = null
+        if (dispatcherRunnable != null) {
+            threadHandlerInfo.threadHandler.removeCallbacks(dispatcherRunnable)
+        }
         if (threadHandlerInfo.closeThreadHandler) {
             threadHandlerInfo.threadHandler.quit()
         }
