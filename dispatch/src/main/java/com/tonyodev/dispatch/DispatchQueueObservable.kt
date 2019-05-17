@@ -161,4 +161,8 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
         return synchronized(dispatchQueueObserversSet) { dispatchQueueObserversSet.toList() }
     }
 
+    internal fun resetResult() {
+        result = INVALID_RESULT
+    }
+
 }
