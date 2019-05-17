@@ -30,7 +30,7 @@ object Dispatcher {
      * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
      * */
     @JvmStatic
-    var globalErrorHandler: ((throwable: Throwable, dispatch: DispatchQueue<*>, String) -> Unit)? = null
+    var globalErrorHandler: ((DispatchQueueError) -> Unit)? = null
 
     /**
      * Sets the global thread handler factory that is responsible for creating thread handlers that the dispatch queues

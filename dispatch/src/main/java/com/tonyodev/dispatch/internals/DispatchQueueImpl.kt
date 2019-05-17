@@ -194,14 +194,14 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         val mainErrorHandler = dispatchQueueInfo.errorHandler
         if (mainErrorHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable { mainErrorHandler.invoke(throwable, this, this.blockLabel) })
+                .threadHandler.post(Runnable { mainErrorHandler.invoke(DispatchQueueError(throwable, this, this.blockLabel)) })
             cancel()
             return
         }
         val globalHandler = Dispatcher.globalErrorHandler
         if (globalHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable { globalHandler.invoke(throwable, this, this.blockLabel) })
+                .threadHandler.post(Runnable { globalHandler.invoke(DispatchQueueError(throwable, this, this.blockLabel)) })
             cancel()
             return
         }
@@ -213,7 +213,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return start(null)
     }
 
-    override fun start(errorHandler: ((throwable: Throwable, dispatchQueue: DispatchQueue<*>, blockLabel: String) -> Unit)?): DispatchQueue<R> {
+    override fun start(errorHandler: ((DispatchQueueError) -> Unit)?): DispatchQueue<R> {
         if (!isCancelled) {
             dispatchQueueInfo.errorHandler = errorHandler
             dispatchQueueInfo.completedDispatchQueue = false

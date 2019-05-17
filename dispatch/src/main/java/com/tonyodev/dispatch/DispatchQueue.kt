@@ -85,7 +85,7 @@ interface DispatchQueue<R> {
      * if the dispatch queue object who throw the error does not handle it's error within its doOnError method. The error handler is called on the main thread.
      * @return dispatch queue.
      * */
-    fun start(errorHandler: ((Throwable, DispatchQueue<*>, String) -> Unit)?): DispatchQueue<R>
+    fun start(errorHandler: ((DispatchQueueError) -> Unit)?): DispatchQueue<R>
 
     /**
      * Triggers the dispatch queue to start.
@@ -385,7 +385,7 @@ interface DispatchQueue<R> {
          * Sets the global error handler for Dispatch objects. This error handler is called only
          * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
          * */
-        var globalErrorHandler: ((throwable: Throwable, dispatch: DispatchQueue<*>, String) -> Unit)?
+        var globalErrorHandler: ((DispatchQueueError) -> Unit)?
             set(value) {
                 Dispatcher.globalErrorHandler = value
             }

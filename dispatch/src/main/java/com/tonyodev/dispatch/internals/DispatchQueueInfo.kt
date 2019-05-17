@@ -1,6 +1,7 @@
 package com.tonyodev.dispatch.internals
 
 import com.tonyodev.dispatch.DispatchQueue
+import com.tonyodev.dispatch.DispatchQueueError
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.utils.Threader
 import java.util.*
@@ -14,7 +15,7 @@ internal class DispatchQueueInfo(val queueId: Int,
     var completedDispatchQueue = false
     lateinit var rootDispatchQueue: DispatchQueueImpl<*, *>
     val queue = LinkedList<DispatchQueueImpl<*, *>>()
-    var errorHandler: ((throwable: Throwable, dispatchQueue: DispatchQueue<*>, blockLabel: String) -> Unit)? = null
+    var errorHandler: ((DispatchQueueError) -> Unit)? = null
     var dispatchQueueController: DispatchQueueController? = null
 
 }
