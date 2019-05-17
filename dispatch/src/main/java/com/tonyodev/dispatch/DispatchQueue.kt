@@ -199,7 +199,7 @@ interface DispatchQueue<R> {
      * */
     fun removeObservers(): DispatchQueue<R>
 
-    companion object {
+    companion object Queues {
 
         /**
          * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
