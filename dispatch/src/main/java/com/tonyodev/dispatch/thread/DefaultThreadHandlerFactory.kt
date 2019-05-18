@@ -34,7 +34,7 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
             name
         }
         val threadHandler = DefaultThreadHandler(threadName)
-        threadHandler.start()
+        startThreadHandlerIfNotActive(threadHandler)
         return threadHandler
     }
 
