@@ -166,6 +166,8 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
             for (queueItem in recycleList) {
                 queueItem.recycle()
             }
+            queueItem?.recycle()
+            queueItem = null
             threadSleepMillis = defaultSleepTime
         }
     }
