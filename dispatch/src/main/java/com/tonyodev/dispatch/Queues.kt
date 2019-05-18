@@ -8,7 +8,7 @@ package com.tonyodev.dispatch
  * */
 val backgroundDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.background
+        return DispatchQueue.background
     }
 
 /**
@@ -18,7 +18,7 @@ val backgroundDispatchQueue: DispatchQueue<Void?>
  * */
 val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.backgroundSecondary
+        return DispatchQueue.backgroundSecondary
     }
 
 /**
@@ -28,7 +28,7 @@ val backgroundSecondaryDispatchQueue: DispatchQueue<Void?>
  * */
 val ioDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.io
+        return DispatchQueue.io
     }
 
 /**
@@ -38,7 +38,7 @@ val ioDispatchQueue: DispatchQueue<Void?>
  * */
 val testDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.test
+        return DispatchQueue.test
     }
 
 /**
@@ -48,7 +48,7 @@ val testDispatchQueue: DispatchQueue<Void?>
  * */
 val newDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.createDispatchQueue(ThreadType.NEW)
+        return DispatchQueue.createDispatchQueue(ThreadType.NEW)
     }
 
 /**
@@ -57,5 +57,5 @@ val newDispatchQueue: DispatchQueue<Void?>
  * */
 val mainDispatchQueue: DispatchQueue<Void?>
     get() {
-        return Dispatcher.main
+        return DispatchQueue.main
     }

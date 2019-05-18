@@ -1,7 +1,6 @@
 package com.tonyodev.dispatchretrofit
 
 import com.tonyodev.dispatch.DispatchQueue
-import com.tonyodev.dispatch.Dispatcher
 import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatch.thread.ThreadHandler
 import okhttp3.Request
@@ -45,7 +44,7 @@ class DispatchQueueCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun create(threadHandler: ThreadHandler? = null, errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchQueueCallAdapterFactory {
-            if (threadHandler?.threadName == Dispatcher.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
+            if (threadHandler?.threadName == DispatchQueue.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
                 throw IllegalArgumentException("DispatchQueueCallAdapterFactory: ThreadHandler cannot be the main thread for network operations.")
             }
             return DispatchQueueCallAdapterFactory(threadHandler, errorHandler)
@@ -59,7 +58,7 @@ class DispatchQueueCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun createTestFactory(errorHandler: ((HttpException, Request) -> Unit)? = null): DispatchQueueCallAdapterFactory {
-            return DispatchQueueCallAdapterFactory(Dispatcher.threadHandlerFactory.create(ThreadType.TEST), errorHandler)
+            return DispatchQueueCallAdapterFactory(DispatchQueue.threadHandlerFactory.create(ThreadType.TEST), errorHandler)
         }
 
     }
@@ -73,9 +72,9 @@ class DispatchQueueCallAdapterFactory constructor(
                 threadHandler.start()
             }
             return if (threadHandler == null) {
-                Dispatcher.createDispatchQueue(ThreadType.IO)
+                DispatchQueue.createDispatchQueue(ThreadType.IO)
             } else {
-                Dispatcher.createDispatchQueue(threadHandler)
+                DispatchQueue.createDispatchQueue(threadHandler)
             }.async {
                 val callClone = call.clone()
                 val response = callClone.execute()

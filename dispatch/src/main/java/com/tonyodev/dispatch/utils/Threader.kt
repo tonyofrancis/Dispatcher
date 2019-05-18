@@ -1,20 +1,21 @@
 package com.tonyodev.dispatch.utils
 
-import com.tonyodev.dispatch.Dispatcher
+
+import com.tonyodev.dispatch.DispatchQueue
 import com.tonyodev.dispatch.ThreadType
 import com.tonyodev.dispatch.thread.ThreadHandler
 
 internal object Threader {
 
-    private val uiHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.MAIN) }
+    private val uiHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.MAIN) }
 
-    private val testHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.TEST) }
+    private val testHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.TEST) }
 
-    private val backgroundHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.BACKGROUND) }
+    private val backgroundHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.BACKGROUND) }
 
-    private val backgroundSecondaryHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.BACKGROUND_SECONDARY) }
+    private val backgroundSecondaryHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.BACKGROUND_SECONDARY) }
 
-    private val ioHandler by lazy { Dispatcher.threadHandlerFactory.create(ThreadType.IO) }
+    private val ioHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.IO) }
 
     private val backgroundThreadHandlerInfo by lazy { ThreadHandlerInfo(backgroundHandler, false) }
 
@@ -33,12 +34,12 @@ internal object Threader {
             ThreadType.IO -> ioThreadHandlerInfo
             ThreadType.MAIN -> uiThreadHandlerInfo
             ThreadType.TEST -> testThreadHandlerInfo
-            ThreadType.NEW -> ThreadHandlerInfo(Dispatcher.threadHandlerFactory.create(ThreadType.NEW), true)
+            ThreadType.NEW -> ThreadHandlerInfo(DispatchQueue.threadHandlerFactory.create(ThreadType.NEW), true)
         }
     }
 
     fun getHandlerThreadInfo(threadName: String): ThreadHandlerInfo {
-        return ThreadHandlerInfo(Dispatcher.threadHandlerFactory.create(threadName), true)
+        return ThreadHandlerInfo(DispatchQueue.threadHandlerFactory.create(threadName), true)
     }
 
     data class ThreadHandlerInfo(val threadHandler: ThreadHandler, val closeThreadHandler: Boolean) {

@@ -178,8 +178,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             }
             dispatcherRunnable = getDispatcher()
             dispatcher = dispatcherRunnable
-            if (dispatchQueueInfo.dispatchQueueController == null && Dispatcher.enableLogWarnings && this == dispatchQueueInfo.rootDispatchQueue) {
-                Dispatcher.logger.print(
+            if (dispatchQueueInfo.dispatchQueueController == null && DispatchQueue.enableLogWarnings && this == dispatchQueueInfo.rootDispatchQueue) {
+                DispatchQueue.logger.print(
                     TAG, "No DispatchQueueController set for dispatch queue with id: $id. " +
                             "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
             }
@@ -198,7 +198,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             cancel()
             return
         }
-        val globalHandler = Dispatcher.globalErrorHandler
+        val globalHandler = DispatchQueue.globalErrorHandler
         if (globalHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
                 .threadHandler.post(Runnable { globalHandler.invoke(DispatchQueueError(throwable, this, this.blockLabel)) })

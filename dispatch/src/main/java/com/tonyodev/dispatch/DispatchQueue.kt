@@ -1,13 +1,21 @@
 package com.tonyodev.dispatch
 
+import com.tonyodev.dispatch.internals.DispatchQueueImpl
+import com.tonyodev.dispatch.internals.DispatchQueueInfo
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
 import com.tonyodev.dispatch.thread.DefaultThreadHandlerFactory
 import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandlerFactory
-import com.tonyodev.dispatch.utils.DefaultLogger
-import com.tonyodev.dispatch.utils.Logger
+import com.tonyodev.dispatch.utils.*
+import com.tonyodev.dispatch.utils.Threader
+import com.tonyodev.dispatch.utils.forceLoadAndroidClassesIfAvailable
+import com.tonyodev.dispatch.utils.getNewDispatchId
+import com.tonyodev.dispatch.utils.getNewQueueId
+import com.tonyodev.dispatch.utils.startThreadHandlerIfNotActive
+import com.tonyodev.dispatch.utils.throwIfUsesMainThreadForBackgroundWork
+import java.lang.IllegalArgumentException
 
 /**
  * A DispatchQueue is used to perform work and return data on the right thread at the right time.
@@ -202,12 +210,44 @@ interface DispatchQueue<R> {
     companion object Queues {
 
         /**
+         * Enable or disable log warnings by the library.
+         * */
+
+        var enableLogWarnings = false
+
+        /**
+         * Sets the global error handler for Dispatch objects. This error handler is called only
+         * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
+         * */
+        var globalErrorHandler: ((DispatchQueueError) -> Unit)? = null
+
+        /**
+         * Sets the global thread handler factory that is responsible for creating thread handlers that the dispatch queues
+         * will use to process work in the background.
+         * */
+        var threadHandlerFactory: ThreadHandlerFactory = DefaultThreadHandlerFactory()
+
+        /**
+         * Sets the logger uses by the library to report warnings and messages.
+         * */
+        var logger: Logger = DefaultLogger()
+
+
+        init {
+            forceLoadAndroidClassesIfAvailable()
+        }
+
+        /**
          * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
          * The dispatch object returned will use the default background handler to schedule work in the background.
          * @return new dispatch queue.
          * */
         fun createDispatchQueue(): DispatchQueue<Void?> {
-            return Dispatcher.createDispatchQueue()
+            return createNewDispatchQueue(
+                delayInMillis = 0,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
+            )
         }
 
         /**
@@ -217,7 +257,13 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createDispatchQueue(backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
-            return Dispatcher.createDispatchQueue(backgroundHandler)
+            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
+            return createNewDispatchQueue(
+                delayInMillis = 0,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false)
+            )
         }
 
         /**
@@ -229,7 +275,12 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createDispatchQueue(threadType: ThreadType): DispatchQueue<Void?> {
-            return Dispatcher.createDispatchQueue(threadType)
+            throwIfUsesMainThreadForBackgroundWork(threadType)
+            return createNewDispatchQueue(
+                delayInMillis = 0,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(threadType)
+            )
         }
 
         /**
@@ -240,7 +291,11 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createDispatchQueue(handlerName: String): DispatchQueue<Void?> {
-            return Dispatcher.createDispatchQueue(handlerName)
+            return createNewDispatchQueue(
+                delayInMillis = 0,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(handlerName)
+            )
         }
 
         /**
@@ -250,7 +305,11 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createTimerDispatchQueue(delayInMillis: Long): DispatchQueue<Void?> {
-            return Dispatcher.createTimerDispatchQueue(delayInMillis)
+            return createNewDispatchQueue(
+                delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.NEW)
+            )
         }
 
         /**
@@ -262,7 +321,13 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createTimerDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
-            return Dispatcher.createTimerDispatchQueue(delayInMillis, backgroundHandler)
+            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
+            return createNewDispatchQueue(
+                delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false)
+            )
         }
 
         /**
@@ -274,7 +339,12 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createTimerDispatchQueue(delayInMillis: Long, threadType: ThreadType): DispatchQueue<Void?> {
-            return Dispatcher.createTimerDispatchQueue(delayInMillis, threadType)
+            throwIfUsesMainThreadForBackgroundWork(threadType)
+            return createNewDispatchQueue(
+                delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(threadType)
+            )
         }
 
         /**
@@ -284,7 +354,11 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createIntervalDispatchQueue(delayInMillis: Long): DispatchQueue<Void?> {
-            return Dispatcher.createIntervalDispatchQueue(delayInMillis)
+            return createNewDispatchQueue(
+                delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = true,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.NEW)
+            )
         }
 
         /**
@@ -296,7 +370,13 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createIntervalDispatchQueue(delayInMillis: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
-            return Dispatcher.createIntervalDispatchQueue(delayInMillis, backgroundHandler)
+            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
+            return createNewDispatchQueue(
+                delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = true,
+                threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false)
+            )
         }
 
         /**
@@ -308,7 +388,12 @@ interface DispatchQueue<R> {
          * @return new dispatch queue.
          * */
         fun createIntervalDispatchQueue(delayInMillis: Long, threadType: ThreadType): DispatchQueue<Void?> {
-            return Dispatcher.createIntervalDispatchQueue(delayInMillis, threadType)
+            throwIfUsesMainThreadForBackgroundWork(threadType)
+            return createNewDispatchQueue(
+                delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = true,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(threadType)
+            )
         }
 
         /**
@@ -318,7 +403,11 @@ interface DispatchQueue<R> {
          * */
         val background: DispatchQueue<Void?>
             get() {
-                return Dispatcher.background
+                return createNewDispatchQueue(
+                    delayInMillis = 0,
+                    isIntervalDispatchQueue = false,
+                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
+                )
             }
 
         /**
@@ -328,7 +417,11 @@ interface DispatchQueue<R> {
          * */
         val backgroundSecondary: DispatchQueue<Void?>
             get() {
-                return Dispatcher.backgroundSecondary
+                return createNewDispatchQueue(
+                    delayInMillis = 0,
+                    isIntervalDispatchQueue = false,
+                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND_SECONDARY)
+                )
             }
 
         /**
@@ -338,7 +431,11 @@ interface DispatchQueue<R> {
          * */
         val io: DispatchQueue<Void?>
             get() {
-                return Dispatcher.io
+                return createNewDispatchQueue(
+                    delayInMillis = 0,
+                    isIntervalDispatchQueue = false,
+                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.IO)
+                )
             }
 
         /**
@@ -348,7 +445,11 @@ interface DispatchQueue<R> {
          * */
         val test: DispatchQueue<Void?>
             get() {
-                return Dispatcher.test
+                return createNewDispatchQueue(
+                    delayInMillis = 0,
+                    isIntervalDispatchQueue = false,
+                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.TEST)
+                )
             }
 
         /**
@@ -357,54 +458,35 @@ interface DispatchQueue<R> {
          * */
         val main: DispatchQueue<Void?>
             get() {
-                return Dispatcher.main
+                return createNewDispatchQueue(
+                    delayInMillis = 0,
+                    isIntervalDispatchQueue = false,
+                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.MAIN)
+                )
             }
 
-        /**
-         * Enable or disable log warnings by the library.
-         * */
-        var enableLogWarnings: Boolean
-            set(value) {
-                Dispatcher.enableLogWarnings = value
-            }
-            get() {
-                return Dispatcher.enableLogWarnings
-            }
+        private fun createNewDispatchQueue(
+            delayInMillis: Long,
+            isIntervalDispatchQueue: Boolean,
+            threadHandlerInfo: Threader.ThreadHandlerInfo
+        ): DispatchQueue<Void?> {
+            val dispatchQueueInfo = DispatchQueueInfo(
+                queueId = getNewQueueId(),
+                isIntervalDispatch = isIntervalDispatchQueue,
+                threadHandlerInfo = threadHandlerInfo
+            )
+            val newDispatchQueue = DispatchQueueImpl<Void?, Void?>(
+                blockLabel = getNewDispatchId(),
+                delayInMillis = delayInMillis,
+                worker = null,
+                dispatchQueueInfo = dispatchQueueInfo,
+                threadHandlerInfo = threadHandlerInfo
+            )
+            dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
+            dispatchQueueInfo.queue.add(newDispatchQueue)
+            return newDispatchQueue
+        }
 
-        /**
-         * Sets the global error handler for Dispatch objects. This error handler is called only
-         * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
-         * */
-        var globalErrorHandler: ((DispatchQueueError) -> Unit)?
-            set(value) {
-                Dispatcher.globalErrorHandler = value
-            }
-            get() {
-                return Dispatcher.globalErrorHandler
-            }
-
-        /**
-         * Sets the global thread handler factory that is responsible for creating thread handlers that the dispatch queues
-         * will use to process work in the background.
-         * */
-        var threadHandlerFactory: ThreadHandlerFactory
-            set(value) {
-                Dispatcher.threadHandlerFactory = value
-            }
-            get() {
-                return Dispatcher.threadHandlerFactory
-            }
-
-        /**
-         * Sets the logger uses by the library to report warnings and messages.
-         * */
-        var logger: Logger
-            set(value) {
-                Dispatcher.logger = value
-            }
-            get() {
-                return Dispatcher.logger
-            }
     }
 
 }
