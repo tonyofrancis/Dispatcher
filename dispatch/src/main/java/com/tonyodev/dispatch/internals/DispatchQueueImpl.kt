@@ -276,7 +276,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return this
     }
 
-    override fun managedBy(dispatchQueueController: DispatchQueueController): DispatchQueue<R> {
+    override fun managedBy(dispatchQueueController: DispatchQueueController?): DispatchQueue<R> {
         if (dispatchQueueController is LifecycleDispatchQueueController) {
             managedBy(dispatchQueueController, CancelType.DESTROYED)
         } else {
@@ -284,7 +284,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             this.dispatchQueueInfo.dispatchQueueController = null
             oldDispatchQueueController?.unmanage(this)
             this.dispatchQueueInfo.dispatchQueueController = dispatchQueueController
-            dispatchQueueController.manage(this)
+            dispatchQueueController?.manage(this)
         }
         return this
     }

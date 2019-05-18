@@ -119,10 +119,10 @@ interface DispatchQueue<R> {
     /**
      * Set's this dispatch queue to be managed by a DispatchQueueController.
      * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
-     * @param dispatchQueueController the dispatch controller that will manage the dispatch queue.
+     * @param dispatchQueueController the dispatch controller that will manage the dispatch queue. Can be null.
      * @return dispatch queue.
      * */
-    fun managedBy(dispatchQueueController: DispatchQueueController): DispatchQueue<R>
+    fun managedBy(dispatchQueueController: DispatchQueueController?): DispatchQueue<R>
 
     /**
      * Set's this dispatch queue to be managed by a LifecycleDispatchQueueController.
