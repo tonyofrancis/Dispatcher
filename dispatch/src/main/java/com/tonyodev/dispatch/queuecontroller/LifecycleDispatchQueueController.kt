@@ -9,23 +9,21 @@ import com.tonyodev.dispatch.DispatchQueue
  * */
 open class LifecycleDispatchQueueController: DispatchQueueController() {
 
-    private val pausedQueueSet = mutableSetOf<DispatchQueue<*>>()
-
-    private val stoppedQueueSet = mutableSetOf<DispatchQueue<*>>()
-
-    private val destroyQueueSet = mutableSetOf<DispatchQueue<*>>()
+    private val queueMap = mutableMapOf<Int, Pair<DispatchQueue<*>, CancelType>>()
 
     /**
      * Cancels all dispatch queues that are being managed by this
      * DispatchQueueController with a cancel type of CancelType.PAUSED.
      * */
     open fun cancelAllPaused() {
-        super.cancelDispatchQueues(pausedQueueSet)
-        synchronized(pausedQueueSet) {
-            val iterator = pausedQueueSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next()
-                iterator.remove()
+        synchronized(queueMap) {
+            val pausedList = queueMap.asSequence()
+                .filter { it.value.second == CancelType.PAUSED }
+                .map { it.value.first }
+                .toList()
+            super.cancelDispatchQueues(pausedList)
+            for (dispatchQueue in pausedList) {
+                queueMap.remove(dispatchQueue.id)
             }
         }
     }
@@ -35,12 +33,14 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * DispatchQueueController with a cancel type of CancelType.STOPPED.
      * */
     open fun cancelAllStopped() {
-        super.cancelDispatchQueues(stoppedQueueSet)
-        synchronized(stoppedQueueSet) {
-            val iterator = stoppedQueueSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next()
-                iterator.remove()
+        synchronized(queueMap) {
+            val stoppedList = queueMap.asSequence()
+                .filter { it.value.second == CancelType.STOPPED }
+                .map { it.value.first }
+                .toList()
+            super.cancelDispatchQueues(stoppedList)
+            for (dispatchQueue in stoppedList) {
+                queueMap.remove(dispatchQueue.id)
             }
         }
     }
@@ -50,53 +50,24 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * DispatchQueueController with a cancel type of CancelType.DESTROYED.
      * */
     open fun cancelAllDestroyed() {
-        super.cancelAllDispatchQueues()
-        cancelAllPaused()
-        cancelAllStopped()
-        synchronized(destroyQueueSet) {
-            val iterator = destroyQueueSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next()
-                iterator.remove()
-            }
+        synchronized(queueMap) {
+            super.cancelAllDispatchQueues()
+            queueMap.clear()
         }
     }
 
     override fun unmanage(dispatchQueue: DispatchQueue<*>) {
         super.unmanage(dispatchQueue)
-        var iterator: MutableIterator<DispatchQueue<*>>
-        synchronized(pausedQueueSet) {
-            iterator = pausedQueueSet.iterator()
-            while (iterator.hasNext()) {
-                if (iterator.next() == dispatchQueue.root) {
-                    iterator.remove()
-                    return
-                }
-            }
-        }
-        synchronized(stoppedQueueSet) {
-            iterator = stoppedQueueSet.iterator()
-            while (iterator.hasNext()) {
-                if (iterator.next() == dispatchQueue.root) {
-                    iterator.remove()
-                    return
-                }
-            }
-        }
-        synchronized(destroyQueueSet) {
-            iterator = destroyQueueSet.iterator()
-            while (iterator.hasNext()) {
-                if (iterator.next() == dispatchQueue.root) {
-                    iterator.remove()
-                    break
-                }
-            }
+        synchronized(queueMap) {
+            queueMap.remove(dispatchQueue.id)
         }
     }
 
     override fun unmanage(dispatchQueueList: List<DispatchQueue<*>>) {
-        for (dispatch in dispatchQueueList) {
-            unmanage(dispatch)
+        synchronized(queueMap) {
+            for (dispatch in dispatchQueueList) {
+                queueMap.remove(dispatch.id)
+            }
         }
     }
 
@@ -111,19 +82,17 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * @param cancelType the cancel type.
      * */
     fun manage(dispatchQueue: DispatchQueue<*>, cancelType: CancelType) {
-        super.manage(dispatchQueue)
-        when(cancelType) {
-            CancelType.PAUSED -> synchronized(pausedQueueSet) { pausedQueueSet.add(dispatchQueue.root) }
-            CancelType.STOPPED -> synchronized(stoppedQueueSet) { stoppedQueueSet.add(dispatchQueue.root) }
-            CancelType.DESTROYED -> synchronized(destroyQueueSet) { destroyQueueSet.add(dispatchQueue.root) }
+        synchronized(queueMap) {
+            super.manage(dispatchQueue)
+            queueMap[dispatchQueue.id] = Pair(dispatchQueue.root, cancelType)
         }
     }
 
     override fun manage(dispatchQueueList: List<DispatchQueue<*>>) {
-        synchronized(destroyQueueSet) {
+        synchronized(queueMap) {
+            super.manage(dispatchQueueList)
             for (dispatchQueue in dispatchQueueList) {
-                super.manage(dispatchQueue)
-                destroyQueueSet.add(dispatchQueue.root)
+                queueMap[dispatchQueue.id] = Pair(dispatchQueue.root, CancelType.DESTROYED)
             }
         }
     }
@@ -133,59 +102,32 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
     }
 
     override fun cancelDispatchQueues(vararg arrayOfDispatchQueues: DispatchQueue<*>) {
-        super.cancelDispatchQueues(*arrayOfDispatchQueues)
-        for (dispatch in arrayOfDispatchQueues) {
-            remove(dispatch.id)
+        synchronized(queueMap) {
+            super.cancelDispatchQueues(arrayOfDispatchQueues.toList())
+            for (dispatch in arrayOfDispatchQueues) {
+                queueMap.remove(dispatch.id)
+            }
         }
     }
 
     override fun cancelDispatchQueues(dispatchQueueIds: List<Int>) {
-        super.cancelDispatchQueues(dispatchQueueIds)
-        for (queueId in dispatchQueueIds) {
-            remove(queueId)
+        synchronized(queueMap) {
+            super.cancelDispatchQueues(dispatchQueueIds)
+            for (id in dispatchQueueIds) {
+                queueMap.remove(id)
+            }
         }
     }
 
     override fun cancelDispatchQueues(vararg arrayOfDispatchQueueId: Int) {
-        super.cancelDispatchQueues(*arrayOfDispatchQueueId)
-        for (queueId in arrayOfDispatchQueueId) {
-            remove(queueId)
-        }
+        cancelDispatchQueues(arrayOfDispatchQueueId.toList())
     }
 
     override fun cancelDispatchQueues(dispatchQueueCollection: Collection<DispatchQueue<*>>) {
-        for (dispatch in dispatchQueueCollection) {
-            super.cancelDispatchQueues(dispatch)
-            remove(dispatch.id)
-        }
-    }
-
-    private fun remove(queueId: Int) {
-        synchronized(pausedQueueSet) {
-            val iterator = pausedQueueSet.iterator()
-            while (iterator.hasNext()) {
-                if (iterator.next().id == queueId) {
-                    iterator.remove()
-                    return
-                }
-            }
-        }
-        synchronized(stoppedQueueSet) {
-            val iterator = stoppedQueueSet.iterator()
-            while (iterator.hasNext()) {
-                if (iterator.next().id == queueId) {
-                    iterator.remove()
-                    return
-                }
-            }
-        }
-        synchronized(destroyQueueSet) {
-            val iterator = destroyQueueSet.iterator()
-            while (iterator.hasNext()) {
-                if (iterator.next().id == queueId) {
-                    iterator.remove()
-                    break
-                }
+        synchronized(queueMap) {
+            super.cancelDispatchQueues(dispatchQueueCollection)
+            for (dispatchQueue in dispatchQueueCollection) {
+                queueMap.remove(dispatchQueue.id)
             }
         }
     }
@@ -195,7 +137,12 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * @return copy of the paused manged queues in a set.
      * */
     fun getManagedPausedDispatchQueues(): Set<DispatchQueue<*>> {
-        return synchronized(pausedQueueSet) { pausedQueueSet.toSet() }
+        return synchronized(queueMap) {
+            queueMap.asSequence()
+                .filter { it.value.second == CancelType.PAUSED }
+                .map { it.value.first }
+                .toSet()
+        }
     }
 
     /**
@@ -203,7 +150,12 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * @return copy of the stopped manged queues in a set.
      * */
     fun getManagedStoppedDispatchQueues(): Set<DispatchQueue<*>> {
-        return synchronized(stoppedQueueSet) { stoppedQueueSet.toSet() }
+        return synchronized(queueMap) {
+            queueMap.asSequence()
+                .filter { it.value.second == CancelType.STOPPED }
+                .map { it.value.first }
+                .toSet()
+        }
     }
 
     /**
@@ -211,7 +163,11 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
      * @return copy of the destroyed manged queues in a set.
      * */
     fun getManagedDestroyedDispatchQueues(): Set<DispatchQueue<*>> {
-        return synchronized(destroyQueueSet) { destroyQueueSet.toSet() }
+        return synchronized(queueMap) {
+            queueMap.asSequence()
+                .map { it.value.first }
+                .toSet()
+        }
     }
 
 }
