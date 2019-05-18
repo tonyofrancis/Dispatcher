@@ -5,8 +5,8 @@ import android.util.Log;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import com.tonyodev.dispatch.DispatchQueue;
 import com.tonyodev.dispatch.queuecontroller.CancelType;
-import com.tonyodev.dispatch.Dispatcher;
 import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueController;
 import kotlin.jvm.functions.Function1;
 
@@ -31,7 +31,7 @@ public class ActivityTwo extends AppCompatActivity {
     }
 
     private void runIntervalTask() {
-        Dispatcher.createIntervalDispatchQueue(10000)
+        DispatchQueue.Queues.createIntervalDispatchQueue(10000)
                 .managedBy(activityDispatchQueueController, CancelType.PAUSED)
                 .async(new Function1<Void, Integer>() {
                     @Override
