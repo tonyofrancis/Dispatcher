@@ -38,12 +38,12 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
     fun addObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
             dispatchQueueObserversSet.add(dispatchQueueObserver)
-        }
-        if (result != INVALID_RESULT) {
-            if (shouldNotifyOnHandler) {
-                threadHandler?.post(Runnable { notifyObserver(dispatchQueueObserver) })
-            } else {
-                notifyObserver(dispatchQueueObserver)
+            if (result != INVALID_RESULT) {
+                if (shouldNotifyOnHandler) {
+                    threadHandler?.post(Runnable { notifyObserver(dispatchQueueObserver) })
+                } else {
+                    notifyObserver(dispatchQueueObserver)
+                }
             }
         }
         return this
@@ -51,23 +51,24 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
 
     /**
      * Adds a list of dispatch queue observers.
-     * @param dispatchQueueObservers the list of observers.
+     * @param dispatchQueueObservers the collection of observers.
      * @return the dispatchQueueObservable.
      * */
-    fun addObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueueObservable<R> {
+    fun addObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
             dispatchQueueObserversSet.addAll(dispatchQueueObservers)
-        }
-        if (result != INVALID_RESULT) {
-            if (shouldNotifyOnHandler) {
-                threadHandler?.post(Runnable {
+            if (result != INVALID_RESULT) {
+                if (shouldNotifyOnHandler) {
+                    val observers = dispatchQueueObserversSet.toList()
+                    threadHandler?.post(Runnable {
+                        for (dispatchObserver in observers) {
+                            notifyObserver(dispatchObserver)
+                        }
+                    })
+                } else {
                     for (dispatchObserver in dispatchQueueObservers) {
                         notifyObserver(dispatchObserver)
                     }
-                })
-            } else {
-                for (dispatchObserver in dispatchQueueObservers) {
-                    notifyObserver(dispatchObserver)
                 }
             }
         }
@@ -97,7 +98,7 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
      * @param dispatchQueueObservers the list of observers to be removed.
      * @return the dispatchQueueObservable.
      * */
-    fun removeObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueueObservable<R> {
+    fun removeObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
             val iterator = dispatchQueueObserversSet.iterator()
             var count = 0
