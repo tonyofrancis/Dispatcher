@@ -1,8 +1,7 @@
 package com.tonyodev.dispatch
 
 /**
- * Enum that holds the different
- * thread types.
+ * Enum that holds the different thread types.
  * */
 enum class ThreadType {
 
@@ -12,15 +11,10 @@ enum class ThreadType {
     /** Use default Background thread.*/
     BACKGROUND,
 
-    /**
-     * Use the Secondary Background thread.
-     * */
-    BACKGROUND_SECONDARY,
-
     /** Use a new background thread.*/
     NEW,
 
-    /** On Android Uses the user interface thread. On other JVMs a thread called dispatchMain is created.*/
+    /** On Android Uses the user interface thread called main. On other JVMs a thread called dispatchMain is created by default.*/
     MAIN,
 
     /** Uses the default test thread handler*/

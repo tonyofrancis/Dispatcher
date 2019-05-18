@@ -19,7 +19,6 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
     override fun create(threadType: ThreadType): ThreadHandler {
         return when(threadType) {
             ThreadType.BACKGROUND -> AndroidThreadHandler(THREAD_BACKGROUND)
-            ThreadType.BACKGROUND_SECONDARY -> AndroidThreadHandler(THREAD_BACKGROUND_SECONDARY)
             ThreadType.IO -> AndroidThreadHandler(THREAD_IO)
             ThreadType.NEW -> getNewDispatchQueueHandler()
             ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))

@@ -412,20 +412,6 @@ interface DispatchQueue<R> {
 
         /**
          * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
-         * The dispatch queue operates on the secondary background handler/thread.
-         * @return new dispatch queue.
-         * */
-        val backgroundSecondary: DispatchQueue<Void?>
-            get() {
-                return createNewDispatchQueue(
-                    delayInMillis = 0,
-                    isIntervalDispatchQueue = false,
-                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND_SECONDARY)
-                )
-            }
-
-        /**
-         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
          * The dispatch queue operates on the default io handler/thread.
          * @return new dispatch queue.
          * */

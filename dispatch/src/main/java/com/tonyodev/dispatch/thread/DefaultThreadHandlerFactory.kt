@@ -14,7 +14,6 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
     override fun create(threadType: ThreadType): ThreadHandler {
         val threadHandler = when(threadType) {
             ThreadType.BACKGROUND -> DefaultThreadHandler(THREAD_BACKGROUND)
-            ThreadType.BACKGROUND_SECONDARY -> DefaultThreadHandler(THREAD_BACKGROUND_SECONDARY)
             ThreadType.IO -> DefaultThreadHandler(THREAD_IO)
             ThreadType.NEW -> getNewThreadHandler()
             ThreadType.MAIN -> DefaultThreadHandler(THREAD_MAIN_NO_UI)

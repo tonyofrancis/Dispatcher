@@ -13,13 +13,9 @@ internal object Threader {
 
     private val backgroundHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.BACKGROUND) }
 
-    private val backgroundSecondaryHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.BACKGROUND_SECONDARY) }
-
     private val ioHandler by lazy { DispatchQueue.threadHandlerFactory.create(ThreadType.IO) }
 
     private val backgroundThreadHandlerInfo by lazy { ThreadHandlerInfo(backgroundHandler, false) }
-
-    private val backgroundSecondaryThreadHandlerInfo by lazy { ThreadHandlerInfo(backgroundSecondaryHandler, false) }
 
     private val uiThreadHandlerInfo by lazy { ThreadHandlerInfo(uiHandler, false) }
 
@@ -30,7 +26,6 @@ internal object Threader {
     fun getHandlerThreadInfo(threadType: ThreadType): ThreadHandlerInfo {
         return when(threadType) {
             ThreadType.BACKGROUND -> backgroundThreadHandlerInfo
-            ThreadType.BACKGROUND_SECONDARY -> backgroundSecondaryThreadHandlerInfo
             ThreadType.IO -> ioThreadHandlerInfo
             ThreadType.MAIN -> uiThreadHandlerInfo
             ThreadType.TEST -> testThreadHandlerInfo
