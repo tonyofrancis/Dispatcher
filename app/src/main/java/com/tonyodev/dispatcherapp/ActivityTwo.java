@@ -31,7 +31,7 @@ public class ActivityTwo extends AppCompatActivity {
     }
 
     private void runIntervalTask() {
-        DispatchQueue.Queues.createIntervalDispatchQueue(10000)
+        DispatchQueue.Queue.createIntervalDispatchQueue(10000)
                 .managedBy(activityDispatchQueueController, CancelType.PAUSED)
                 .async(aVoid -> 55)
                 .async(2000, integer -> {

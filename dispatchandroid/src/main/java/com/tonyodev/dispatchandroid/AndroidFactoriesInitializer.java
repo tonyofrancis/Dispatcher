@@ -11,8 +11,8 @@ public final class AndroidFactoriesInitializer {
     }
 
     public static void init() {
-        DispatchQueue.Queues.getGlobalSettings().setLogger(new AndroidLogger());
-        DispatchQueue.Queues.getGlobalSettings().setThreadHandlerFactory(new AndroidThreadHandlerFactory());
+        DispatchQueue.Queue.getGlobalSettings().setLogger(new AndroidLogger());
+        DispatchQueue.Queue.getGlobalSettings().setThreadHandlerFactory(new AndroidThreadHandlerFactory());
     }
 
 }

@@ -204,7 +204,7 @@ interface DispatchQueue<R> {
      * */
     fun removeObservers(): DispatchQueue<R>
 
-    companion object Queues {
+    companion object Queue {
 
         /** DispatchQueue Global globalSettings.*/
         val globalSettings = Settings()
