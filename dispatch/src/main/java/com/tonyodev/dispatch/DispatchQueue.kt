@@ -209,28 +209,8 @@ interface DispatchQueue<R> {
 
     companion object Queues {
 
-        /**
-         * Enable or disable log warnings by the library.
-         * */
-        var enableLogWarnings = false
-
-        /**
-         * Sets the global error handler for Dispatch objects. This error handler is called only
-         * if a dispatch queue does not handler its errors. The error handler is called on the main thread.
-         * */
-        var globalErrorHandler: ((DispatchQueueError) -> Unit)? = null
-
-        /**
-         * Sets the global thread handler factory that is responsible for creating thread handlers that the dispatch queues
-         * will use to process work in the background.
-         * */
-        var threadHandlerFactory: ThreadHandlerFactory = DefaultThreadHandlerFactory()
-
-        /**
-         * Sets the logger uses by the library to report warnings and messages.
-         * */
-        var logger: Logger = DefaultLogger()
-
+        /** DispatchQueue Global globalSettings.*/
+        val globalSettings = Settings()
 
         init {
             forceLoadAndroidClassesIfAvailable()
@@ -238,14 +218,13 @@ interface DispatchQueue<R> {
 
         /**
          * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
-         * The dispatch object returned will use the default background handler to schedule work in the background.
          * @return new dispatch queue.
          * */
         fun createDispatchQueue(): DispatchQueue<Void?> {
             return createNewDispatchQueue(
                 delayInMillis = 0,
                 isIntervalDispatchQueue = false,
-                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.BACKGROUND)
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.NEW)
             )
         }
 
@@ -285,15 +264,15 @@ interface DispatchQueue<R> {
         /**
          * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
          * The returned dispatch will have a newly created handler that will handle background work.
-         * @param handlerName the name used by the handler.
+         * @param threadHandlerName the name used by the threadHandler.
          * handler is used.
          * @return new dispatch queue.
          * */
-        fun createDispatchQueue(handlerName: String): DispatchQueue<Void?> {
+        fun createDispatchQueue(threadHandlerName: String): DispatchQueue<Void?> {
             return createNewDispatchQueue(
                 delayInMillis = 0,
                 isIntervalDispatchQueue = false,
-                threadHandlerInfo = Threader.getHandlerThreadInfo(handlerName)
+                threadHandlerInfo = Threader.getHandlerThreadInfo(threadHandlerName)
             )
         }
 
@@ -396,7 +375,7 @@ interface DispatchQueue<R> {
         }
 
         /**
-         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * Creates a new dispatch queue using the default background thread that can be used to post work on the main thread or do work in the background.
          * The dispatch queue operates on the default background handler/thread.
          * @return new dispatch queue.
          * */
@@ -410,7 +389,7 @@ interface DispatchQueue<R> {
             }
 
         /**
-         * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
+         * Creates a new dispatch queue using the io thread that can be used to post work on the main thread or do work in the background.
          * The dispatch queue operates on the default io handler/thread.
          * @return new dispatch queue.
          * */
@@ -424,7 +403,7 @@ interface DispatchQueue<R> {
             }
 
         /**
-         * Creates a new test dispatch queue. All async and post run on the same thread this dispatch queue was created on.
+         * Creates a new test dispatch queue using the test thread. All async and post run on the same thread this dispatch queue was created on.
          * Note: Test Dispatch queues do not run with delays.
          * @return test dispatch queue.
          * */
@@ -437,36 +416,17 @@ interface DispatchQueue<R> {
                 )
             }
 
-        /**
-         * Creates a new main dispatch queue. All async and post run on the main thread.
-         * @return main dispatch queue.
-         * */
-        val main: DispatchQueue<Void?>
-            get() {
-                return createNewDispatchQueue(
-                    delayInMillis = 0,
-                    isIntervalDispatchQueue = false,
-                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                )
-            }
-
-        private fun createNewDispatchQueue(
-            delayInMillis: Long,
-            isIntervalDispatchQueue: Boolean,
-            threadHandlerInfo: Threader.ThreadHandlerInfo
-        ): DispatchQueue<Void?> {
+        private fun createNewDispatchQueue(delayInMillis: Long, isIntervalDispatchQueue: Boolean, threadHandlerInfo: Threader.ThreadHandlerInfo): DispatchQueue<Void?> {
             val dispatchQueueInfo = DispatchQueueInfo(
                 queueId = getNewQueueId(),
                 isIntervalDispatch = isIntervalDispatchQueue,
-                threadHandlerInfo = threadHandlerInfo
-            )
+                threadHandlerInfo = threadHandlerInfo)
             val newDispatchQueue = DispatchQueueImpl<Void?, Void?>(
                 blockLabel = getNewDispatchId(),
                 delayInMillis = delayInMillis,
                 worker = null,
                 dispatchQueueInfo = dispatchQueueInfo,
-                threadHandlerInfo = threadHandlerInfo
-            )
+                threadHandlerInfo = threadHandlerInfo)
             dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
             dispatchQueueInfo.queue.add(newDispatchQueue)
             return newDispatchQueue

@@ -1,14 +1,14 @@
-package com.tonyodev.dispatchretrofit
+package com.tonyodev.dispatchretrofit;
 
-import okhttp3.Request
-import retrofit2.HttpException
-import retrofit2.Response
+import okhttp3.Request;
+import retrofit2.HttpException;
+import retrofit2.Response;
 
 /**
  * Interface used by DispatchQueueCallAdapterFactory to relay errors.
  * */
 @FunctionalInterface
-interface OnErrorCallback {
+public interface OnErrorCallback {
 
     /**
      * Called when an error occur when executing a request.
@@ -16,6 +16,6 @@ interface OnErrorCallback {
      * @param request the request.
      * @param response the response.
      * */
-    fun onError(exception: HttpException, request: Request, response: Response<*>)
+    void onError(HttpException exception, Request request, Response response);
 
 }

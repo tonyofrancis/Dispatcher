@@ -43,7 +43,7 @@ class DispatchQueueCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun create(threadHandler: ThreadHandler? = null, onErrorCallback: OnErrorCallback? = null): DispatchQueueCallAdapterFactory {
-            if (threadHandler?.threadName == DispatchQueue.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
+            if (threadHandler?.threadName == DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
                 throw IllegalArgumentException("DispatchQueueCallAdapterFactory: ThreadHandler cannot be the main thread for network operations.")
             }
             return DispatchQueueCallAdapterFactory(threadHandler, onErrorCallback)
@@ -67,7 +67,7 @@ class DispatchQueueCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun createTestFactory(onErrorCallback: OnErrorCallback? = null): DispatchQueueCallAdapterFactory {
-            return DispatchQueueCallAdapterFactory(DispatchQueue.threadHandlerFactory.create(ThreadType.TEST), onErrorCallback)
+            return DispatchQueueCallAdapterFactory(DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.TEST), onErrorCallback)
         }
 
     }

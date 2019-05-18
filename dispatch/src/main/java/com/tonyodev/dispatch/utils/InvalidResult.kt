@@ -1,3 +1,3 @@
 package com.tonyodev.dispatch.utils
 
-class InvalidResult
+internal class InvalidResult
