@@ -179,10 +179,10 @@ interface DispatchQueue<R> {
 
     /**
      * Adds a list of dispatch queue observers.
-     * @param dispatchQueueObservers the list of observers.
+     * @param dispatchQueueObservers the collection of observers.
      * @return the dispatch queue.
      * */
-    fun addObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R>
+    fun addObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueue<R>
 
     /**
      * Removes a dispatch queue observer.
@@ -193,10 +193,10 @@ interface DispatchQueue<R> {
 
     /**
      * Remove a list of dispatch queue observers.
-     * @param dispatchQueueObservers the list of observers to be removed.
+     * @param dispatchQueueObservers the collection of observers to be removed.
      * @return the dispatch queue.
      * */
-    fun removeObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R>
+    fun removeObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueue<R>
 
     /**
      * Removes all dispatch queue observers.

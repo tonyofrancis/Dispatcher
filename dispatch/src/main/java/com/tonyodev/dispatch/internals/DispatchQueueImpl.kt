@@ -419,7 +419,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return this
     }
 
-    override fun addObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R> {
+    override fun addObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueue<R> {
         dispatchQueueObservable.addObservers(dispatchQueueObservers)
         return this
     }
@@ -429,7 +429,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return this
     }
 
-    override fun removeObservers(dispatchQueueObservers: List<DispatchQueueObserver<R>>): DispatchQueue<R> {
+    override fun removeObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueue<R> {
         dispatchQueueObservable.removeObservers(dispatchQueueObservers)
         return this
     }
