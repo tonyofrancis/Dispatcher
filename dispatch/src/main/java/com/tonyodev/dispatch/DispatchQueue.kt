@@ -212,7 +212,6 @@ interface DispatchQueue<R> {
         /**
          * Enable or disable log warnings by the library.
          * */
-
         var enableLogWarnings = false
 
         /**
