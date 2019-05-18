@@ -44,12 +44,12 @@ class AndroidThreadHandler (val handler: Handler): ThreadHandler {
 
     override fun quit() {
         if (!isCancelled) {
+            isCancelled = true
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 handler.looper.quitSafely()
             } else {
                 handler.looper.quit()
             }
-            isCancelled = true
         }
     }
 
