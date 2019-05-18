@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.tonyodev.dispatch.DispatchQueue
+import com.tonyodev.dispatch.DispatchQueueErrorCallback
 import com.tonyodev.dispatchandroid.utils.managedBy
 import com.tonyodev.dispatchretrofit.DispatchQueueCallAdapterFactory
 import retrofit2.Retrofit
@@ -55,7 +56,9 @@ class MainActivity : AppCompatActivity() {
             .post {
                 Log.d("dispatcherTest", "data size is:${it.size}")
             }
-            .start()
+            .start(DispatchQueueErrorCallback {
+
+            })
     }
 
     private fun runTestTimer() {
@@ -73,7 +76,9 @@ class MainActivity : AppCompatActivity() {
             .post {
                 Log.d("dispatcherTest","Test timer after 5000 millis. data is $it")
             }
-            .start()
+            .start(DispatchQueueErrorCallback {
+
+            })
     }
 
 }

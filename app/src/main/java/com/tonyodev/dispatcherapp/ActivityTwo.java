@@ -33,32 +33,20 @@ public class ActivityTwo extends AppCompatActivity {
     private void runIntervalTask() {
         DispatchQueue.Queues.createIntervalDispatchQueue(10000)
                 .managedBy(activityDispatchQueueController, CancelType.PAUSED)
-                .async(new Function1<Void, Integer>() {
-                    @Override
-                    public Integer invoke(Void aVoid) {
-                        return 55;
-                    }
-                })
-                .async(2000, new Function1<Integer, String>() {
-                    @Override
-                    public String invoke(Integer integer) {
-                        Log.d("dispatcherTest", "interval break");
-                        return "hello world";
-                    }
-                }).post(new Function1<String, Void>() {
-            @Override
-            public Void invoke(String s) {
-                textView.setText(s);
-                Log.d("dispatcherTest", "main thread break:" + s);
-                return null;
-            }
-        }).async(new Function1<Void, Void>() {
-            @Override
-            public Void invoke(Void aVoid) {
-                Log.d("dispatcherTest", "void method called");
-                return null;
-            }
-        }).start();
+                .async(aVoid -> 55)
+                .async(2000, integer -> {
+                    Log.d("dispatcherTest", "interval break");
+                    return "hello world";
+                }).post((Function1<String, Void>) s -> {
+                    textView.setText(s);
+                    Log.d("dispatcherTest", "main thread break:" + s);
+                    return null;
+                }).async((Function1<Void, Void>) aVoid -> {
+                    Log.d("dispatcherTest", "void method called");
+                    return null;
+                }).start(dispatchQueueError -> {
+
+                });
     }
 
 }
