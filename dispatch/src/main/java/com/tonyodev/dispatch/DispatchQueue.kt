@@ -86,11 +86,11 @@ interface DispatchQueue<R> {
 
     /**
      * Triggers the dispatch queue to start.
-     * @param errorHandler the error handler for the dispatch queue. Notifies of the async or post block via its label that throw the error and the error that was thrown. Only called
+     * @param dispatchQueueErrorCallback the error handler for the dispatch queue. Notifies of the async or post block via its label that throw the error and the error that was thrown. Only called
      * if the dispatch queue object who throw the error does not handle it's error within its doOnError method. The error handler is called on the main thread.
      * @return dispatch queue.
      * */
-    fun start(errorHandler: ((DispatchQueueError) -> Unit)?): DispatchQueue<R>
+    fun start(dispatchQueueErrorCallback: DispatchQueueErrorCallback?): DispatchQueue<R>
 
     /**
      * Triggers the dispatch queue to start.

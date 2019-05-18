@@ -191,10 +191,10 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     private fun handleException(throwable: Throwable) {
-        val mainErrorHandler = dispatchQueueInfo.errorHandler
+        val mainErrorHandler = dispatchQueueInfo.dispatchQueueErrorCallback
         if (mainErrorHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable { mainErrorHandler.invoke(DispatchQueueError(throwable, this, this.blockLabel)) })
+                .threadHandler.post(Runnable { mainErrorHandler.onError(DispatchQueueError(throwable, this, this.blockLabel)) })
             cancel()
             return
         }
@@ -213,9 +213,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return start(null)
     }
 
-    override fun start(errorHandler: ((DispatchQueueError) -> Unit)?): DispatchQueue<R> {
+    override fun start(dispatchQueueErrorCallback: DispatchQueueErrorCallback?): DispatchQueue<R> {
         if (!isCancelled) {
-            dispatchQueueInfo.errorHandler = errorHandler
+            dispatchQueueInfo.dispatchQueueErrorCallback = dispatchQueueErrorCallback
             dispatchQueueInfo.completedDispatchQueue = false
             dispatchQueueInfo.rootDispatchQueue.runDispatcher()
         } else {
@@ -254,7 +254,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatcher = null
                 doOnErrorWorker = null
                 worker = null
-                dispatchQueueInfo.errorHandler = null
+                dispatchQueueInfo.dispatchQueueErrorCallback = null
             }
         }
         return this
