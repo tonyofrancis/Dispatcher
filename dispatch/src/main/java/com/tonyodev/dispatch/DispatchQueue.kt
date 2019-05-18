@@ -5,10 +5,7 @@ import com.tonyodev.dispatch.internals.DispatchQueueInfo
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
-import com.tonyodev.dispatch.thread.DefaultThreadHandlerFactory
 import com.tonyodev.dispatch.thread.ThreadHandler
-import com.tonyodev.dispatch.thread.ThreadHandlerFactory
-import com.tonyodev.dispatch.utils.*
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.forceLoadAndroidClassesIfAvailable
 import com.tonyodev.dispatch.utils.getNewDispatchId
