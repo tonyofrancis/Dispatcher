@@ -333,7 +333,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatchQueueInfo.queue.add(newDispatchQueue)
                 if (dispatchQueueInfo.completedDispatchQueue) {
                     dispatchQueueInfo.completedDispatchQueue = false
-                    newDispatchQueue.runDispatcher()
+                    runDispatcher()
                 }
             } else {
                 throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
