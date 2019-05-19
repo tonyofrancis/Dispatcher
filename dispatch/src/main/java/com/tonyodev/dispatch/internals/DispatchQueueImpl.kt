@@ -148,18 +148,12 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     private fun getNextDispatchQueueInfo(after: DispatchQueue<*>): DispatchQueueImpl<*, *>? {
         return synchronized(dispatchQueueInfo.queue) {
-            val iterator = dispatchQueueInfo.queue.iterator()
-            var self: DispatchQueueImpl<*, *>? = null
             var nextDispatchQueue: DispatchQueueImpl<*, *>? = null
-            var dispatch: DispatchQueueImpl<*, *>
-            while (iterator.hasNext() && !isCancelled) {
-                dispatch = iterator.next()
-                if (self != null) {
-                    nextDispatchQueue = dispatch
-                    break
-                }
-                if (dispatch == after) {
-                    self = dispatch
+            var index = dispatchQueueInfo.queue.indexOf(after)
+            if (index > -1) {
+               index += 1
+                if (index < dispatchQueueInfo.queue.size) {
+                    nextDispatchQueue = dispatchQueueInfo.queue[index]
                 }
             }
             if (isCancelled) {
