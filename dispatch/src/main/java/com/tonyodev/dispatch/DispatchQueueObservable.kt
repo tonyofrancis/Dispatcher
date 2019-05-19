@@ -82,13 +82,7 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
      * */
     fun removeObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
-            val iterator = dispatchQueueObserversSet.iterator()
-            while (iterator.hasNext()) {
-                if (dispatchQueueObserver == iterator.next()) {
-                    iterator.remove()
-                    break
-                }
-            }
+          dispatchQueueObserversSet.remove(dispatchQueueObserver)
         }
         return this
     }
@@ -100,17 +94,7 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
      * */
     fun removeObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
-            val iterator = dispatchQueueObserversSet.iterator()
-            var count = 0
-            while (iterator.hasNext()) {
-                if (dispatchQueueObservers.contains(iterator.next())) {
-                    iterator.remove()
-                    ++count
-                    if (count == dispatchQueueObservers.size) {
-                        break
-                    }
-                }
-            }
+            dispatchQueueObserversSet.removeAll(dispatchQueueObservers)
         }
         return this
     }
@@ -118,11 +102,7 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
     /** Removes all observers attached this observable.*/
     fun removeObservers() {
         synchronized(dispatchQueueObserversSet) {
-            val iterator = dispatchQueueObserversSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next()
-                iterator.remove()
-            }
+            dispatchQueueObserversSet.clear()
         }
     }
 
@@ -142,9 +122,8 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
     private fun notifyObservers(result: R) {
         this.result = result
         synchronized(dispatchQueueObserversSet) {
-            val iterator = dispatchQueueObserversSet.iterator()
-            while (iterator.hasNext()) {
-                iterator.next().onChanged(result)
+            for (dispatchQueueObserver in dispatchQueueObserversSet) {
+                dispatchQueueObserver.onChanged(result)
             }
         }
     }
