@@ -12,10 +12,9 @@ import com.tonyodev.dispatch.utils.getNewDispatchId
 internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                                        private val delayInMillis: Long = 0,
                                        private var worker: ((T) -> R)?,
-                                       private val dispatchQueueInfo: DispatchQueueInfo,
-                                       private val threadHandlerInfo: Threader.ThreadHandlerInfo): DispatchQueue<R> {
+                                       private val dispatchQueueInfo: DispatchQueueInfo): DispatchQueue<R> {
 
-    private val dispatchSources = ArrayList<DispatchQueue<*>?>(3)
+    private val dispatchSources = ArrayList<DispatchQueueImpl<*,*>?>(3)
     private val dispatchQueueObservable = DispatchQueueObservable<R>(null, false)
     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
 
@@ -173,7 +172,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         if (!isCancelled) {
             var dispatcherRunnable = dispatcher
             if (dispatcherRunnable != null) {
-                threadHandlerInfo.threadHandler.removeCallbacks(dispatcherRunnable)
+                dispatchQueueInfo.threadHandlerInfo.threadHandler.removeCallbacks(dispatcherRunnable)
                 dispatcher = null
             }
             dispatcherRunnable = getDispatcher()
@@ -184,8 +183,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                             "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
             }
             when {
-                delayInMillis >= 1 -> threadHandlerInfo.threadHandler.postDelayed(delayInMillis, dispatcherRunnable)
-                else -> threadHandlerInfo.threadHandler.post(dispatcherRunnable)
+                delayInMillis >= 1 -> dispatchQueueInfo.threadHandlerInfo.threadHandler.postDelayed(delayInMillis, dispatcherRunnable)
+                else -> dispatchQueueInfo.threadHandlerInfo.threadHandler.post(dispatcherRunnable)
             }
         }
     }
@@ -264,10 +263,10 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         val dispatcherRunnable = dispatcher
         dispatcher = null
         if (dispatcherRunnable != null) {
-            threadHandlerInfo.threadHandler.removeCallbacks(dispatcherRunnable)
+            dispatchQueueInfo.threadHandlerInfo.threadHandler.removeCallbacks(dispatcherRunnable)
         }
-        if (threadHandlerInfo.closeThreadHandler) {
-            threadHandlerInfo.threadHandler.quit()
+        if (dispatchQueueInfo.threadHandlerInfo.closeThreadHandler) {
+            dispatchQueueInfo.threadHandlerInfo.threadHandler.quit()
         }
     }
 
@@ -325,8 +324,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 blockLabel = getNewDispatchId(),
                 delayInMillis = delayInMillis,
                 worker = worker,
-                dispatchQueueInfo = dispatchQueueInfo,
-                threadHandlerInfo = threadHandlerInfo)
+                dispatchQueueInfo = dispatchQueueInfo)
             if (!isCancelled) {
                 newDispatchQueue.dispatchSources.add(this)
                 throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
@@ -349,8 +347,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 blockLabel = getNewDispatchId(),
                 delayInMillis = 0,
                 worker = { it },
-                dispatchQueueInfo = dispatchQueueInfo,
-                threadHandlerInfo = dispatchQueueInfo.threadHandlerInfo)
+                dispatchQueueInfo = dispatchQueueInfo)
             if (!isCancelled) {
                 newDispatch.dispatchSources.add(this)
                 newDispatch.dispatchSources.add((dispatchQueue as DispatchQueueImpl<*, *>).cloneTo(newDispatchQueueInfo = dispatchQueueInfo))
@@ -374,8 +371,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 blockLabel = getNewDispatchId(),
                 delayInMillis = 0,
                 worker = { it },
-                dispatchQueueInfo = dispatchQueueInfo,
-                threadHandlerInfo = dispatchQueueInfo.threadHandlerInfo)
+                dispatchQueueInfo = dispatchQueueInfo)
             if (!isCancelled) {
                 newDispatchQueue.dispatchSources.add(this)
                 newDispatchQueue.dispatchSources.add((dispatchQueue as DispatchQueueImpl<*, *>).cloneTo(newDispatchQueueInfo = dispatchQueueInfo))
@@ -398,8 +394,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             blockLabel = blockLabel,
             delayInMillis = delayInMillis,
             worker = worker,
-            dispatchQueueInfo = newDispatchQueueInfo,
-            threadHandlerInfo = newDispatchQueueInfo.threadHandlerInfo)
+            dispatchQueueInfo = newDispatchQueueInfo)
         newDispatchQueue.results = results
         newDispatchQueue.doOnErrorWorker = doOnErrorWorker
         newDispatchQueue.dispatchQueueObservable.addObservers(dispatchQueueObservable.getObservers())

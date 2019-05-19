@@ -422,8 +422,7 @@ interface DispatchQueue<R> {
                 blockLabel = getNewDispatchId(),
                 delayInMillis = delayInMillis,
                 worker = null,
-                dispatchQueueInfo = dispatchQueueInfo,
-                threadHandlerInfo = threadHandlerInfo)
+                dispatchQueueInfo = dispatchQueueInfo)
             dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
             dispatchQueueInfo.queue.add(newDispatchQueue)
             return newDispatchQueue
