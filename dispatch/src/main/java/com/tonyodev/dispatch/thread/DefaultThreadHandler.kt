@@ -11,7 +11,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
     private var isCancelled = false
     @Volatile
     private var isSleeping = false
-    private val defaultSleepTime = 1000L
+    private val defaultSleepTime = 250L
     private var threadSleepMillis = defaultSleepTime
     private val queue = mutableListOf<QueueItem>()
     private var queueIndex = 0
