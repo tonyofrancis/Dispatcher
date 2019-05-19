@@ -6,8 +6,8 @@ import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
 import com.tonyodev.dispatch.thread.ThreadHandler
+import com.tonyodev.dispatch.utils.*
 import com.tonyodev.dispatch.utils.Threader
-import com.tonyodev.dispatch.utils.forceLoadAndroidClassesIfAvailable
 import com.tonyodev.dispatch.utils.getNewDispatchId
 import com.tonyodev.dispatch.utils.getNewQueueId
 import com.tonyodev.dispatch.utils.startThreadHandlerIfNotActive
@@ -207,11 +207,7 @@ interface DispatchQueue<R> {
     companion object Queue {
 
         /** DispatchQueue Global globalSettings.*/
-        val globalSettings = Settings()
-
-        init {
-            forceLoadAndroidClassesIfAvailable()
-        }
+        val globalSettings: Settings
 
         /**
          * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
@@ -427,6 +423,12 @@ interface DispatchQueue<R> {
             dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
             dispatchQueueInfo.queue.add(newDispatchQueue)
             return newDispatchQueue
+        }
+
+        init {
+            val settings = Settings()
+            globalSettings = settings
+            forceLoadAndroidSettingsIfAvailable(settings)
         }
 
     }
