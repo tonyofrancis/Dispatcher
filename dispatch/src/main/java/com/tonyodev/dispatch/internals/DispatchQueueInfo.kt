@@ -12,6 +12,8 @@ internal class DispatchQueueInfo(val queueId: Int,
     var isCancelled = false
     @Volatile
     var completedDispatchQueue = false
+    @Volatile
+    var isStarted = false
     lateinit var rootDispatchQueue: DispatchQueueImpl<*, *>
     val queue = ArrayList<DispatchQueueImpl<*, *>>()
     var dispatchQueueErrorCallback: DispatchQueueErrorCallback? = null

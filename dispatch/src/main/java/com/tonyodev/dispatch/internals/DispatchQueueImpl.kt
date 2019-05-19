@@ -215,9 +215,12 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     override fun start(dispatchQueueErrorCallback: DispatchQueueErrorCallback?): DispatchQueue<R> {
         if (!isCancelled) {
-            dispatchQueueInfo.dispatchQueueErrorCallback = dispatchQueueErrorCallback
-            dispatchQueueInfo.completedDispatchQueue = false
-            dispatchQueueInfo.rootDispatchQueue.runDispatcher()
+            if (!dispatchQueueInfo.isStarted) {
+                dispatchQueueInfo.isStarted = true
+                dispatchQueueInfo.dispatchQueueErrorCallback = dispatchQueueErrorCallback
+                dispatchQueueInfo.completedDispatchQueue = false
+                dispatchQueueInfo.rootDispatchQueue.runDispatcher()
+            }
         } else {
             throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         }
@@ -254,6 +257,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatcher = null
                 doOnErrorWorker = null
                 worker = null
+                dispatchQueueInfo.isStarted = false
                 dispatchQueueInfo.dispatchQueueErrorCallback = null
             }
         }
