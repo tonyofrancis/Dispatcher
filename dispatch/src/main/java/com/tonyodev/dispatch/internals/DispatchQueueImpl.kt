@@ -355,7 +355,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatchQueueInfo.queue.add(newDispatch)
                 if (dispatchQueueInfo.completedDispatchQueue) {
                     dispatchQueueInfo.completedDispatchQueue = false
-                    newDispatch.runDispatcher()
+                    runDispatcher()
                 }
             } else {
                 throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
@@ -380,7 +380,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatchQueueInfo.queue.add(newDispatchQueue)
                 if (dispatchQueueInfo.completedDispatchQueue) {
                     dispatchQueueInfo.completedDispatchQueue = false
-                    newDispatchQueue.runDispatcher()
+                    runDispatcher()
                 }
             } else {
                 throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
@@ -398,9 +398,11 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         newDispatchQueue.results = results
         newDispatchQueue.doOnErrorWorker = doOnErrorWorker
         newDispatchQueue.dispatchQueueObservable.addObservers(dispatchQueueObservable.getObservers())
-        for (dispatchSource in dispatchSources) {
-            val source = dispatchSource as DispatchQueueImpl<*, *>
-            newDispatchQueue.dispatchSources.add(source.cloneTo(newDispatchQueueInfo = newDispatchQueueInfo))
+        synchronized(dispatchSources) {
+            for (dispatchSource in dispatchSources) {
+                val source = dispatchSource as DispatchQueueImpl<*, *>
+                newDispatchQueue.dispatchSources.add(source.cloneTo(newDispatchQueueInfo = newDispatchQueueInfo))
+            }
         }
         synchronized(newDispatchQueueInfo.queue) {
             throwIllegalStateExceptionIfCancelled(newDispatchQueueInfo)
