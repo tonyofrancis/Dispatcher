@@ -18,6 +18,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     private val dispatchSources = ArrayList<DispatchQueue<*>?>(3)
     private val dispatchQueueObservable = DispatchQueueObservable<R>(null, false)
     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
+    private var retryCount = 0
+    private var retryAttempt = 0
+    private var retryDelayInMillis = 0L
 
     override val id: Int
         get() {
@@ -98,17 +101,21 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                     }
                 }
             } catch (err: Exception) {
-                val doOnErrorWorker = doOnErrorWorker
-                if (doOnErrorWorker != null && !isCancelled) {
-                    try {
-                        results = doOnErrorWorker.invoke(err)
-                        notifyDispatchObservers()
-                        processNextDispatchQueue()
-                    } catch (e: Exception) {
-                        handleException(e)
-                    }
+                if (retryAttempt < retryCount) {
+                    runDispatcher(true)
                 } else {
-                    handleException(err)
+                    val doOnErrorWorker = doOnErrorWorker
+                    if (doOnErrorWorker != null && !isCancelled) {
+                        try {
+                            results = doOnErrorWorker.invoke(err)
+                            notifyDispatchObservers()
+                            processNextDispatchQueue()
+                        } catch (e: Exception) {
+                            handleException(e)
+                        }
+                    } else {
+                        handleException(err)
+                    }
                 }
             }
         }
@@ -163,7 +170,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         }
     }
 
-    private fun runDispatcher() {
+    private fun runDispatcher(isRetryAttempt: Boolean = false) {
         if (!isCancelled) {
             var dispatcherRunnable = dispatcher
             if (dispatcherRunnable != null) {
@@ -178,6 +185,10 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                             "Not setting a DispatchQueueController can cause memory leaks for long running tasks.")
             }
             when {
+                isRetryAttempt -> {
+                    retryAttempt += 1
+                    threadHandlerInfo.threadHandler.postDelayed(retryDelayInMillis, dispatcherRunnable)
+                }
                 delayInMillis >= 1 -> threadHandlerInfo.threadHandler.postDelayed(delayInMillis, dispatcherRunnable)
                 else -> threadHandlerInfo.threadHandler.post(dispatcherRunnable)
             }
@@ -252,6 +263,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 doOnErrorWorker = null
                 worker = null
                 dispatchQueueInfo.isStarted = false
+                retryAttempt = 0
                 dispatchQueueInfo.dispatchQueueErrorCallback = null
             }
         }
@@ -446,6 +458,16 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     override fun setBlockLabel(blockLabel: String): DispatchQueue<R> {
         this.blockLabel = blockLabel
         return this
+    }
+
+    override fun retry(count: Int, delayInMillis: Long): DispatchQueue<R> {
+        this.retryCount = count
+        this.retryDelayInMillis = delayInMillis
+        return this
+    }
+
+    override fun retry(count: Int): DispatchQueue<R> {
+        return retry(count, 0)
     }
 
     override fun toString(): String {

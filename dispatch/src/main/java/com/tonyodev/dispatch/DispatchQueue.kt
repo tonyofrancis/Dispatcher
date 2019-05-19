@@ -204,6 +204,21 @@ interface DispatchQueue<R> {
      * */
     fun removeObservers(): DispatchQueue<R>
 
+    /**
+     * Retry the post or async operation if an error occurred.
+     * @param count the retry count.
+     * @param delayInMillis the delay in milliseconds before the next retry attempted.
+     * @return the dispatch queue.
+     * */
+    fun retry(count: Int, delayInMillis: Long): DispatchQueue<R>
+
+    /**
+     * Retry the post or async operation if an error occurred.
+     * @param count the retry count.
+     * @return the dispatch queue.
+     * */
+    fun retry(count: Int): DispatchQueue<R>
+
     companion object Queue {
 
         /** DispatchQueue Global globalSettings.*/
