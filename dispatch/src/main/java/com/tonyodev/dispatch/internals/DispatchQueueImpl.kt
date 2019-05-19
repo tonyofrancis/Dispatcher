@@ -266,7 +266,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         if (dispatcherRunnable != null) {
             threadHandlerInfo.threadHandler.removeCallbacks(dispatcherRunnable)
         }
-        if (threadHandlerInfo.closeThreadHandler) {
+        if (threadHandlerInfo.closeThreadHandler && threadHandlerInfo.threadHandler.isActive) {
             threadHandlerInfo.threadHandler.quit()
         }
     }
