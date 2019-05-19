@@ -60,7 +60,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                                 }
                             }
                         }
-                        queueItem!!.recycle()
+                        queueItem?.recycle()
                         queueIndex = 0
                     } else {
                         val minIndex = findQueueMinIndex()
