@@ -383,7 +383,7 @@ interface DispatchQueue<R> {
         }
 
         /**
-         * Creates a new dispatch queue using the default background thread that can be used to post work on the main thread or do work in the background.
+         * Creates a new dispatch queue using the default background thread that can be used to do work on a background thread or post work on the main thread.
          * The dispatch queue operates on the default background handler/thread.
          * @return new dispatch queue.
          * */
@@ -397,7 +397,7 @@ interface DispatchQueue<R> {
             }
 
         /**
-         * Creates a new dispatch queue using the io thread that can be used to post work on the main thread or do work in the background.
+         * Creates a new dispatch queue using the io thread that can be used to do work on an io thread or post work on the main thread.
          * The dispatch queue operates on the default io handler/thread.
          * @return new dispatch queue.
          * */

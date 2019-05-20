@@ -2,7 +2,7 @@ package com.tonyodev.dispatch;
 
 
 /**
- * Interface used by the DispatchQueue to rely errors.
+ * Interface used by the DispatchQueue to relay errors.
  * */
 @FunctionalInterface
 public interface DispatchQueueErrorCallback {
