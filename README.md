@@ -192,7 +192,7 @@ class SimpleActivity: AppCompatActivity() {
             .async {
                 mapOf(0 to "cat", 1 to "bat")
             }
-            .zipWith(getDataDispatchQueue()) // combine two queue results
+            .zip(getDataDispatchQueue()) // combine two queue results
             .async { results ->
                 for ((key, value) in results.first) {
                     println("$key:$value")
