@@ -92,7 +92,7 @@ class SimpleActivity: AppCompatActivity() {
 Managing queues could not be easier.
 ### Queue Types
 
-Dispatch comes with many pre-exiting queues:
+DispatchQueue comes with many pre-exiting queues:
 ```java
 DispatchQueue.background
 
