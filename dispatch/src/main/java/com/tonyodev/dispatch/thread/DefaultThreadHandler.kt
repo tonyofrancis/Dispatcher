@@ -219,7 +219,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
 
             private val poolSync = Any()
             private var pool: QueueItem? = null
-            private const val MAX_POOL_SIZE = 50
+            private const val MAX_POOL_SIZE = 100
             private var poolSize = 0
 
             @JvmStatic
