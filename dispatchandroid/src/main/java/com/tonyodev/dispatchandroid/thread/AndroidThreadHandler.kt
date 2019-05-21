@@ -8,7 +8,7 @@ import com.tonyodev.dispatch.thread.ThreadHandler
 /**
  * The default android thread handler that uses the android.os.Handler class to perform work.
  * */
-class AndroidThreadHandler (val handler: Handler): ThreadHandler {
+class AndroidThreadHandler (private val handler: Handler): ThreadHandler {
 
     @Volatile
     private var isCancelled = false

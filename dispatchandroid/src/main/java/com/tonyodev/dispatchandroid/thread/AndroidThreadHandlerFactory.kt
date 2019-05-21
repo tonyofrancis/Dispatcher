@@ -3,6 +3,7 @@ package com.tonyodev.dispatchandroid.thread
 import android.os.Handler
 import android.os.Looper
 import com.tonyodev.dispatch.ThreadType
+import com.tonyodev.dispatch.thread.DefaultThreadHandler
 import com.tonyodev.dispatch.thread.TestThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandler
 import com.tonyodev.dispatch.thread.ThreadHandlerFactory
@@ -18,8 +19,8 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
 
     override fun create(threadType: ThreadType): ThreadHandler {
         return when(threadType) {
-            ThreadType.BACKGROUND -> AndroidThreadHandler(THREAD_BACKGROUND)
-            ThreadType.IO -> AndroidThreadHandler(THREAD_IO)
+            ThreadType.BACKGROUND -> DefaultThreadHandler(THREAD_BACKGROUND)
+            ThreadType.IO -> DefaultThreadHandler(THREAD_IO)
             ThreadType.NEW -> getNewDispatchQueueHandler()
             ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
@@ -36,7 +37,7 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
         } else {
             name
         }
-        return AndroidThreadHandler(threadName)
+        return DefaultThreadHandler(threadName)
     }
 
 }
