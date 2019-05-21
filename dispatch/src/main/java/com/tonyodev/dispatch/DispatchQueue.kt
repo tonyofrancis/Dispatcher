@@ -430,7 +430,8 @@ interface DispatchQueue<R> {
                 worker = null,
                 dispatchQueueInfo = dispatchQueueInfo,
                 threadHandlerInfo = threadHandlerInfo)
-            dispatchQueueInfo.queue.add(newDispatchQueue)
+            dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
+            dispatchQueueInfo.endDispatchQueue = newDispatchQueue
             return newDispatchQueue
         }
 

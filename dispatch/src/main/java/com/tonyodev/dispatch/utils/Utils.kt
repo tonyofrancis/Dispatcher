@@ -37,6 +37,12 @@ internal fun throwIllegalStateExceptionIfCancelled(dispatchQueueInfo: DispatchQu
     }
 }
 
+internal fun throwIllegalStateExceptionIfStarted(dispatchQueueInfo: DispatchQueueInfo) {
+    if (dispatchQueueInfo.isStarted) {
+        throw IllegalStateException("DispatchQueue with id: ${dispatchQueueInfo.queueId} has already been started. Cannot add new operations.")
+    }
+}
+
 internal fun startThreadHandlerIfNotActive(threadHandler: ThreadHandler) {
     if (!threadHandler.isActive) {
         threadHandler.start()
