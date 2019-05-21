@@ -23,6 +23,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     private var retryAttempt = 0
     private var retryDelayInMillis = 0L
     private var next: DispatchQueueImpl<*, *>? = null
+    private var results: Any? = INVALID_RESULT
+    private var dispatcher: Runnable? = null
 
     override val id: Int
         get() {
@@ -38,9 +40,6 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         get() {
             return dispatchQueueInfo.dispatchQueueController
         }
-
-    private var results: Any? = INVALID_RESULT
-    private var dispatcher: Runnable? = null
 
     @Suppress("UNCHECKED_CAST")
     private fun getDispatcher(): Runnable {
@@ -201,11 +200,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     private fun addSource(source: DispatchQueueImpl<*, *>) {
-        synchronized(dispatchSources) {
-            if (sourceCount < 3) {
-                dispatchSources[sourceCount] = source
-                sourceCount += 1
-            }
+        if (sourceCount < 3) {
+            dispatchSources[sourceCount] = source
+            sourceCount += 1
         }
     }
 
@@ -229,6 +226,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     override fun cancel(): DispatchQueue<R> {
         if (!isCancelled) {
             dispatchQueueInfo.isCancelled = true
+            dispatchQueueInfo.isStarted = false
+            dispatchQueueInfo.dispatchQueueErrorCallback = null
             val dispatchQueueController = dispatchQueueInfo.dispatchQueueController
             dispatchQueueInfo.dispatchQueueController = null
             if (dispatchQueueController is LifecycleDispatchQueueController) {
@@ -237,25 +236,28 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatchQueueController?.unmanage(this)
             }
             var current = dispatchQueueInfo.rootDispatchQueue
-            var size: Int
+            var next: DispatchQueueImpl<*, *>?
+            var sourceSize: Int
             while (current != null) {
                 current.removeDispatcher()
-                size = current.sourceCount
+                sourceSize = current.sourceCount
                 current.sourceCount = 0
-                for (index in 0 until size) {
+                for (index in 0 until sourceSize) {
                     current.dispatchSources[index] = null
                 }
-                current = current.next
+                current.dispatchQueueObservable.removeObservers()
+                current.dispatchQueueObservable.resetResult()
+                current.results = INVALID_RESULT
+                current.dispatcher = null
+                current.doOnErrorWorker = null
+                current.worker = null
+                current.retryAttempt = 0
+                next = current.next
+                current.next = null
+                current = next
             }
-            dispatchQueueObservable.removeObservers()
-            dispatchQueueObservable.resetResult()
-            results = INVALID_RESULT
-            dispatcher = null
-            doOnErrorWorker = null
-            worker = null
-            dispatchQueueInfo.isStarted = false
-            retryAttempt = 0
-            dispatchQueueInfo.dispatchQueueErrorCallback = null
+            dispatchQueueInfo.rootDispatchQueue = null
+            dispatchQueueInfo.endDispatchQueue = null
         }
         return this
     }
@@ -372,6 +374,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             threadHandlerInfo = newDispatchQueueInfo.threadHandlerInfo)
         newDispatchQueue.results = results
         newDispatchQueue.doOnErrorWorker = doOnErrorWorker
+        newDispatchQueue.retryCount = retryCount
+        newDispatchQueue.retryAttempt = retryAttempt
+        newDispatchQueue.retryDelayInMillis = retryDelayInMillis
         newDispatchQueue.dispatchQueueObservable.addObservers(dispatchQueueObservable.getObservers())
         var source: DispatchQueueImpl<*, *>?
         for (dispatchSource in dispatchSources) {
