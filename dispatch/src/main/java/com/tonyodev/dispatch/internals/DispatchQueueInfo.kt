@@ -16,4 +16,8 @@ internal class DispatchQueueInfo(val queueId: Int,
     var rootDispatchQueue: DispatchQueueImpl<*, *>? = null
     var endDispatchQueue: DispatchQueueImpl<*, *>? = null
 
+    fun canPerformOperations(): Boolean {
+        return !isStarted && !isCancelled
+    }
+
 }

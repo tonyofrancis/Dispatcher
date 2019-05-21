@@ -193,7 +193,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     private fun enqueue(dispatchQueueImpl: DispatchQueueImpl<*, *>) {
         synchronized(dispatchQueueInfo) {
-            if (!dispatchQueueInfo.isStarted && !dispatchQueueInfo.isCancelled) {
+            if (dispatchQueueInfo.canPerformOperations()) {
                 dispatchQueueInfo.endDispatchQueue?.next = dispatchQueueImpl
                 dispatchQueueInfo.endDispatchQueue = dispatchQueueImpl
             }
@@ -201,7 +201,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     private fun addSource(source: DispatchQueueImpl<*, *>) {
-        if (sourceCount < 3) {
+        if (dispatchQueueInfo.canPerformOperations() && sourceCount < 3) {
             dispatchSources[sourceCount] = source
             sourceCount += 1
         }
@@ -275,29 +275,35 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun doOnError(func: ((Throwable) -> R)): DispatchQueue<R> {
-        this.doOnErrorWorker = func
+        if (dispatchQueueInfo.canPerformOperations()) {
+            this.doOnErrorWorker = func
+        }
         return this
     }
 
     override fun managedBy(dispatchQueueController: DispatchQueueController?): DispatchQueue<R> {
-        if (dispatchQueueController is LifecycleDispatchQueueController) {
-            managedBy(dispatchQueueController, CancelType.DESTROYED)
-        } else {
-            val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
-            this.dispatchQueueInfo.dispatchQueueController = null
-            oldDispatchQueueController?.unmanage(this)
-            this.dispatchQueueInfo.dispatchQueueController = dispatchQueueController
-            dispatchQueueController?.manage(this)
+        if (dispatchQueueInfo.canPerformOperations()) {
+            if (dispatchQueueController is LifecycleDispatchQueueController) {
+                managedBy(dispatchQueueController, CancelType.DESTROYED)
+            } else {
+                val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
+                this.dispatchQueueInfo.dispatchQueueController = null
+                oldDispatchQueueController?.unmanage(this)
+                this.dispatchQueueInfo.dispatchQueueController = dispatchQueueController
+                dispatchQueueController?.manage(this)
+            }
         }
         return this
     }
 
     override fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController, cancelType: CancelType): DispatchQueue<R> {
-        val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
-        this.dispatchQueueInfo.dispatchQueueController = null
-        oldDispatchQueueController?.unmanage(this)
-        this.dispatchQueueInfo.dispatchQueueController = lifecycleDispatchQueueController
-        lifecycleDispatchQueueController.manage(this, cancelType)
+        if (dispatchQueueInfo.canPerformOperations()) {
+            val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
+            this.dispatchQueueInfo.dispatchQueueController = null
+            oldDispatchQueueController?.unmanage(this)
+            this.dispatchQueueInfo.dispatchQueueController = lifecycleDispatchQueueController
+            lifecycleDispatchQueueController.manage(this, cancelType)
+        }
         return this
     }
 
@@ -322,6 +328,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     private fun <T, R> getNewDispatchQueue(worker: (T) -> R, delayInMillis: Long, threadHandlerInfo: Threader.ThreadHandlerInfo): DispatchQueue<R> {
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val newDispatchQueue = DispatchQueueImpl(
             blockLabel = getNewDispatchId(),
             delayInMillis = delayInMillis,
@@ -336,6 +344,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun <U> zip(dispatchQueue: DispatchQueue<U>): DispatchQueue<Pair<R, U>> {
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val newDispatchQueue = DispatchQueueImpl<Pair<R, U>, Pair<R, U>>(
             blockLabel = getNewDispatchId(),
             delayInMillis = 0,
@@ -351,6 +361,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun <U, T> zip(dispatchQueue: DispatchQueue<U>, dispatchQueue2: DispatchQueue<T>): DispatchQueue<Triple<R, U, T>> {
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val newDispatchQueue = DispatchQueueImpl<Triple<R, U, T>, Triple<R, U, T>>(
             blockLabel = getNewDispatchId(),
             delayInMillis = 0,
@@ -397,12 +409,16 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun addObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueue<R> {
-        dispatchQueueObservable.addObserver(dispatchQueueObserver)
+        if (dispatchQueueInfo.canPerformOperations()) {
+            dispatchQueueObservable.addObserver(dispatchQueueObserver)
+        }
         return this
     }
 
     override fun addObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueue<R> {
-        dispatchQueueObservable.addObservers(dispatchQueueObservers)
+        if (dispatchQueueInfo.canPerformOperations()) {
+            dispatchQueueObservable.addObservers(dispatchQueueObservers)
+        }
         return this
     }
 
@@ -426,19 +442,25 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun setBlockLabel(blockLabel: String): DispatchQueue<R> {
-        this.blockLabel = blockLabel
+        if (dispatchQueueInfo.canPerformOperations()) {
+            this.blockLabel = blockLabel
+        }
         return this
     }
 
     override fun retry(count: Int, delayInMillis: Long): DispatchQueue<R> {
-        this.retryCount = count
-        this.retryDelayInMillis = delayInMillis
+        if (dispatchQueueInfo.canPerformOperations()) {
+            this.retryCount = count
+            this.retryDelayInMillis = delayInMillis
+        }
         return this
     }
 
     override fun retry(count: Int): DispatchQueue<R> {
         return retry(count, 0)
     }
+
+
 
     override fun toString(): String {
         return "DispatchQueue(blockLabel='$blockLabel', id='${dispatchQueueInfo.queueId}')"

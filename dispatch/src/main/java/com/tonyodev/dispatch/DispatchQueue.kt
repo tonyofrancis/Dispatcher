@@ -44,12 +44,14 @@ interface DispatchQueue<R> {
 
     /**
      * Gets the DispatchQueueController that is managing this dispatch queue. May be null.
+     * Null when dispatch queue is cancelled.
      * */
     val controller: DispatchQueueController?
 
     /**
      * Posts work on the main thread.
      * @param func the function.
+     * @throws IllegalStateException if the dispatch queue was already cancelled or started.
      * @return the dispatch queue.
      * */
     fun <U> post(func: (R) -> U): DispatchQueue<U>
@@ -59,6 +61,7 @@ interface DispatchQueue<R> {
      * @param delayInMillis the delay in milliseconds before the dispatch runs the function.
      * Values less than 1 indicates that there are no delays.
      * @param func the function.
+     * @throws IllegalStateException if the dispatch queue was already cancelled or started.
      * @return the dispatch queue.
      * */
     fun <U> post(delayInMillis: Long, func: (R) -> U): DispatchQueue<U>
@@ -66,6 +69,7 @@ interface DispatchQueue<R> {
     /**
      * Perform work on the background thread.
      * @param func the func.
+     * @throws IllegalStateException if the dispatch queue was already cancelled or started.
      * @return the dispatch queue.
      * */
     fun <U> async(func: (R) -> U): DispatchQueue<U>
@@ -75,6 +79,7 @@ interface DispatchQueue<R> {
      * @param delayInMillis the delay in milliseconds before the background thread runs the function.
      * Values less than 1 indicates that there are no delays.
      * @param func the function.
+     * @throws IllegalStateException if the dispatch queue was already cancelled or started.
      * @return the dispatch queue.
      * */
     fun <U> async(delayInMillis: Long, func: (R) -> U): DispatchQueue<U>
@@ -132,6 +137,7 @@ interface DispatchQueue<R> {
     /**
      * Combines this dispatchQueue with the passed in dispatchQueue by cloning the passed in dispatchQueue into this dispatchQueue's queue. Returns a paired result.
      * @param dispatchQueue dispatchQueue queue to combine with.
+     * @throws IllegalStateException if the dispatch queue was already (cancelled or started) or the passed in dispatch queue was (cancelled or started).
      * @return dispatchQueue queue with result pair.
      * */
     fun<U> zip(dispatchQueue: DispatchQueue<U>): DispatchQueue<Pair<R, U>>
@@ -141,6 +147,7 @@ interface DispatchQueue<R> {
      * Returns a Triple result.
      * @param dispatchQueue dispatchQueue to combine with.
      * @param dispatchQueue2 dispatchQueue to combine with.
+     * @throws IllegalStateException if the dispatch queue was already (cancelled or started) or the passed in dispatch queues were (cancelled or started).
      * @return dispatchQueue with result triple.
      * */
     fun<U, T> zip(dispatchQueue: DispatchQueue<U>, dispatchQueue2: DispatchQueue<T>): DispatchQueue<Triple<R, U, T>>
@@ -155,6 +162,7 @@ interface DispatchQueue<R> {
      * Transforms the data from the previous dispatch queue object to a another
      * data type. The transformation is performed on the background thread.
      * @param func the function.
+     * @throws IllegalStateException if the dispatch queue was already cancelled.
      * @return the dispatch queue.
      * */
     fun <T> map(func: (R) -> T): DispatchQueue<T>
