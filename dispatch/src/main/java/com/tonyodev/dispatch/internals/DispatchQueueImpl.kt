@@ -195,6 +195,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         synchronized(dispatchQueueInfo) {
             if (!dispatchQueueInfo.isStarted && !dispatchQueueInfo.isCancelled) {
                 dispatchQueueInfo.endDispatchQueue?.next = dispatchQueueImpl
+                dispatchQueueInfo.endDispatchQueue = dispatchQueueImpl
             }
         }
     }
@@ -366,6 +367,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     private fun cloneTo(newDispatchQueueInfo: DispatchQueueInfo): DispatchQueueImpl<T, R> {
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val newDispatchQueue = DispatchQueueImpl(
             blockLabel = blockLabel,
             delayInMillis = delayInMillis,
@@ -385,9 +388,11 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 newDispatchQueue.addSource(source.cloneTo(newDispatchQueueInfo = newDispatchQueueInfo))
             }
         }
-        enqueue(newDispatchQueue)
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        newDispatchQueueInfo.endDispatchQueue?.enqueue(newDispatchQueue)
+        throwIllegalStateExceptionIfStarted(newDispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(newDispatchQueueInfo)
         return newDispatchQueue
     }
 
