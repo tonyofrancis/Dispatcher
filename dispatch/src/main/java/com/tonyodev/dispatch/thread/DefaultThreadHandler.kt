@@ -153,6 +153,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
             if (isSleeping) {
                 interrupt()
             }
+            isSleeping = false
             val recycleList = mutableListOf<QueueItem>()
             synchronized(queue) {
                 val iterator = queue.iterator()
@@ -168,6 +169,8 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
             }
             queueItem?.recycle()
             queueItem = null
+            isQueueEmpty = true
+            queueIndex = 0
             threadSleepMillis = defaultSleepTime
         }
     }

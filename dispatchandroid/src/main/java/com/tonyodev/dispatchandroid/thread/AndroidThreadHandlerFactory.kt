@@ -18,13 +18,17 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
     private var newThreadCount = 0
 
     override fun create(threadType: ThreadType): ThreadHandler {
-        return when(threadType) {
+        val threadHandler = when(threadType) {
             ThreadType.BACKGROUND -> DefaultThreadHandler(THREAD_BACKGROUND)
             ThreadType.IO -> DefaultThreadHandler(THREAD_IO)
             ThreadType.NEW -> getNewDispatchQueueHandler()
             ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)
         }
+        if (!threadHandler.isActive) {
+            threadHandler.start()
+        }
+        return threadHandler
     }
 
     override fun create(threadName: String?): ThreadHandler {
@@ -37,7 +41,11 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
         } else {
             name
         }
-        return DefaultThreadHandler(threadName)
+        val threadHandler = DefaultThreadHandler(threadName)
+        if (!threadHandler.isActive) {
+            threadHandler.start()
+        }
+        return threadHandler
     }
 
 }
