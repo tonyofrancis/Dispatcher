@@ -14,9 +14,14 @@ internal class DispatchQueueInfo(val queueId: Int,
     var completedDispatchQueue = false
     @Volatile
     var isStarted = false
-    lateinit var rootDispatchQueue: DispatchQueueImpl<*, *>
     val queue = ArrayList<DispatchQueueImpl<*, *>>()
     var dispatchQueueErrorCallback: DispatchQueueErrorCallback? = null
     var dispatchQueueController: DispatchQueueController? = null
+    val rootDispatchQueue: DispatchQueueImpl<*, *>?
+        get() {
+            return synchronized(queue) {
+                queue.firstOrNull()
+            }
+        }
 
 }

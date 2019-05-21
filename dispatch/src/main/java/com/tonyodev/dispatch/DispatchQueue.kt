@@ -38,11 +38,6 @@ interface DispatchQueue<R> {
     val blockLabel: String
 
     /**
-     * The first dispatch queue object in the queue.
-     * */
-    val root: DispatchQueue<*>
-
-    /**
      * Checks if a dispatch queue has been cancelled.
      * */
     val isCancelled: Boolean
@@ -435,7 +430,6 @@ interface DispatchQueue<R> {
                 worker = null,
                 dispatchQueueInfo = dispatchQueueInfo,
                 threadHandlerInfo = threadHandlerInfo)
-            dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
             dispatchQueueInfo.queue.add(newDispatchQueue)
             return newDispatchQueue
         }

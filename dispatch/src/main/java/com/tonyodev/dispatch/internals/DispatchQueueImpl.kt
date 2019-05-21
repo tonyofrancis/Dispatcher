@@ -32,11 +32,6 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             return dispatchQueueInfo.isCancelled
         }
 
-    override val root: DispatchQueue<*>
-        get() {
-            return dispatchQueueInfo.rootDispatchQueue
-        }
-
     override val controller: DispatchQueueController?
         get() {
             return dispatchQueueInfo.dispatchQueueController
@@ -142,7 +137,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             val nextDispatchQueue = getNextDispatchQueueInfo(this)
             when {
                 nextDispatchQueue != null -> nextDispatchQueue.runDispatcher()
-                dispatchQueueInfo.isIntervalDispatch -> dispatchQueueInfo.rootDispatchQueue.runDispatcher()
+                dispatchQueueInfo.isIntervalDispatch -> dispatchQueueInfo.rootDispatchQueue?.runDispatcher()
                 else -> {
                     dispatchQueueInfo.completedDispatchQueue = true
                     if (!dispatchQueueInfo.isIntervalDispatch) {
@@ -224,7 +219,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatchQueueInfo.isStarted = true
                 dispatchQueueInfo.dispatchQueueErrorCallback = dispatchQueueErrorCallback
                 dispatchQueueInfo.completedDispatchQueue = false
-                dispatchQueueInfo.rootDispatchQueue.runDispatcher()
+                dispatchQueueInfo.rootDispatchQueue?.runDispatcher()
             }
         } else {
             throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)

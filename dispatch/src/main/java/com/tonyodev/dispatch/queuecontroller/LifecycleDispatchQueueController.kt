@@ -57,14 +57,15 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
     }
 
     override fun unmanage(dispatchQueue: DispatchQueue<*>) {
-        super.unmanage(dispatchQueue)
         synchronized(queueMap) {
+            super.unmanage(dispatchQueue)
             queueMap.remove(dispatchQueue.id)
         }
     }
 
     override fun unmanage(dispatchQueueList: List<DispatchQueue<*>>) {
         synchronized(queueMap) {
+            super.unmanage(dispatchQueueList)
             for (dispatch in dispatchQueueList) {
                 queueMap.remove(dispatch.id)
             }
@@ -84,7 +85,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
     fun manage(dispatchQueue: DispatchQueue<*>, cancelType: CancelType) {
         synchronized(queueMap) {
             super.manage(dispatchQueue)
-            queueMap[dispatchQueue.id] = Pair(dispatchQueue.root, cancelType)
+            queueMap[dispatchQueue.id] = Pair(dispatchQueue, cancelType)
         }
     }
 
@@ -92,7 +93,7 @@ open class LifecycleDispatchQueueController: DispatchQueueController() {
         synchronized(queueMap) {
             super.manage(dispatchQueueList)
             for (dispatchQueue in dispatchQueueList) {
-                queueMap[dispatchQueue.id] = Pair(dispatchQueue.root, CancelType.DESTROYED)
+                queueMap[dispatchQueue.id] = Pair(dispatchQueue, CancelType.DESTROYED)
             }
         }
     }
