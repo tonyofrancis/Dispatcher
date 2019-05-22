@@ -55,9 +55,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                         }
                         if (!isCancelled) {
                             synchronized(queue) {
-                                if (queueIndex < queue.size) {
-                                    queue.removeAt(queueIndex)
-                                }
+                                queue.remove(queueItem!!)
                             }
                         }
                         queueItem?.recycle()
