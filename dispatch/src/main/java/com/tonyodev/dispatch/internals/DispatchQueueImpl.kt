@@ -217,6 +217,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 dispatchQueueInfo.isStarted = true
                 dispatchQueueInfo.dispatchQueueErrorCallback = dispatchQueueErrorCallback
                 dispatchQueueInfo.rootDispatchQueue?.runDispatcher()
+                DispatchQueue.globalSettings.logger.print(TAG, "DispatchQueue with id ${dispatchQueueInfo.queueId} has started.")
             }
         } else {
             throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
@@ -259,6 +260,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             }
             dispatchQueueInfo.rootDispatchQueue = null
             dispatchQueueInfo.endDispatchQueue = null
+            DispatchQueue.globalSettings.logger.print(TAG, "DispatchQueue with id ${dispatchQueueInfo.queueId} has been cancelled.")
         }
         return this
     }
