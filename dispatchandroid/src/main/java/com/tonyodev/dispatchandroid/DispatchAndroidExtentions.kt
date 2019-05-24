@@ -1,11 +1,18 @@
 @file:JvmName("DispatchQueueAndroid")
 
-package com.tonyodev.dispatchandroid.utils
+package com.tonyodev.dispatchandroid
 
 import android.app.Activity
 import com.tonyodev.dispatch.DispatchQueue
 import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueController
+import com.tonyodev.dispatchandroid.thread.AndroidThreadHandlerFactory
+import com.tonyodev.dispatchandroid.utils.AndroidLogger
+
+fun initAndroidDispatchQueues() {
+    DispatchQueue.globalSettings.logger = AndroidLogger()
+    DispatchQueue.globalSettings.threadHandlerFactory = AndroidThreadHandlerFactory()
+}
 
 /**
  * Set's this dispatch queue to be managed by an Activity. The activity is wrapped in an instance

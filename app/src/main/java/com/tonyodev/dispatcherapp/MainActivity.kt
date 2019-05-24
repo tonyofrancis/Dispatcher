@@ -7,7 +7,7 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.tonyodev.dispatch.DispatchQueue
 import com.tonyodev.dispatch.DispatchQueueErrorCallback
-import com.tonyodev.dispatchandroid.utils.managedBy
+import com.tonyodev.dispatchandroid.managedBy
 import com.tonyodev.dispatchretrofit.DispatchQueueCallAdapterFactory
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

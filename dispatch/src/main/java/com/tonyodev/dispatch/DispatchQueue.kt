@@ -225,7 +225,7 @@ interface DispatchQueue<R> {
     companion object Queue {
 
         /** DispatchQueue Global globalSettings.*/
-        val globalSettings: Settings
+        val globalSettings = Settings()
 
         /**
          * Creates a new dispatch queue that can be used to post work on the main thread or do work in the background.
@@ -441,12 +441,6 @@ interface DispatchQueue<R> {
             dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
             dispatchQueueInfo.endDispatchQueue = newDispatchQueue
             return newDispatchQueue
-        }
-
-        init {
-            val settings = Settings()
-            globalSettings = settings
-            forceLoadAndroidSettingsIfAvailable(settings)
         }
 
     }

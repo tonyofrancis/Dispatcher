@@ -24,4 +24,3 @@
  -keep class com.tonyodev.dispatchandroid.thread.AndroidThreadHandlerFactory { *; }
  -keep class com.tonyodev.dispatchandroid.utils.AndroidLogger { *; }
  -keep class com.tonyodev.dispatchandroid.utils.DispatchQueueAndroid { *; }
- -keep class com.tonyodev.dispatchandroid.AndroidFactoriesInitializer { *; }
