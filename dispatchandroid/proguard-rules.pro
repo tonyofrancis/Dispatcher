@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+ -keep class com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueController { *; }
+ -keep class com.tonyodev.dispatchandroid.thread.AndroidThreadHandler { *; }
+ -keep class com.tonyodev.dispatchandroid.thread.AndroidThreadHandlerFactory { *; }
+ -keep class com.tonyodev.dispatchandroid.utils.AndroidLogger { *; }
+ -keep class com.tonyodev.dispatchandroid.utils.DispatchQueueAndroid { *; }
+ -keep class com.tonyodev.dispatchandroid.AndroidFactoriesInitializer { *; }

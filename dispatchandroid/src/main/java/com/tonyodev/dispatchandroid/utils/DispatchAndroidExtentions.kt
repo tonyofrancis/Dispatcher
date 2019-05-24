@@ -1,3 +1,5 @@
+@file:JvmName("DispatchQueueAndroid")
+
 package com.tonyodev.dispatchandroid.utils
 
 import android.app.Activity
