@@ -17,6 +17,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
     private var queueIndex = 0
     private var queueItem: QueueItem? = null
     private var isQueueEmpty = true
+    private val minQueuePair = MinQueuePair()
 
     override val isActive: Boolean
         get()  {
@@ -61,12 +62,14 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                         queueItem?.recycle()
                         queueIndex = 0
                     } else {
-                        val minIndex = findQueueMinIndex()
-                        if (minIndex > -1) {
-                            queueIndex = minIndex
+                        val minQueuePair1 = findQueueMinIndex()
+                        queueIndex = if (minQueuePair1.index > -1) {
+                            minQueuePair1.index
                         } else {
-                            queueIndex = 0
-                            threadSleepMillis = defaultSleepTime
+                            0
+                        }
+                        if (minQueuePair1.delay > 0) {
+                            threadSleepMillis = minQueuePair1.delay
                             sleep()
                         }
                     }
@@ -80,21 +83,26 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
         }
     }
 
-    private fun findQueueMinIndex(): Int {
+    private fun findQueueMinIndex(): MinQueuePair {
         return synchronized(queue) {
-            var index = -1
+            minQueuePair.index = -1
+            minQueuePair.delay = -1
             var minDelay = -1L
             var counter = 0
             var queueItem: QueueItem
             while (counter < queue.size) {
                 queueItem = queue[counter]
                 if (minDelay == -1L || queueItem.delay < minDelay) {
-                    index = counter
+                    minQueuePair.index = counter
                     minDelay = queueItem.delay
+                    minQueuePair.delay = queueItem.delay - queueItem.waitTime
+                    if (minQueuePair.delay < 0) {
+                        minQueuePair.delay = 0
+                    }
                 }
                 counter++
             }
-            index
+            minQueuePair
         }
     }
 
@@ -175,6 +183,11 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
 
     override fun start() {
         super.start()
+    }
+
+    private class MinQueuePair {
+        var index = -1
+        var delay = -1L
     }
 
     private class QueueItem private constructor() {
