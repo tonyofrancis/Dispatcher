@@ -15,6 +15,7 @@ class DefaultThreadHandlerFactory: ThreadHandlerFactory {
         val threadHandler = when(threadType) {
             ThreadType.BACKGROUND -> DefaultThreadHandler(THREAD_BACKGROUND)
             ThreadType.IO -> DefaultThreadHandler(THREAD_IO)
+            ThreadType.NETWORK -> DefaultThreadHandler(THREAD_NETWORK)
             ThreadType.NEW -> getNewThreadHandler()
             ThreadType.MAIN -> DefaultThreadHandler(THREAD_MAIN_NO_UI)
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)

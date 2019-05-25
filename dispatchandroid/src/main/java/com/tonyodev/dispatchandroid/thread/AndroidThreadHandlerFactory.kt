@@ -21,6 +21,7 @@ class AndroidThreadHandlerFactory: ThreadHandlerFactory {
         val threadHandler = when(threadType) {
             ThreadType.BACKGROUND -> DefaultThreadHandler(THREAD_BACKGROUND)
             ThreadType.IO -> DefaultThreadHandler(THREAD_IO)
+            ThreadType.NETWORK -> DefaultThreadHandler(THREAD_NETWORK)
             ThreadType.NEW -> getNewDispatchQueueHandler()
             ThreadType.MAIN -> AndroidThreadHandler(Handler(Looper.getMainLooper()))
             ThreadType.TEST -> TestThreadHandler(THREAD_TEST)

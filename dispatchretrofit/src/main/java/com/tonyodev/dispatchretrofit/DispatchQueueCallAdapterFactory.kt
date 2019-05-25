@@ -81,7 +81,7 @@ class DispatchQueueCallAdapterFactory constructor(
                 threadHandler.start()
             }
             return if (threadHandler == null) {
-                DispatchQueue.createDispatchQueue(ThreadType.IO)
+                DispatchQueue.createDispatchQueue(ThreadType.NETWORK)
             } else {
                 DispatchQueue.createDispatchQueue(threadHandler)
             }.async {
