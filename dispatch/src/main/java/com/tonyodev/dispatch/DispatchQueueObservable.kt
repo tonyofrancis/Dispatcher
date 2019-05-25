@@ -8,23 +8,26 @@ import com.tonyodev.dispatch.utils.startThreadHandlerIfNotActive
 /**
  * Class that allows for the attaching of dispatch queue observers and publishing results to them.
  * */
-class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHandler?,
-                                             private val shouldNotifyOnHandler: Boolean) {
-
+class DispatchQueueObservable<R> constructor(
     /**
      * Notifies the attached Observers on the passed in threadHandler.
      * */
-    constructor(threadHandler: ThreadHandler): this(threadHandler, true)
+    private val threadHandler: ThreadHandler?) {
+
+    private var shouldNotifyOnHandler: Boolean = false
 
     /**
      * Notifies the attached Observers on the main thread.
      * */
-    constructor(): this(Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler, true)
+    constructor(): this(Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler)
 
     private val dispatchQueueObserversSet = mutableSetOf<DispatchQueueObserver<R>>()
     private var result: Any? = INVALID_RESULT
 
     init {
+        if (threadHandler != null) {
+            shouldNotifyOnHandler = true
+        }
         if (shouldNotifyOnHandler && threadHandler != null) {
             startThreadHandlerIfNotActive(threadHandler)
         }
@@ -82,7 +85,7 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
      * */
     fun removeObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
-          dispatchQueueObserversSet.remove(dispatchQueueObserver)
+            dispatchQueueObserversSet.remove(dispatchQueueObserver)
         }
         return this
     }
@@ -99,11 +102,14 @@ class DispatchQueueObservable<R> constructor(private val threadHandler: ThreadHa
         return this
     }
 
-    /** Removes all observers attached this observable.*/
-    fun removeObservers() {
+    /** Removes all observers attached this observable.
+     * @return the dispatchQueueObservable.
+     * */
+    fun removeObservers(): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
             dispatchQueueObserversSet.clear()
         }
+        return this
     }
 
     /** Notifies observers of the passed in result
