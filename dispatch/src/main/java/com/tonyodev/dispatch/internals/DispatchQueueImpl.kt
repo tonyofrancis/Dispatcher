@@ -8,6 +8,8 @@ import com.tonyodev.dispatch.utils.*
 import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
+import java.lang.IllegalArgumentException
+import java.lang.IllegalStateException
 
 internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                                        private val delayInMillis: Long = 0,
@@ -452,8 +454,16 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     override fun retry(count: Int, delayInMillis: Long): DispatchQueue<R> {
         if (dispatchQueueInfo.canPerformOperations()) {
+            if (count < 0) {
+                throw IllegalArgumentException("Count cannot be less than zero")
+            }
+            if (delayInMillis < 0) {
+                throw IllegalArgumentException("Delay cannot be less than zero")
+            }
             this.retryCount = count
             this.retryDelayInMillis = delayInMillis
+        } else {
+            throw IllegalStateException("Cannot add a retry operation after a dispatch queue has been started or is cancelled.")
         }
         return this
     }
@@ -461,8 +471,6 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     override fun retry(count: Int): DispatchQueue<R> {
         return retry(count, 0)
     }
-
-
 
     override fun toString(): String {
         return "DispatchQueue(blockLabel='$blockLabel', id='${dispatchQueueInfo.queueId}')"
