@@ -147,8 +147,4 @@ class DispatchQueueObservable<R> constructor(
         return synchronized(dispatchQueueObserversSet) { dispatchQueueObserversSet.toList() }
     }
 
-    internal fun resetResult() {
-        result = INVALID_RESULT
-    }
-
 }

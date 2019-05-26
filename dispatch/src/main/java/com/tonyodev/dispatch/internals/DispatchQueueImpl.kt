@@ -250,7 +250,6 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                     current.dispatchSources[index] = null
                 }
                 current.dispatchQueueObservable.removeObservers()
-                current.dispatchQueueObservable.resetResult()
                 current.results = INVALID_RESULT
                 current.dispatcher = null
                 current.doOnErrorWorker = null
@@ -413,16 +412,12 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun addObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueue<R> {
-        if (dispatchQueueInfo.canPerformOperations()) {
-            dispatchQueueObservable.addObserver(dispatchQueueObserver)
-        }
+        dispatchQueueObservable.addObserver(dispatchQueueObserver)
         return this
     }
 
     override fun addObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueue<R> {
-        if (dispatchQueueInfo.canPerformOperations()) {
-            dispatchQueueObservable.addObservers(dispatchQueueObservers)
-        }
+        dispatchQueueObservable.addObservers(dispatchQueueObservers)
         return this
     }
 
@@ -446,9 +441,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun setBlockLabel(blockLabel: String): DispatchQueue<R> {
-        if (dispatchQueueInfo.canPerformOperations()) {
-            this.blockLabel = blockLabel
-        }
+        this.blockLabel = blockLabel
         return this
     }
 
