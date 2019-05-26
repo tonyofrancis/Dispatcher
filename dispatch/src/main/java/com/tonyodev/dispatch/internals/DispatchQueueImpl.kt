@@ -17,7 +17,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     private val dispatchSources = arrayOfNulls<DispatchQueueImpl<*, *>>(3)
     private var sourceCount = 0
-    private val dispatchQueueObservable = DispatchQueueObservable<R>(null, false)
+    private val dispatchQueueObservable = DispatchQueueObservable<R>(null)
     private var doOnErrorWorker: ((throwable: Throwable) -> R)? = null
     private var retryCount = 0
     private var retryAttempt = 0
