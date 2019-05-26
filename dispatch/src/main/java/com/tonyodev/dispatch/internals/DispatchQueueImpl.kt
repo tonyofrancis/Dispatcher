@@ -285,28 +285,24 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun managedBy(dispatchQueueController: DispatchQueueController?): DispatchQueue<R> {
-        if (dispatchQueueInfo.canPerformOperations()) {
-            if (dispatchQueueController is LifecycleDispatchQueueController) {
-                managedBy(dispatchQueueController, CancelType.DESTROYED)
-            } else {
-                val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
-                this.dispatchQueueInfo.dispatchQueueController = null
-                oldDispatchQueueController?.unmanage(this)
-                this.dispatchQueueInfo.dispatchQueueController = dispatchQueueController
-                dispatchQueueController?.manage(this)
-            }
+        if (dispatchQueueController is LifecycleDispatchQueueController) {
+            managedBy(dispatchQueueController, CancelType.DESTROYED)
+        } else {
+            val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
+            this.dispatchQueueInfo.dispatchQueueController = null
+            oldDispatchQueueController?.unmanage(this)
+            this.dispatchQueueInfo.dispatchQueueController = dispatchQueueController
+            dispatchQueueController?.manage(this)
         }
         return this
     }
 
     override fun managedBy(lifecycleDispatchQueueController: LifecycleDispatchQueueController, cancelType: CancelType): DispatchQueue<R> {
-        if (dispatchQueueInfo.canPerformOperations()) {
-            val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
-            this.dispatchQueueInfo.dispatchQueueController = null
-            oldDispatchQueueController?.unmanage(this)
-            this.dispatchQueueInfo.dispatchQueueController = lifecycleDispatchQueueController
-            lifecycleDispatchQueueController.manage(this, cancelType)
-        }
+        val oldDispatchQueueController = this.dispatchQueueInfo.dispatchQueueController
+        this.dispatchQueueInfo.dispatchQueueController = null
+        oldDispatchQueueController?.unmanage(this)
+        this.dispatchQueueInfo.dispatchQueueController = lifecycleDispatchQueueController
+        lifecycleDispatchQueueController.manage(this, cancelType)
         return this
     }
 
@@ -456,7 +452,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             this.retryCount = count
             this.retryDelayInMillis = delayInMillis
         } else {
-            throw IllegalStateException("Cannot add a retry operation after a dispatch queue has been started or is cancelled.")
+            throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+            throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         }
         return this
     }
