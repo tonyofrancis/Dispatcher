@@ -9,7 +9,6 @@ import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
 import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
 
 internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                                        private val delayInMillis: Long = 0,
@@ -167,6 +166,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 isRetryAttempt -> {
                     retryAttempt += 1
                     threadHandlerInfo.threadHandler.postDelayed(retryDelayInMillis, dispatcherRunnable)
+                    DispatchQueue.globalSettings.logger.print(
+                        TAG, "DispatchQueue with id $id attempting retry on block with label: $blockLabel")
                 }
                 delayInMillis >= 1 -> threadHandlerInfo.threadHandler.postDelayed(delayInMillis, dispatcherRunnable)
                 else -> threadHandlerInfo.threadHandler.post(dispatcherRunnable)
