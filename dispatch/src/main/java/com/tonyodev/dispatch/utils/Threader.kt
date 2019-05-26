@@ -7,25 +7,15 @@ import com.tonyodev.dispatch.thread.ThreadHandler
 
 internal object Threader {
 
-    private val uiHandler by lazy { DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.MAIN) }
+    private val backgroundThreadHandlerInfo by lazy { ThreadHandlerInfo(DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.BACKGROUND), false) }
 
-    private val testHandler by lazy { DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.TEST) }
+    private val uiThreadHandlerInfo by lazy { ThreadHandlerInfo(DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.MAIN), false) }
 
-    private val backgroundHandler by lazy { DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.BACKGROUND) }
+    private val networkThreadHandlerInfo by lazy { ThreadHandlerInfo(DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.NETWORK), false) }
 
-    private val ioHandler by lazy { DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.IO) }
+    private val ioThreadHandlerInfo by lazy { ThreadHandlerInfo(DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.IO), false) }
 
-    private val networkHandler by lazy { DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.NETWORK) }
-
-    private val backgroundThreadHandlerInfo by lazy { ThreadHandlerInfo(backgroundHandler, false) }
-
-    private val uiThreadHandlerInfo by lazy { ThreadHandlerInfo(uiHandler, false) }
-
-    private val networkThreadHandlerInfo by lazy { ThreadHandlerInfo(networkHandler, false) }
-
-    private val ioThreadHandlerInfo by lazy { ThreadHandlerInfo(ioHandler, false) }
-
-    private val testThreadHandlerInfo by lazy { ThreadHandlerInfo(testHandler, false) }
+    private val testThreadHandlerInfo by lazy { ThreadHandlerInfo(DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.TEST), false) }
 
     fun getHandlerThreadInfo(threadType: ThreadType): ThreadHandlerInfo {
         return when(threadType) {
