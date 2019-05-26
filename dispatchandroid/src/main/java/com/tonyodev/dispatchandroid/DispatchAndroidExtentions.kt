@@ -41,3 +41,11 @@ fun<R> DispatchQueue<R>.managedBy(activity: Activity, cancelType: CancelType): D
     managedBy(dispatchQueueController, cancelType)
     return this
 }
+
+/**
+ * Gets the DispatchQueueController associated with this activity.
+ * */
+val Activity.dispatchQueueController: ActivityDispatchQueueController
+    get() {
+        return ActivityDispatchQueueController.getInstance(this)
+    }
