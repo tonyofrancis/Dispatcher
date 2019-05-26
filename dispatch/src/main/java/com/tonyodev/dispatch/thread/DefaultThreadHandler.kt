@@ -52,6 +52,9 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                 if (queueItem != null) {
                     if (queueItem!!.isReady) {
                         if (!isCancelled) {
+                            synchronized(queue) {
+                                queueItem!!.isRunning = true
+                            }
                             queueItem!!.runnable?.run()
                         }
                         if (!isCancelled) {
@@ -79,8 +82,11 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                     threadSleepMillis = defaultSleepTime
                     sleep()
                 }
+            } else {
+                queueItem?.recycle()
+                queueItem = null
             }
-            queueItem = null
+
         }
     }
 
@@ -139,19 +145,24 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
     }
 
     override fun removeCallbacks(runnable: Runnable) {
-        var recycleQueueItem: QueueItem? = null
         synchronized(queue) {
+            val recycleList = mutableListOf<QueueItem>()
             val iterator = queue.iterator()
             var queueItem: QueueItem
             while (iterator.hasNext()) {
                 queueItem = iterator.next()
                 if (queueItem.runnable == runnable) {
                     iterator.remove()
-                    recycleQueueItem = queueItem
+                    recycleList.add(queueItem)
                 }
             }
+            for (recycleQueueItem in recycleList) {
+                if (!recycleQueueItem.isRunning) {
+                    recycleQueueItem.recycle()
+                }
+            }
+            recycleList.clear()
         }
-        recycleQueueItem?.recycle()
     }
 
     override fun quit() {
@@ -161,8 +172,8 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                 interrupt()
             }
             isSleeping = false
-            val recycleList = mutableListOf<QueueItem>()
             synchronized(queue) {
+                val recycleList = mutableListOf<QueueItem>()
                 val iterator = queue.iterator()
                 var queueItem: QueueItem
                 while (iterator.hasNext()) {
@@ -170,15 +181,18 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                     iterator.remove()
                     recycleList.add(queueItem)
                 }
+                for (recycleQueueItem in recycleList) {
+                    if (!recycleQueueItem.isRunning) {
+                        recycleQueueItem.recycle()
+                    }
+                }
+                recycleList.clear()
             }
-            for (queueItem in recycleList) {
-                queueItem.recycle()
-            }
-            queueItem?.recycle()
-            queueItem = null
             isQueueEmpty = true
             queueIndex = 0
             threadSleepMillis = defaultSleepTime
+            minQueuePair.delay = -1
+            minQueuePair.index = -1
         }
     }
 
@@ -200,6 +214,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
         private var startWaitTime = 0L
         private var next: QueueItem? = null
         private var isRecycled = false
+        var isRunning = false
 
         val waitTime: Long
             get() {
@@ -218,6 +233,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                     delay = 0
                     runnable = null
                     isRecycled = true
+                    isRunning = false
                     if (poolSize <= MAX_POOL_SIZE) {
                         next = pool
                         pool = this
