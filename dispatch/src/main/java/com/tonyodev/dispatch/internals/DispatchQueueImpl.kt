@@ -278,9 +278,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun doOnError(func: ((Throwable) -> R)): DispatchQueue<R> {
-        if (dispatchQueueInfo.canPerformOperations()) {
-            this.doOnErrorWorker = func
-        }
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        this.doOnErrorWorker = func
         return this
     }
 
@@ -442,19 +442,16 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun retry(count: Int, delayInMillis: Long): DispatchQueue<R> {
-        if (dispatchQueueInfo.canPerformOperations()) {
-            if (count < 0) {
-                throw IllegalArgumentException("Count cannot be less than zero")
-            }
-            if (delayInMillis < 0) {
-                throw IllegalArgumentException("Delay cannot be less than zero")
-            }
-            this.retryCount = count
-            this.retryDelayInMillis = delayInMillis
-        } else {
-            throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
-            throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        if (count < 0) {
+            throw IllegalArgumentException("Count cannot be less than zero")
         }
+        if (delayInMillis < 0) {
+            throw IllegalArgumentException("Delay cannot be less than zero")
+        }
+        this.retryCount = count
+        this.retryDelayInMillis = delayInMillis
         return this
     }
 
