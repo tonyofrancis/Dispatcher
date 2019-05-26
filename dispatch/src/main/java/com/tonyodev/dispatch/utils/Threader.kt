@@ -15,9 +15,13 @@ internal object Threader {
 
     private val ioHandler by lazy { DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.IO) }
 
+    private val networkHandler by lazy { DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.NETWORK) }
+
     private val backgroundThreadHandlerInfo by lazy { ThreadHandlerInfo(backgroundHandler, false) }
 
     private val uiThreadHandlerInfo by lazy { ThreadHandlerInfo(uiHandler, false) }
+
+    private val networkThreadHandlerInfo by lazy { ThreadHandlerInfo(networkHandler, false) }
 
     private val ioThreadHandlerInfo by lazy { ThreadHandlerInfo(ioHandler, false) }
 
@@ -27,6 +31,7 @@ internal object Threader {
         return when(threadType) {
             ThreadType.BACKGROUND -> backgroundThreadHandlerInfo
             ThreadType.IO -> ioThreadHandlerInfo
+            ThreadType.NETWORK -> networkThreadHandlerInfo
             ThreadType.MAIN -> uiThreadHandlerInfo
             ThreadType.TEST -> testThreadHandlerInfo
             ThreadType.NEW -> ThreadHandlerInfo(DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.NEW), true)
