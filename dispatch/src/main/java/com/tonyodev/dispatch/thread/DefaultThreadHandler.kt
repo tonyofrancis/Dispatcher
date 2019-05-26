@@ -80,6 +80,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                     sleep()
                 }
             }
+            queueItem = null
         }
     }
 
