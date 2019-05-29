@@ -7,8 +7,6 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.tonyodev.dispatch.DispatchQueue
 import com.tonyodev.dispatch.DispatchQueueErrorCallback
-import com.tonyodev.dispatch.async
-import com.tonyodev.dispatch.post
 import com.tonyodev.dispatchandroid.managedBy
 import com.tonyodev.dispatchretrofit.DispatchQueueCallAdapterFactory
 import retrofit2.Retrofit
@@ -36,7 +34,6 @@ class MainActivity : AppCompatActivity() {
 
         runTestService()
         runTestTimer()
-        runDSL()
     }
 
     private fun runTestService() {
@@ -82,26 +79,6 @@ class MainActivity : AppCompatActivity() {
             .start(DispatchQueueErrorCallback {
 
             })
-    }
-
-    private fun runDSL() {
-        async {
-            run {
-                processServiceData()
-            }
-        }
-    }
-
-    private fun processServiceData() {
-        val data = service.getData().execute().body()
-        post {
-          run {
-              println("This was a fun service Fetch using DSL. ")
-              data?.forEach {
-                  println(it.toString())
-              }
-          }
-        }
     }
 
 }
