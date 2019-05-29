@@ -1,4 +1,4 @@
-[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.4.4) ](https://bintray.com/tonyofrancis/maven/dispatch/1.4.4/link)
+[ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.4.5) ](https://bintray.com/tonyofrancis/maven/dispatch/1.4.5/link)
 # DispatchQueue: A simple work scheduler for Java, Kotlin and Android
 
 DispatchQueue is a simple and flexible work scheduler that schedulers work on a background or main thread in the form of a dispatch queue.
@@ -63,7 +63,7 @@ class SimpleActivity: AppCompatActivity() {
 ```
 In this example, the queue is canceled when the Activity’s onPause method is called. There is no need to store the queue in a variable and cancel in manually in a callback method. You can if you want. The choice is yours.
 
-Dispatch uses a `DispatchQueueController` to manage when a queue is canceled. There are many variations of the DispatchQueueController : `LifecycleDispatchQueueController` and `ActivityDispatchQueueController`. You can extend any of those classes to create your own queue controllers and set them on a queue.
+DispatchQueue uses a `DispatchQueueController` to manage when a queue is canceled. There are many variations of the DispatchQueueController : `LifecycleDispatchQueueController` and `ActivityDispatchQueueController`. You can extend any of those classes to create your own queue controllers and set them on a queue.
 ```java
 class SimpleActivity: AppCompatActivity() {
 
@@ -97,6 +97,8 @@ DispatchQueue comes with many pre-exiting queues:
 DispatchQueue.background
 
 DispatchQueue.io
+
+DispatchQueue.network
 
 DispatchQueue.test - // Used specifically for testing
 
@@ -376,15 +378,15 @@ The above is a simple diagram on how a dispatch queue works. When you create a q
 
 To use the DispatchQueue library in your project, add the following code to your project’s build.gradle file.
 ```java
-implementation "com.tonyodev.dispatch:dispatch:1.4.4"
+implementation "com.tonyodev.dispatch:dispatch:1.4.5"
 ```
 For Android also add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-android:1.4.4"
+implementation "com.tonyodev.dispatch:dispatch-android:1.4.5"
 ```
 To use Dispatch with Retrofit, add:
 ```java
-implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.4.4"
+implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.4.5"
 ```
 
 Android users also have to initialize the AndroidDispatchQueues on application launch.
