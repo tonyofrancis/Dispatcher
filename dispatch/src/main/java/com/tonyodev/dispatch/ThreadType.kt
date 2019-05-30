@@ -14,6 +14,9 @@ enum class ThreadType {
     /** Use default Network thread.*/
     NETWORK,
 
+    /** Use default Computation thread. Use this thread for long computation work*/
+    COMPUTATION,
+
     /** Use a new background thread.*/
     NEW,
 

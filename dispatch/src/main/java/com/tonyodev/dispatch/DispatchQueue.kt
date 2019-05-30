@@ -428,6 +428,20 @@ interface DispatchQueue<R> {
             }
 
         /**
+         * Creates a new dispatch queue using the computation thread to perform async work or post work on the main thread.
+         * The dispatch queue operates on the default computation handler/thread. Use this queue for long computation work.
+         * @return new dispatch queue.
+         * */
+        val computation: DispatchQueue<Void?>
+            get() {
+                return createNewDispatchQueue(
+                    delayInMillis = 0,
+                    isIntervalDispatchQueue = false,
+                    threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.COMPUTATION)
+                )
+            }
+
+        /**
          * Creates a new test dispatch queue using the test thread. All async and post run on the same thread this dispatch queue was created on.
          * Note: Test Dispatch queues do not run with delays.
          * @return test dispatch queue.
