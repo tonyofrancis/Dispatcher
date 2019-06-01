@@ -380,12 +380,13 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     private fun cloneTo(newDispatchQueueInfo: DispatchQueueInfo): DispatchQueueImpl<T, R> {
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        val threadHandlerInfo = if (threadHandlerInfo.closeThreadHandler) newDispatchQueueInfo.threadHandlerInfo else threadHandlerInfo
         val newDispatchQueue = DispatchQueueImpl(
             blockLabel = blockLabel,
             delayInMillis = delayInMillis,
             worker = worker,
             dispatchQueueInfo = newDispatchQueueInfo,
-            threadHandlerInfo = newDispatchQueueInfo.threadHandlerInfo)
+            threadHandlerInfo = threadHandlerInfo)
         newDispatchQueue.results = results
         newDispatchQueue.doOnErrorWorker = doOnErrorWorker
         newDispatchQueue.retryCount = retryCount
