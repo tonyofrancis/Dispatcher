@@ -175,11 +175,18 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun handleException(throwable: Throwable) {
         val mainErrorHandler = dispatchQueueInfo.dispatchQueueErrorCallback
         if (mainErrorHandler != null) {
             Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable { mainErrorHandler.onError(DispatchQueueError(throwable, this, this.blockLabel)) })
+                .threadHandler.post(Runnable {
+                if (mainErrorHandler is DispatchQueueErrorCallback) {
+                    mainErrorHandler.onError(DispatchQueueError(throwable, this, this.blockLabel))
+                } else {
+                    (mainErrorHandler as (DispatchQueueError) -> Unit).invoke(DispatchQueueError(throwable, this, this.blockLabel))
+                }
+            })
             cancel()
             return
         }
@@ -206,14 +213,22 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun start(): DispatchQueue<R> {
-        return start(null)
+        return startQueue(null)
+    }
+
+    override fun start(errorCallback: (DispatchQueueError) -> Unit): DispatchQueue<R> {
+        return startQueue(errorCallback)
     }
 
     override fun start(dispatchQueueErrorCallback: DispatchQueueErrorCallback?): DispatchQueue<R> {
+        return startQueue(dispatchQueueErrorCallback)
+    }
+
+    private fun startQueue(errorCallback: Any?): DispatchQueue<R> {
         if (!isCancelled) {
             if (!dispatchQueueInfo.isStarted) {
                 dispatchQueueInfo.isStarted = true
-                dispatchQueueInfo.dispatchQueueErrorCallback = dispatchQueueErrorCallback
+                dispatchQueueInfo.dispatchQueueErrorCallback = errorCallback
                 dispatchQueueInfo.rootDispatchQueue?.runDispatcher()
                 DispatchQueue.globalSettings.logger.print(TAG, "DispatchQueue with id ${dispatchQueueInfo.queueId} has started.")
             }

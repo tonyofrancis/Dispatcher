@@ -1,6 +1,5 @@
 package com.tonyodev.dispatch.internals
 
-import com.tonyodev.dispatch.DispatchQueueErrorCallback
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.utils.Threader
 
@@ -11,7 +10,7 @@ internal class DispatchQueueInfo(val queueId: Int,
     var isCancelled = false
     @Volatile
     var isStarted = false
-    var dispatchQueueErrorCallback: DispatchQueueErrorCallback? = null
+    var dispatchQueueErrorCallback: Any? = null
     var dispatchQueueController: DispatchQueueController? = null
     var rootDispatchQueue: DispatchQueueImpl<*, *>? = null
     var endDispatchQueue: DispatchQueueImpl<*, *>? = null

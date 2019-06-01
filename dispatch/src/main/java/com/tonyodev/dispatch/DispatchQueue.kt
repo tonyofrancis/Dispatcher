@@ -98,6 +98,14 @@ interface DispatchQueue<R> {
     fun start(): DispatchQueue<R>
 
     /**
+     * Triggers the dispatch queue to start.
+     * @param errorCallback the error handler for the dispatch queue. Notifies of the async or post block via its label that throw the error and the error that was thrown. Only called
+     * if the dispatch queue object who throw the error does not handle it's error within its doOnError method. The error handler is called on the main thread.
+     * @return dispatch queue.
+     * */
+    fun start(errorCallback: (DispatchQueueError) -> Unit): DispatchQueue<R>
+
+    /**
      * Cancels all pending work on the dispatch queue.
      * Once cancelled a dispatch queue cannot start again.
      * @return dispatch queue.
