@@ -1,3 +1,9 @@
+Version 1.4.6
+- Added new zip method that takes in a list of dispatchQueues.
+- Added new async and post methods on DispatchQueue interface for direct executions.
+- Added new computation queue.
+- Added new start method on DispatchQueue
+
 Version 1.4.5
 - Memory, performance improvements and bug fixes.
 
