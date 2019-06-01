@@ -152,6 +152,15 @@ interface DispatchQueue<R> {
     fun<U, T> zip(dispatchQueue: DispatchQueue<U>, dispatchQueue2: DispatchQueue<T>): DispatchQueue<Triple<R, U, T>>
 
     /**
+     * Combines this dispatchQueue with the passed in list of dispatchQueues by cloning them into this dispatchQueue's queue. Returns a list result.
+     * @param list a list of dispatchQueue to zip inside this queue.
+     * @throws IllegalStateException if the dispatch queue was already (cancelled or started) or the passed in dispatch queue was (cancelled or started).
+     * @throws IllegalArgumentException if the passed in list is empty.
+     * @return dispatchQueue queue with result list. The first item in the list is the result of this dispatch queue. Results from of the passed in list starts at index 1.
+     * */
+    fun zip(list: List<DispatchQueue<Any?>>): DispatchQueue<List<Any?>>
+
+    /**
      * Sets the dispatch queue object blockLabel. Use this blockLabel to identify where errors occur in the dispatch queue.
      * @param blockLabel the dispatch object block Label.
      * */
@@ -465,8 +474,7 @@ interface DispatchQueue<R> {
                 worker = null,
                 dispatchQueueInfo = dispatchQueueInfo,
                 threadHandlerInfo = threadHandlerInfo)
-            dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
-            dispatchQueueInfo.endDispatchQueue = newDispatchQueue
+            dispatchQueueInfo.enqueue(newDispatchQueue)
             return newDispatchQueue
         }
 

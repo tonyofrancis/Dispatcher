@@ -20,4 +20,18 @@ internal class DispatchQueueInfo(val queueId: Int,
         return !isStarted && !isCancelled
     }
 
+    fun enqueue(dispatchQueueImpl: DispatchQueueImpl<*, *>) {
+        synchronized(this) {
+            if (canPerformOperations()) {
+                if (rootDispatchQueue == null) {
+                    rootDispatchQueue = dispatchQueueImpl
+                    endDispatchQueue = dispatchQueueImpl
+                } else {
+                    endDispatchQueue?.setNext(dispatchQueueImpl)
+                    endDispatchQueue = dispatchQueueImpl
+                }
+            }
+        }
+    }
+
 }

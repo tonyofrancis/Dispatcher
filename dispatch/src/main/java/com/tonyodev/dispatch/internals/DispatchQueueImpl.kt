@@ -194,13 +194,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         throw throwable
     }
 
-    private fun enqueue(dispatchQueueImpl: DispatchQueueImpl<*, *>) {
-        synchronized(dispatchQueueInfo) {
-            if (dispatchQueueInfo.canPerformOperations()) {
-                dispatchQueueInfo.endDispatchQueue?.next = dispatchQueueImpl
-                dispatchQueueInfo.endDispatchQueue = dispatchQueueImpl
-            }
-        }
+    internal fun setNext(dispatchQueueImpl: DispatchQueueImpl<*, *>) {
+        next = dispatchQueueImpl
     }
 
     private fun addSource(source: DispatchQueueImpl<*, *>) {
@@ -336,7 +331,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             dispatchQueueInfo = dispatchQueueInfo,
             threadHandlerInfo = threadHandlerInfo)
         newDispatchQueue.addSource(this)
-        enqueue(newDispatchQueue)
+        dispatchQueueInfo.enqueue(newDispatchQueue)
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         return newDispatchQueue
@@ -353,7 +348,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             threadHandlerInfo = dispatchQueueInfo.threadHandlerInfo)
         newDispatchQueue.addSource(this)
         newDispatchQueue.addSource((dispatchQueue as DispatchQueueImpl<*, *>).cloneTo(newDispatchQueueInfo = dispatchQueueInfo))
-        enqueue(newDispatchQueue)
+        dispatchQueueInfo.enqueue(newDispatchQueue)
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         return newDispatchQueue
@@ -371,7 +366,41 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         newDispatchQueue.addSource(this)
         newDispatchQueue.addSource((dispatchQueue as DispatchQueueImpl<*, *>).cloneTo(newDispatchQueueInfo = dispatchQueueInfo))
         newDispatchQueue.addSource((dispatchQueue2 as DispatchQueueImpl<*, *>).cloneTo(newDispatchQueueInfo = dispatchQueueInfo))
-        enqueue(newDispatchQueue)
+        dispatchQueueInfo.enqueue(newDispatchQueue)
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        return newDispatchQueue
+    }
+
+    override fun zip(list: List<DispatchQueue<Any?>>): DispatchQueue<List<Any?>> {
+        throwIllegalArgumentExceptionIfListEmpty(list)
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        val dataList = mutableListOf<Any?>()
+        var source: DispatchQueueImpl<*, *>
+        var queue: DispatchQueueImpl<*, *>
+        for (dispatchQueue in list) {
+            source = (dispatchQueue as DispatchQueueImpl<*, *>).cloneTo(newDispatchQueueInfo = dispatchQueueInfo)
+            queue = DispatchQueueImpl<Any?, Unit>(
+                blockLabel = getNewDispatchId(),
+                delayInMillis = 0,
+                worker = { dataList.add(it) },
+                dispatchQueueInfo = dispatchQueueInfo,
+                threadHandlerInfo = dispatchQueueInfo.threadHandlerInfo)
+            queue.addSource(source)
+            dispatchQueueInfo.enqueue(queue)
+        }
+        val newDispatchQueue = DispatchQueueImpl<R, List<Any?>>(
+            blockLabel = getNewDispatchId(),
+            delayInMillis = 0,
+            worker = {
+                dataList.add(0, it)
+                dataList
+            },
+            dispatchQueueInfo = dispatchQueueInfo,
+            threadHandlerInfo = dispatchQueueInfo.threadHandlerInfo)
+        newDispatchQueue.addSource(this)
+        dispatchQueueInfo.enqueue(newDispatchQueue)
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         return newDispatchQueue
@@ -402,7 +431,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         }
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
-        newDispatchQueueInfo.endDispatchQueue?.enqueue(newDispatchQueue)
+        newDispatchQueueInfo.enqueue(newDispatchQueue)
         throwIllegalStateExceptionIfStarted(newDispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(newDispatchQueueInfo)
         return newDispatchQueue
