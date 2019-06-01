@@ -6,7 +6,6 @@ import com.tonyodev.dispatch.queuecontroller.CancelType
 import com.tonyodev.dispatch.queuecontroller.DispatchQueueController
 import com.tonyodev.dispatch.queuecontroller.LifecycleDispatchQueueController
 import com.tonyodev.dispatch.thread.ThreadHandler
-import com.tonyodev.dispatch.utils.*
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
 import com.tonyodev.dispatch.utils.getNewQueueId
@@ -469,6 +468,40 @@ interface DispatchQueue<R> {
             dispatchQueueInfo.rootDispatchQueue = newDispatchQueue
             dispatchQueueInfo.endDispatchQueue = newDispatchQueue
             return newDispatchQueue
+        }
+
+        /**
+         * Executes the function on the default background thread.
+         * @param func the function to execute.
+         * */
+        fun async(func: () -> Unit) {
+            DispatchQueue.background.async { func.invoke() }.start()
+        }
+
+        /**
+         * Executes the function on the default background thread.
+         * @param delayInMillis the delay in milliseconds before the function is executed.
+         * @param func the function to execute.
+         * */
+        fun async(delayInMillis: Long, func: () -> Unit) {
+            DispatchQueue.background.async(delayInMillis) { func.invoke() }.start()
+        }
+
+        /**
+         * Executes the function on the main thread.
+         * @param func the function to execute.
+         * */
+        fun post(func: () -> Unit) {
+            DispatchQueue.background.post { func.invoke() }.start()
+        }
+
+        /**
+         * Executes the function on the main thread.
+         * @param delayInMillis the delay in milliseconds before the function is executed.
+         * @param func the function to execute.
+         * */
+        fun post(delayInMillis: Long, func: () -> Unit) {
+            DispatchQueue.background.post(delayInMillis) { func.invoke() }.start()
         }
 
     }
