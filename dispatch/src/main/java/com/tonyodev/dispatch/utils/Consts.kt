@@ -1,7 +1,10 @@
 package com.tonyodev.dispatch.utils
 
+import com.tonyodev.dispatch.DispatchQueueError
+
 const val TAG = "DispatchQueue"
 internal val INVALID_RESULT = InvalidResult()
+internal val CANCELLED_ERROR_CALLBACK = {_: DispatchQueueError -> }
 const val THREAD_BACKGROUND = "DispatchQueueBackground"
 const val THREAD_IO = "DispatchQueueIO"
 const val THREAD_TEST = "DispatchQueueTest"

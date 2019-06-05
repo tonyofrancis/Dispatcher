@@ -241,7 +241,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     override fun cancel(): DispatchQueue<R> {
         if (!isCancelled) {
             dispatchQueueInfo.isCancelled = true
-            dispatchQueueInfo.dispatchQueueErrorCallback = null
+            dispatchQueueInfo.dispatchQueueErrorCallback = CANCELLED_ERROR_CALLBACK
             val dispatchQueueController = dispatchQueueInfo.dispatchQueueController
             dispatchQueueInfo.dispatchQueueController = null
             if (dispatchQueueController is LifecycleDispatchQueueController) {
