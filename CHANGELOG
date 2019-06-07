@@ -1,3 +1,6 @@
+Version 1.4.7
+- Fixed issue where a cancelled queue would throw exceptions
+
 Version 1.4.6
 - Added new zip method that takes in a list of dispatchQueues.
 - Added new async and post methods on DispatchQueue interface for direct executions.
