@@ -6,6 +6,8 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.tonyodev.dispatch.DispatchQueue;
+import com.tonyodev.dispatch.DispatchQueueError;
+import com.tonyodev.dispatch.DispatchQueueErrorCallback;
 import com.tonyodev.dispatch.queuecontroller.CancelType;
 import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueController;
 import kotlin.jvm.functions.Function1;
@@ -44,9 +46,12 @@ public class ActivityTwo extends AppCompatActivity {
                 }).async((Function1<Void, Void>) aVoid -> {
                     Log.d("dispatcherTest", "void method called");
                     return null;
-                }).start(dispatchQueueError -> {
+                }).start(new DispatchQueueErrorCallback() {
+            @Override
+            public void onError(DispatchQueueError dispatchQueueError) {
 
-                });
+            }
+        });
     }
 
 }

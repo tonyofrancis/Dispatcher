@@ -179,13 +179,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     private fun handleException(throwable: Throwable) {
         val mainErrorHandler = dispatchQueueInfo.dispatchQueueErrorCallback
         if (mainErrorHandler != null) {
-            Threader.getHandlerThreadInfo(ThreadType.MAIN)
-                .threadHandler.post(Runnable {
-                if (mainErrorHandler is DispatchQueueErrorCallback) {
-                    mainErrorHandler.onError(DispatchQueueError(throwable, this, this.blockLabel))
-                } else {
-                    (mainErrorHandler as (DispatchQueueError) -> Unit).invoke(DispatchQueueError(throwable, this, this.blockLabel))
-                }
+            Threader.getHandlerThreadInfo(ThreadType.MAIN).threadHandler.post(Runnable {
+                mainErrorHandler.onError(DispatchQueueError(throwable, this, this.blockLabel))
             })
             cancel()
             return
@@ -216,15 +211,11 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return startQueue(null)
     }
 
-    override fun start(errorCallback: (DispatchQueueError) -> Unit): DispatchQueue<R> {
-        return startQueue(errorCallback)
-    }
-
     override fun start(dispatchQueueErrorCallback: DispatchQueueErrorCallback?): DispatchQueue<R> {
         return startQueue(dispatchQueueErrorCallback)
     }
 
-    private fun startQueue(errorCallback: Any?): DispatchQueue<R> {
+    private fun startQueue(errorCallback: DispatchQueueErrorCallback?): DispatchQueue<R> {
         if (!isCancelled) {
             if (!dispatchQueueInfo.isStarted) {
                 dispatchQueueInfo.isStarted = true

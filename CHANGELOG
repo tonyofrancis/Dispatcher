@@ -1,3 +1,6 @@
+Version 1.4.8
+- Remove ambiguous start method
+
 Version 1.4.7
 - Fixed issue where a cancelled queue would throw exceptions
 
