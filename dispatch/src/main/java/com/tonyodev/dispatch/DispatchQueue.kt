@@ -453,7 +453,6 @@ interface DispatchQueue<R> {
 
         /**
          * Creates a new test dispatch queue using the test thread. All async and post run on the same thread this dispatch queue was created on.
-         * Note: Test Dispatch queues do not run with delays.
          * @return test dispatch queue.
          * */
         val test: DispatchQueue<Void?>
