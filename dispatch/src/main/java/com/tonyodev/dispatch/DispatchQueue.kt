@@ -32,7 +32,7 @@ interface DispatchQueue<R> {
     val id: Int
 
     /***
-     * The label for the proceeding async or post block.
+     * The label for the preceding async or post block.
      * */
     val blockLabel: String
 
@@ -106,7 +106,7 @@ interface DispatchQueue<R> {
     fun cancel(): DispatchQueue<R>
 
     /**
-     * The doOnError handles the case where an error occurred during a async or post operation. Each dispatch queue object
+     * The doOnError handles the case where an uncaught error occurred in the preceding async or post operationBlock/dispatchQueue object. Each dispatch queue object
      * can have its own doOnError callback.
      * If set, the error handler for this dispatch queue may not be called because the function will provide default data.
      * This is called on the same thread the the error occurred.
@@ -117,7 +117,7 @@ interface DispatchQueue<R> {
     fun doOnError(func: ((Throwable) -> R)): DispatchQueue<R>
 
     /**
-     * Set's this dispatch queue to be managed by a DispatchQueueController.
+     * Set's the entire dispatch queue to be managed by a DispatchQueueController.
      * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
      * @param dispatchQueueController the dispatch controller that will manage the dispatch queue. Can be null.
      * @return dispatch queue.
@@ -125,7 +125,7 @@ interface DispatchQueue<R> {
     fun managedBy(dispatchQueueController: DispatchQueueController?): DispatchQueue<R>
 
     /**
-     * Set's this dispatch queue to be managed by a LifecycleDispatchQueueController.
+     * Set's the entire dispatch queue to be managed by a LifecycleDispatchQueueController.
      * LifecycleDispatchQueueController is controlled by a component's lifecycle.
      * Managed dispatch queues can be cancelled by the DispatchQueueController if the dispatch queue is not already cancelled.
      * @param lifecycleDispatchQueueController the lifecycleDispatchQueueController that will manage the dispatch queue.
@@ -163,6 +163,7 @@ interface DispatchQueue<R> {
 
     /**
      * Sets the dispatch queue object blockLabel. Use this blockLabel to identify where errors occur in the dispatch queue.
+     * The label is attached to the preceding dispatch queue object.
      * @param blockLabel the dispatch object block Label.
      * */
     fun setBlockLabel(blockLabel: String): DispatchQueue<R>
