@@ -12,9 +12,10 @@ class DispatchQueueObservable<R> constructor(
     /**
      * Notifies the attached Observers on the passed in threadHandler.
      * */
-    private val threadHandler: ThreadHandler?) {
+    val threadHandler: ThreadHandler?) {
 
-    private var shouldNotifyOnHandler: Boolean = false
+    @Volatile
+    var shouldNotifyOnHandler: Boolean = false
 
     /**
      * Notifies the attached Observers on the main thread.
@@ -38,14 +39,16 @@ class DispatchQueueObservable<R> constructor(
      * @param dispatchQueueObserver the observer.
      * @return the dispatchQueueObservable.
      * */
+    @Suppress("UNCHECKED_CAST")
     fun addObserver(dispatchQueueObserver: DispatchQueueObserver<R>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
             dispatchQueueObserversSet.add(dispatchQueueObserver)
             if (result != INVALID_RESULT) {
-                if (shouldNotifyOnHandler) {
-                    threadHandler?.post(Runnable { notifyObserver(dispatchQueueObserver) })
+                val value = result as R
+                if (shouldNotifyOnHandler && threadHandler != null) {
+                    threadHandler.post(Runnable { dispatchQueueObserver.onChanged(value) })
                 } else {
-                    notifyObserver(dispatchQueueObserver)
+                    dispatchQueueObserver.onChanged(value)
                 }
             }
         }
@@ -57,20 +60,23 @@ class DispatchQueueObservable<R> constructor(
      * @param dispatchQueueObservers the collection of observers.
      * @return the dispatchQueueObservable.
      * */
+    @Suppress("UNCHECKED_CAST")
     fun addObservers(dispatchQueueObservers: Collection<DispatchQueueObserver<R>>): DispatchQueueObservable<R> {
         synchronized(dispatchQueueObserversSet) {
             dispatchQueueObserversSet.addAll(dispatchQueueObservers)
+            val result = this.result
             if (result != INVALID_RESULT) {
-                if (shouldNotifyOnHandler) {
-                    val observers = dispatchQueueObserversSet.toList()
-                    threadHandler?.post(Runnable {
+                val value = result as R
+                if (shouldNotifyOnHandler && threadHandler != null) {
+                    val observers = dispatchQueueObservers.toList()
+                    threadHandler.post(Runnable {
                         for (dispatchObserver in observers) {
-                            notifyObserver(dispatchObserver)
+                            dispatchObserver.onChanged(value)
                         }
                     })
                 } else {
                     for (dispatchObserver in dispatchQueueObservers) {
-                        notifyObserver(dispatchObserver)
+                        dispatchObserver.onChanged(value)
                     }
                 }
             }
@@ -117,8 +123,8 @@ class DispatchQueueObservable<R> constructor(
      * @return the dispatchQueueObservable.
      * */
     fun notify(result: R): DispatchQueueObservable<R> {
-        if (shouldNotifyOnHandler) {
-            threadHandler?.post(Runnable { notifyObservers(result) })
+        if (shouldNotifyOnHandler && threadHandler != null) {
+            threadHandler.post(Runnable { notifyObservers(result) })
         } else {
             notifyObservers(result)
         }
@@ -131,14 +137,6 @@ class DispatchQueueObservable<R> constructor(
             for (dispatchQueueObserver in dispatchQueueObserversSet) {
                 dispatchQueueObserver.onChanged(result)
             }
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun notifyObserver(dispatchQueueObserver: DispatchQueueObserver<R>) {
-        val r = result
-        if (r != INVALID_RESULT) {
-            dispatchQueueObserver.onChanged(r as R)
         }
     }
 
