@@ -43,7 +43,7 @@ internal fun throwIllegalStateExceptionIfStarted(dispatchQueueInfo: DispatchQueu
 
 internal fun throwIllegalArgumentExceptionIfListEmpty(list: List<Any?>) {
     if (list.isEmpty()) {
-        throw IllegalArgumentException("Cannot pass in an empty list to be zipped.")
+        throw IllegalArgumentException("Cannot pass in an empty list.")
     }
 }
 
