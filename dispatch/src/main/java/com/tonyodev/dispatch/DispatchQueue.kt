@@ -32,7 +32,7 @@ interface DispatchQueue<R> {
     val id: Int
 
     /***
-     * The async or post label.
+     * The label for the proceeding async or post block.
      * */
     val blockLabel: String
 
@@ -92,7 +92,8 @@ interface DispatchQueue<R> {
     fun start(dispatchQueueErrorCallback: DispatchQueueErrorCallback?): DispatchQueue<R>
 
     /**
-     * Triggers the dispatch queue to start.
+     * Triggers the dispatch queue to start. No dispatchQueueErrorCallback is set. Errors not caught in the corresponding doOnError block
+     * will cause the queue to throw an exception and terminate.
      * @return dispatch queue.
      * */
     fun start(): DispatchQueue<R>
