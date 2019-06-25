@@ -35,7 +35,7 @@ class DispatchQueueCallAdapterFactory constructor(
 
         /**
          * Creates an instance of DispatchQueueCallAdapterFactory
-         * @param threadHandler Optional threadHandler used to start this dispatch object. Can be null.
+         * @param threadHandler Optional threadHandler used to start this dispatch object. Can be null. If null the default network thread is used.
          * @param onErrorCallback Optional on error callback. Can be null.
          * @throws IllegalArgumentException is the passed in threadHandler uses the main thread to do background work.
          * @return new instance of DispatchQueueCallAdapterFactory.
@@ -50,7 +50,7 @@ class DispatchQueueCallAdapterFactory constructor(
         }
 
         /**
-         * Creates an instance of DispatchQueueCallAdapterFactory
+         * Creates an instance of DispatchQueueCallAdapterFactory. The default network thread is used.
          * @param onErrorCallback Optional on error callback. Can be null.
          * @return new instance of DispatchQueueCallAdapterFactory.
          * */
