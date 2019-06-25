@@ -3,9 +3,7 @@ package com.tonyodev.dispatchandroid
 import androidx.test.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4
 import com.tonyodev.dispatch.ThreadType
-import com.tonyodev.dispatch.thread.DefaultThreadHandlerFactory
 import com.tonyodev.dispatch.utils.THREAD_BACKGROUND
-import com.tonyodev.dispatch.utils.THREAD_MAIN_NO_UI
 import com.tonyodev.dispatchandroid.thread.AndroidThreadHandlerFactory
 import junit.framework.Assert
 import org.junit.Before
