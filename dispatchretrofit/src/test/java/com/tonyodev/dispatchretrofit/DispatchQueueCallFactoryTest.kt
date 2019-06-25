@@ -16,7 +16,8 @@ class DispatchQueueCallFactoryTest {
         val factory2 = DispatchQueueCallAdapterFactory.create(handler, callback)
         assert(factory2.threadHandler == handler)
         assert(factory2.onErrorCallback == callback)
-
+        val testFactory = DispatchQueueCallAdapterFactory.createTestFactory()
+        assert(testFactory.threadHandler?.threadName == handler.threadName)
     }
 
 }
