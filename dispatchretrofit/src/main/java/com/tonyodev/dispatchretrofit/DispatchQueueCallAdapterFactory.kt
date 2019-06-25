@@ -13,11 +13,11 @@ import java.lang.reflect.Type
  * */
 class DispatchQueueCallAdapterFactory constructor(
     /** Optional threadHandler used by the DispatchQueues created by this Factory.*/
-    private val threadHandler: ThreadHandler? = null,
+    val threadHandler: ThreadHandler? = null,
     /** Optional error callback for network requests made by a DispatchQueueCallAdapter instance.
      * Only called if an error occurred. Note: The errors will still be thrown inside the DispatchQueue.
      * This callback only allows for observing at a global level.*/
-    private val onErrorCallback: OnErrorCallback?): CallAdapter.Factory() {
+    val onErrorCallback: OnErrorCallback?): CallAdapter.Factory() {
 
     override fun get(returnType: Type, annotations: Array<Annotation>, retrofit: Retrofit): CallAdapter<*, *>? {
         val clazz = getRawType(returnType)
