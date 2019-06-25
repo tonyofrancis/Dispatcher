@@ -97,6 +97,22 @@ class ThreadHandlerQueueItem private constructor() {
             }
         }
 
+        /**
+         * Release pool
+         * */
+        fun release() {
+            synchronized(this) {
+                var current = pool
+                while (current != null) {
+                    pool = current.next
+                    current.next = null
+                    current = pool
+                }
+                pool = null
+                size = 0
+            }
+        }
+
     }
 
 }

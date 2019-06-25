@@ -37,4 +37,15 @@ class ThreadHandlerQueueItemTest {
         assert(item.delay == 0L)
     }
 
+    @Test
+    fun testRelease() {
+        val pool = ThreadHandlerQueueItem.Pool()
+        val item = pool.obtain(4, Runnable {  })
+        val item2 = pool.obtain(0, Runnable {  })
+        val item3 = pool.obtain(0, Runnable {  })
+        val item4 = pool.obtain(6, Runnable {  })
+        pool.release()
+        assert(pool.size == 0)
+    }
+
 }

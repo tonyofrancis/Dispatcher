@@ -7,18 +7,19 @@ import java.lang.IllegalStateException
  * */
 class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHandler {
 
+    private val queue = mutableListOf<ThreadHandlerQueueItem>()
+    private val minQueueIndexPair = MinQueueIndexPair()
+    private val queueItemPool = ThreadHandlerQueueItem.Pool()
+    private val defaultSleepTime = 250L
+
     @Volatile
     private var isCancelled = false
     @Volatile
     private var isSleeping = false
-    private val defaultSleepTime = 250L
-    private var threadSleepMillis = defaultSleepTime
-    private val queue = mutableListOf<ThreadHandlerQueueItem>()
     private var queueIndex = 0
     private var queueItem: ThreadHandlerQueueItem? = null
     private var isQueueEmpty = true
-    private val minQueuePair = MinQueuePair()
-    private val queueItemPool = ThreadHandlerQueueItem.Pool()
+    private var threadSleepMillis = defaultSleepTime
 
     override val isActive: Boolean
         get()  {
@@ -40,95 +41,67 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
             if(isQueueEmpty) {
                 sleep()
             } else {
-                processNextQueueItem()
-            }
-        }
-    }
-
-    private fun processNextQueueItem() {
-        if (!isCancelled) {
-            synchronized(queue) {
-                if (queueIndex < queue.size) {
-                    queueItem = queue[queueIndex]
-                }
-            }
-            if (!isCancelled) {
-                if (queueItem != null) {
-                    if (queueItem!!.isReady) {
-                        if (!isCancelled) {
-                            synchronized(queue) {
-                                queueItem!!.isProcessing = true
-                            }
-                            queueItem!!.runnable?.run()
+                if (!isCancelled) {
+                    synchronized(queue) {
+                        if (queueIndex < queue.size) {
+                            queueItem = queue[queueIndex]
                         }
-                        if (!isCancelled) {
-                            synchronized(queue) {
-                                queue.remove(queueItem!!)
+                    }
+                    if (!isCancelled) {
+                        if (queueItem != null) {
+                            if (queueItem!!.isReady) {
+                                if (!isCancelled) {
+                                    synchronized(queue) {
+                                        queueItem!!.isProcessing = true
+                                    }
+                                    queueItem!!.runnable?.run()
+                                }
+                                val item = queueItem
+                                if (item != null) {
+                                    if (!isCancelled) {
+                                        synchronized(queue) {
+                                            queue.remove(item)
+                                        }
+                                    }
+                                    queueItemPool.recycle(item)
+                                }
+                                queueIndex = 0
+                            } else {
+                                val minQueuePair1 = findQueueMinIndex(queue, minQueueIndexPair)
+                                queueIndex = if (minQueuePair1.index > -1)  minQueuePair1.index else 0
+                                if (minQueuePair1.waitTime > 0) {
+                                    threadSleepMillis = minQueuePair1.waitTime
+                                    sleep(false)
+                                }
                             }
+                            queueItem = null
+                        } else {
+                            queueIndex = 0
+                            threadSleepMillis = defaultSleepTime
+                            sleep()
                         }
+                    } else {
                         val item = queueItem
                         if (item != null) {
                             queueItemPool.recycle(item)
                         }
-                        queueIndex = 0
-                    } else {
-                        val minQueuePair1 = findQueueMinIndex()
-                        queueIndex = if (minQueuePair1.index > -1) {
-                            minQueuePair1.index
-                        } else {
-                            0
-                        }
-                        if (minQueuePair1.delay > 0) {
-                            threadSleepMillis = minQueuePair1.delay
-                            sleep()
-                        }
+                        queueItem = null
                     }
-                    queueItem = null
-                } else {
-                    queueIndex = 0
-                    threadSleepMillis = defaultSleepTime
-                    sleep()
                 }
-            } else {
-                val item = queueItem
-                if (item != null) {
-                    queueItemPool.recycle(item)
-                }
-                queueItem = null
             }
-
         }
     }
 
-    private fun findQueueMinIndex(): MinQueuePair {
-        return synchronized(queue) {
-            minQueuePair.index = -1
-            minQueuePair.delay = -1
-            var minDelay = -1L
-            var counter = 0
-            var queueItem: ThreadHandlerQueueItem
-            while (counter < queue.size) {
-                queueItem = queue[counter]
-                if (minDelay == -1L || queueItem.delay < minDelay) {
-                    minQueuePair.index = counter
-                    minDelay = queueItem.delay
-                    minQueuePair.delay = queueItem.delay - queueItem.waitTime
-                    if (minQueuePair.delay < 0) {
-                        minQueuePair.delay = 0
-                    }
-                }
-                counter++
-            }
-            minQueuePair
-        }
-    }
-
-    private fun sleep() {
+    private fun sleep(backOffSleepTime: Boolean = true) {
         if (!isCancelled) {
             try {
                 isSleeping = true
                 sleep(threadSleepMillis)
-                threadSleepMillis *= 2
+                if (backOffSleepTime) {
+                    threadSleepMillis *= 2
+                } else {
+                    threadSleepMillis = defaultSleepTime
+                }
                 isSleeping = false
             } catch (e: InterruptedException) {
                 threadSleepMillis = defaultSleepTime
@@ -156,22 +129,17 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
 
     override fun removeCallbacks(runnable: Runnable) {
         synchronized(queue) {
-            val recycleList = mutableListOf<ThreadHandlerQueueItem>()
             val iterator = queue.iterator()
             var queueItem: ThreadHandlerQueueItem
             while (iterator.hasNext()) {
                 queueItem = iterator.next()
                 if (queueItem.runnable == runnable) {
                     iterator.remove()
-                    recycleList.add(queueItem)
+                    if (!queueItem.isProcessing) {
+                        queueItemPool.recycle(queueItem)
+                    }
                 }
             }
-            for (recycleQueueItem in recycleList) {
-                if (!recycleQueueItem.isProcessing) {
-                    queueItemPool.recycle(recycleQueueItem)
-                }
-            }
-            recycleList.clear()
         }
     }
 
@@ -183,26 +151,22 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
             }
             isSleeping = false
             synchronized(queue) {
-                val recycleList = mutableListOf<ThreadHandlerQueueItem>()
                 val iterator = queue.iterator()
                 var queueItem: ThreadHandlerQueueItem
                 while (iterator.hasNext()) {
                     queueItem = iterator.next()
                     iterator.remove()
-                    recycleList.add(queueItem)
-                }
-                for (recycleQueueItem in recycleList) {
-                    if (!recycleQueueItem.isProcessing) {
-                        queueItemPool.recycle(recycleQueueItem)
+                    if (!queueItem.isProcessing) {
+                        queueItemPool.recycle(queueItem)
                     }
                 }
-                recycleList.clear()
             }
             isQueueEmpty = true
             queueIndex = 0
             threadSleepMillis = defaultSleepTime
-            minQueuePair.delay = -1
-            minQueuePair.index = -1
+            minQueueIndexPair.waitTime = -1
+            minQueueIndexPair.index = -1
+            queueItemPool.release()
         }
     }
 
@@ -210,11 +174,9 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
         super.start()
     }
 
-    private class MinQueuePair {
+    class MinQueueIndexPair {
         var index = -1
-        var delay = -1L
+        var waitTime = -1L
     }
-
-
 
 }
