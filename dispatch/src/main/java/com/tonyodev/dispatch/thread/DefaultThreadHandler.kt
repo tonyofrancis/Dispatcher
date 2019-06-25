@@ -53,7 +53,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                     if (queueItem!!.isReady) {
                         if (!isCancelled) {
                             synchronized(queue) {
-                                queueItem!!.isRunning = true
+                                queueItem!!.isProcessing = true
                             }
                             queueItem!!.runnable?.run()
                         }
@@ -157,7 +157,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                 }
             }
             for (recycleQueueItem in recycleList) {
-                if (!recycleQueueItem.isRunning) {
+                if (!recycleQueueItem.isProcessing) {
                     recycleQueueItem.recycle()
                 }
             }
@@ -182,7 +182,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                     recycleList.add(queueItem)
                 }
                 for (recycleQueueItem in recycleList) {
-                    if (!recycleQueueItem.isRunning) {
+                    if (!recycleQueueItem.isProcessing) {
                         recycleQueueItem.recycle()
                     }
                 }
@@ -214,7 +214,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
         private var startWaitTime = 0L
         private var next: QueueItem? = null
         private var isRecycled = false
-        var isRunning = false
+        var isProcessing = false
 
         val waitTime: Long
             get() {
@@ -233,7 +233,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
                     delay = 0
                     runnable = null
                     isRecycled = true
-                    isRunning = false
+                    isProcessing = false
                     if (poolSize <= MAX_POOL_SIZE) {
                         next = pool
                         pool = this
