@@ -4,7 +4,7 @@ import android.util.Log
 import com.tonyodev.dispatch.utils.Logger
 import com.tonyodev.dispatch.utils.TAG
 
-class AndroidLogger: Logger {
+open class AndroidLogger: Logger {
 
     override fun print(tag: String, message: String) {
         Log.d(tag, message)

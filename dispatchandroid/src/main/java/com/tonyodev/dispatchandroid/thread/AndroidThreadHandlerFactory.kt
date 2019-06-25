@@ -12,7 +12,7 @@ import com.tonyodev.dispatch.utils.*
 /**
  * The Default Android Handler based ThreadHandler Factory used by the library.
  * */
-class AndroidThreadHandlerFactory: ThreadHandlerFactory {
+open class AndroidThreadHandlerFactory: ThreadHandlerFactory {
 
     @Volatile
     private var newThreadCount = 0
