@@ -145,4 +145,11 @@ class DispatchQueueObservable<R> constructor(
         return synchronized(dispatchQueueObserversSet) { dispatchQueueObserversSet.toList() }
     }
 
+    /**
+     * Clears the currently stored data.
+     * */
+    fun resetResults() {
+        result = INVALID_RESULT
+    }
+
 }
