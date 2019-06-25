@@ -19,7 +19,7 @@ class AndroidThreadHandler (private val handler: Handler): ThreadHandler {
         Handler(handlerThread.looper)
     }())
 
-    override val threadName: String
+    override val name: String
         get() {
             return handler.looper.thread.name
         }

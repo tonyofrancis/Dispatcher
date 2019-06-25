@@ -10,7 +10,7 @@ interface ThreadHandler {
     /**
      * The thread name.
      * */
-    val threadName: String
+    val name: String
 
     /**
      * Checks if this threadHandler is alive.
@@ -31,13 +31,13 @@ interface ThreadHandler {
     fun postDelayed(delayInMilliseconds: Long, runnable: Runnable)
 
     /**
-     * Removes the runnable from the threads processing queue.
+     * Removes the runnable from the threads processing queue if possible.
      * @param runnable the runnable to remove.
      * */
     fun removeCallbacks(runnable: Runnable)
 
     /**
-     * Terminate the underlining thread that is handling the runnable work.
+     * Terminate the underlining thread that is handling the runnable work if possible.
      * */
     fun quit()
 

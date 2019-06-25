@@ -12,7 +12,7 @@ class DefaultThreadHandlerFactoryTest {
     @Test
     fun testCreateBackgroundThread() {
         val thread = defaultThreadHandlerFactory.create(ThreadType.BACKGROUND)
-        assert(thread.threadName == THREAD_BACKGROUND)
+        assert(thread.name == THREAD_BACKGROUND)
         thread.quit()
         assert(!thread.isActive)
     }
@@ -20,7 +20,7 @@ class DefaultThreadHandlerFactoryTest {
     @Test
     fun testCreateMainThread() {
         val thread = defaultThreadHandlerFactory.create(ThreadType.MAIN)
-        assert(thread.threadName == THREAD_MAIN_NO_UI)
+        assert(thread.name == THREAD_MAIN_NO_UI)
         thread.quit()
         assert(!thread.isActive)
     }
@@ -37,7 +37,7 @@ class DefaultThreadHandlerFactoryTest {
     fun testCreatedThreadByName() {
         val name = "sampleThread"
         val thread = defaultThreadHandlerFactory.create(name)
-        assert(thread.threadName == name)
+        assert(thread.name == name)
         thread.quit()
         assert(!thread.isActive)
     }

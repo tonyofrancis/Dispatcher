@@ -1,7 +1,7 @@
 package com.tonyodev.dispatch.thread
 
 /** The default test thread handler */
-class TestThreadHandler(override val threadName: String): ThreadHandler {
+class TestThreadHandler(override val name: String): ThreadHandler {
 
     override fun post(runnable: Runnable) {
         postDelayed(0, runnable)

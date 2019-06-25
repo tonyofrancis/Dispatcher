@@ -38,7 +38,7 @@ internal object Threader {
     data class ThreadHandlerInfo(val threadHandler: ThreadHandler, val closeThreadHandler: Boolean) {
         val threadName: String
             get() {
-                return threadHandler.threadName
+                return threadHandler.name
             }
     }
 

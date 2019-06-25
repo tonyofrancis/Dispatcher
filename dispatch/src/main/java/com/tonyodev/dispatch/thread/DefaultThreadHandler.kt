@@ -5,7 +5,7 @@ import java.lang.IllegalStateException
 /**
  * The default Thread Handler. Performs it works on a plain old thread.
  * */
-class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHandler {
+class DefaultThreadHandler(override val name: String): Thread(), ThreadHandler {
 
     @Volatile
     private var isCancelled = false
@@ -25,7 +25,7 @@ class DefaultThreadHandler(override val threadName: String): Thread(), ThreadHan
         }
 
     init {
-        name = threadName
+        name = name
     }
 
     override fun run() {
