@@ -31,7 +31,6 @@ class MainActivity : AppCompatActivity() {
             .baseUrl("https://jsonplaceholder.typicode.com")
             .build()
         service = retrofit.create(TestService::class.java)
-
         runTestService()
         runTestTimer()
     }
@@ -40,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         service.getSampleJson()
             .managedBy(this)
             .async { data ->
-                Log.d("dispatcherTest", "data size is:${data.size}")
+                Log.d("dispatchTest", "data size is:${data.size}")
             }
             .start()
         //or
@@ -54,7 +53,7 @@ class MainActivity : AppCompatActivity() {
                 it.second
             }
             .post {
-                Log.d("dispatcherTest", "data size is:${it.size}")
+                Log.d("dispatchTest", "data size is:${it.size}")
             }
             .start(DispatchQueueErrorCallback {
 
@@ -74,7 +73,7 @@ class MainActivity : AppCompatActivity() {
                 "do more work here"
             }
             .post {
-                Log.d("dispatcherTest","Test timer after 5000 millis. data is $it")
+                Log.d("dispatchTest","Test timer after 5000 millis. data is $it")
             }
             .start(DispatchQueueErrorCallback {
 
