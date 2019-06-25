@@ -15,7 +15,7 @@ interface ThreadHandlerFactory {
     fun create(threadType: ThreadType): ThreadHandler
 
     /**
-     * Creates a thread Handler with the passed in name.
+     * Creates a thread Handler with the passed in threadName.
      * @param threadName the thread name. If null, a name will be automatically generated.
      * @return thread handler.
      * */

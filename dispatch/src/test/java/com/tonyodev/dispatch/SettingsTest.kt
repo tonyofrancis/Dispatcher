@@ -31,7 +31,7 @@ class SettingsTest {
         assert(settings.threadHandlerFactory is DefaultThreadHandlerFactory)
         val thread2 = settings.threadHandlerFactory.create(ThreadType.BACKGROUND)
         thread2.quit()
-        assert(thread1.name == thread2.name)
+        assert(thread1.threadName == thread2.threadName)
     }
 
     @Test

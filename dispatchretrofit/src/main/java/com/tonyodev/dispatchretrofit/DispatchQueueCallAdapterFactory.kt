@@ -43,7 +43,7 @@ class DispatchQueueCallAdapterFactory constructor(
         @JvmStatic
         @JvmOverloads
         fun create(threadHandler: ThreadHandler? = null, onErrorCallback: OnErrorCallback? = null): DispatchQueueCallAdapterFactory {
-            if (threadHandler?.name == DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.MAIN).name) {
+            if (threadHandler?.threadName == DispatchQueue.globalSettings.threadHandlerFactory.create(ThreadType.MAIN).threadName) {
                 throw IllegalArgumentException("DispatchQueueCallAdapterFactory: ThreadHandler cannot be the main thread for network operations.")
             }
             return DispatchQueueCallAdapterFactory(threadHandler, onErrorCallback)
