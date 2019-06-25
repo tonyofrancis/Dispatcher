@@ -9,7 +9,11 @@ import com.tonyodev.dispatchandroid.queueController.ActivityDispatchQueueControl
 import com.tonyodev.dispatchandroid.thread.AndroidThreadHandlerFactory
 import com.tonyodev.dispatchandroid.utils.AndroidLogger
 
-fun initAndroidDispatchQueues() {
+/**
+ * This method must be called in an Android project to initialize the proper threads that the dispatch queue will
+ * use on android.
+ * */
+fun init() {
     DispatchQueue.globalSettings.logger = AndroidLogger()
     DispatchQueue.globalSettings.threadHandlerFactory = AndroidThreadHandlerFactory()
 }
