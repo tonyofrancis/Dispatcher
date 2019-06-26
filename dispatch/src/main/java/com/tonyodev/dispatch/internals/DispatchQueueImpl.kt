@@ -9,6 +9,7 @@ import com.tonyodev.dispatch.utils.INVALID_RESULT
 import com.tonyodev.dispatch.utils.Threader
 import com.tonyodev.dispatch.utils.getNewDispatchId
 import java.lang.IllegalArgumentException
+import java.util.concurrent.TimeUnit
 
 internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                                        private val delayInMillis: Long = 0,
@@ -316,12 +317,20 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return getNewDispatchQueue(func, delayInMillis, Threader.getHandlerThreadInfo(ThreadType.MAIN))
     }
 
+    override fun <U> post(timeUnit: TimeUnit, delay: Long, func: (R) -> U): DispatchQueue<U> {
+        return getNewDispatchQueue(func, timeUnit.toMillis(delay), Threader.getHandlerThreadInfo(ThreadType.MAIN))
+    }
+
     override fun <U> async(func: (R) -> U): DispatchQueue<U> {
         return async(0, func)
     }
 
     override fun <U> async(delayInMillis: Long, func: (R) -> U): DispatchQueue<U> {
         return getNewDispatchQueue(func, delayInMillis, dispatchQueueInfo.threadHandlerInfo)
+    }
+
+    override fun <U> async(timeUnit: TimeUnit, delay: Long, func: (R) -> U): DispatchQueue<U> {
+        return getNewDispatchQueue(func, timeUnit.toMillis(delay), dispatchQueueInfo.threadHandlerInfo)
     }
 
     override fun <T> map(func: (R) -> T): DispatchQueue<T> {
@@ -494,6 +503,10 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     override fun retry(count: Int): DispatchQueue<R> {
         return retry(count, 0)
+    }
+
+    override fun retry(count: Int, timeUnit: TimeUnit, delay: Long): DispatchQueue<R> {
+        return retry(count, timeUnit.toMillis(delay))
     }
 
     override fun toString(): String {

@@ -12,6 +12,7 @@ import com.tonyodev.dispatch.utils.getNewQueueId
 import com.tonyodev.dispatch.utils.startThreadHandlerIfNotActive
 import com.tonyodev.dispatch.utils.throwIfUsesMainThreadForBackgroundWork
 import java.lang.IllegalArgumentException
+import java.util.concurrent.TimeUnit
 
 /**
  * A DispatchQueue is used to perform work and return data on the right thread at the right time.
@@ -66,6 +67,16 @@ interface DispatchQueue<R> {
     fun <U> post(delayInMillis: Long, func: (R) -> U): DispatchQueue<U>
 
     /**
+     * Posts work on the main thread.
+     * @param timeUnit the delay time unit
+     * @param delay the delay time that corresponds to the time unit
+     * @param func the function.
+     * @throws IllegalStateException if the dispatch queue was already cancelled or started.
+     * @return the dispatch queue.
+     * */
+    fun <U> post(timeUnit: TimeUnit, delay: Long, func: (R) -> U): DispatchQueue<U>
+
+    /**
      * Perform work on the background thread.
      * @param func the func.
      * @throws IllegalStateException if the dispatch queue was already cancelled or started.
@@ -82,6 +93,16 @@ interface DispatchQueue<R> {
      * @return the dispatch queue.
      * */
     fun <U> async(delayInMillis: Long, func: (R) -> U): DispatchQueue<U>
+
+    /**
+     * Perform work on the background thread.
+     * @param timeUnit the delay time unit
+     * @param delay the delay time that corresponds to the time unit
+     * @param func the function.
+     * @throws IllegalStateException if the dispatch queue was already cancelled or started.
+     * @return the dispatch queue.
+     * */
+    fun <U> async(timeUnit: TimeUnit, delay: Long, func: (R) -> U): DispatchQueue<U>
 
     /**
      * Triggers the dispatch queue to start.
@@ -224,6 +245,15 @@ interface DispatchQueue<R> {
      * @return the dispatch queue.
      * */
     fun retry(count: Int, delayInMillis: Long): DispatchQueue<R>
+
+    /**
+     * Retry the post, async or map operation if an error occurred inside the block.
+     * @param count the retry count.
+     * @param timeUnit the delay time unit
+     * @param delay the delay time that corresponds to the time unit
+     * @return the dispatch queue.
+     * */
+    fun retry(count: Int, timeUnit: TimeUnit, delay: Long): DispatchQueue<R>
 
     /**
      * Retry the post, async or map operation if an error occurred.
