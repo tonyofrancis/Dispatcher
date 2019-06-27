@@ -1,4 +1,5 @@
 Version 1.4.9
+- Added new FlatMap methods
 - Memory and cpu performance improvements
 - Api improvements
 
