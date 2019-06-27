@@ -24,45 +24,15 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ActivityTwo::class.java)
             startActivity(intent)
         }
-
         retrofit = Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(DispatchQueueCallAdapterFactory.create())
             .baseUrl("https://jsonplaceholder.typicode.com")
             .build()
         service = retrofit.create(TestService::class.java)
-      //  runTestService()
-       // runTestTimer()
-
-        DispatchQueue.background
-            .async {
-               "a quick brown fox"
-            }
-            .async {
-                it + " over a lazy dog"
-            }
-            .flatMap { label ->
-                service.getSampleJson().async {
-                    Log.d("tonyoTest", "list size is ${it.size}")
-                }.async {
-                    label
-                }
-            }
-            .async {
-                Log.d("tonyoTest", "label is $it")
-            }
-            .post {
-                Log.d("tonyoTest", "got a log int $it")
-            }
-            .flatMap {
-                service.getSampleJson()
-            }
-            .async {
-                for (testJsonData in it) {
-                    Log.d("dispatchTest", "data is $testJsonData")
-                }
-            }
-            .start()
+        runTestService()
+        runTestTimer()
+        runFlatMap()
     }
 
     private fun runTestService() {
@@ -104,6 +74,34 @@ class MainActivity : AppCompatActivity() {
             }
             .post {
                 Log.d("dispatchTest","Test timer after 5000 millis. data is $it")
+            }
+            .start(DispatchQueueErrorCallback {
+
+            })
+    }
+
+    private fun runFlatMap() {
+        DispatchQueue.background
+            .async {
+                "a quick brown fox"
+            }
+            .async {
+                Pair(it, " over the lazy dogs")
+            }
+            .flatMap { labelPair ->
+                service.getSampleJson().async { Pair(it, labelPair) }
+            }
+            .async {
+                Log.d("dispatchTest", "label is ${it.second.first + it.second.second}")
+                it.first
+            }
+            .map { it.toSet() }
+            .flatMap { set -> DispatchQueue.io.async { Pair(set, set.size) } }
+            .post {
+                Log.d("dispatchTest", "set size is ${it.second}")
+                for (testJsonData in it.first) {
+                  //  Log.d("dispatchTest", testJsonData.toString())
+                }
             }
             .start(DispatchQueueErrorCallback {
 
