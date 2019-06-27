@@ -201,8 +201,8 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         next = dispatchQueueImpl
     }
 
-    private fun addSource(source: DispatchQueueImpl<*, *>) {
-        if (dispatchQueueInfo.canPerformOperations() && sourceCount < 3) {
+    private fun addSource(source: DispatchQueueImpl<*, *>, performChecks: Boolean = true) {
+        if ((!performChecks || dispatchQueueInfo.canPerformOperations()) && sourceCount < 3) {
             dispatchSources[sourceCount] = source
             sourceCount += 1
         }
@@ -435,9 +435,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         newDispatchQueue.results = results
         newDispatchQueue.doOnErrorWorker = doOnErrorWorker
         newDispatchQueue.retryCount = retryCount
-        newDispatchQueue.retryAttempt = retryAttempt
+        newDispatchQueue.retryAttempt = 0
         newDispatchQueue.retryDelayInMillis = retryDelayInMillis
-        newDispatchQueue.dispatchQueueObservable = dispatchQueueObservable
+        newDispatchQueue.dispatchQueueObservable.addObservers(dispatchQueueObservable.getObservers())
         var source: DispatchQueueImpl<*, *>?
         for (dispatchSource in dispatchSources) {
             source = dispatchSource
@@ -507,6 +507,63 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
 
     override fun retry(count: Int, timeUnit: TimeUnit, delay: Long): DispatchQueue<R> {
         return retry(count, timeUnit.toMillis(delay))
+    }
+
+    override fun <U> flatMap(func: (R) -> DispatchQueue<U>): DispatchQueue<U> {
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        val newDispatchQueue = DispatchQueueImpl<U, U>(
+            blockLabel = getNewDispatchId(),
+            delayInMillis = 0,
+            worker = {
+                it
+            },
+            dispatchQueueInfo = dispatchQueueInfo,
+            threadHandlerInfo = threadHandlerInfo)
+        var queue: DispatchQueue<Unit>? = null
+        queue = async(func).async { flatMapDispatchQueue ->
+            val cloneQueueList = mutableListOf<DispatchQueueImpl<*, *>>()
+            (flatMapDispatchQueue as DispatchQueueImpl<*, *>).getCloneQueue(dispatchQueueInfo, cloneQueueList)
+            if (!isCancelled) {
+                (queue as DispatchQueueImpl<*, *>).next = cloneQueueList.first()
+                newDispatchQueue.addSource((cloneQueueList.last()), false)
+                cloneQueueList.last().next = newDispatchQueue
+            }
+        }
+        dispatchQueueInfo.enqueue(newDispatchQueue)
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        return newDispatchQueue
+    }
+
+    private fun getCloneQueue(newDispatchQueueInfo: DispatchQueueInfo, queueList: MutableList<DispatchQueueImpl<*, *>>): DispatchQueueImpl<*, *> {
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        val threadHandlerInfo = if (threadHandlerInfo.closeThreadHandler) newDispatchQueueInfo.threadHandlerInfo else threadHandlerInfo
+        val newDispatchQueue = DispatchQueueImpl(
+            blockLabel = blockLabel,
+            delayInMillis = delayInMillis,
+            worker = worker,
+            dispatchQueueInfo = newDispatchQueueInfo,
+            threadHandlerInfo = threadHandlerInfo)
+        newDispatchQueue.results = results
+        newDispatchQueue.doOnErrorWorker = doOnErrorWorker
+        newDispatchQueue.retryCount = retryCount
+        newDispatchQueue.retryAttempt = 0
+        newDispatchQueue.retryDelayInMillis = retryDelayInMillis
+        newDispatchQueue.dispatchQueueObservable.addObservers(dispatchQueueObservable.getObservers())
+        var source: DispatchQueueImpl<*, *>?
+        for (dispatchSource in dispatchSources) {
+            source = dispatchSource
+            if (source != null) {
+                newDispatchQueue.addSource(source.getCloneQueue(newDispatchQueueInfo, queueList))
+            }
+        }
+
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        queueList.add(newDispatchQueue)
+        return newDispatchQueue
     }
 
     override fun toString(): String {

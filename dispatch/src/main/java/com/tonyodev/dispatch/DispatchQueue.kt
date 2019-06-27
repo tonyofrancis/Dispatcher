@@ -104,6 +104,8 @@ interface DispatchQueue<R> {
      * */
     fun <U> async(timeUnit: TimeUnit, delay: Long, func: (R) -> U): DispatchQueue<U>
 
+    fun <U> flatMap(func:(R) -> DispatchQueue<U>): DispatchQueue<U>
+
     /**
      * Triggers the dispatch queue to start.
      * @param dispatchQueueErrorCallback the error handler for the dispatch queue. Notifies of the async or post block via its label that throw the error and the error that was thrown. Only called

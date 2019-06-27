@@ -31,8 +31,38 @@ class MainActivity : AppCompatActivity() {
             .baseUrl("https://jsonplaceholder.typicode.com")
             .build()
         service = retrofit.create(TestService::class.java)
-        runTestService()
-        runTestTimer()
+      //  runTestService()
+       // runTestTimer()
+
+        DispatchQueue.background
+            .async {
+               "a quick brown fox"
+            }
+            .async {
+                it + " over a lazy dog"
+            }
+            .flatMap { label ->
+                service.getSampleJson().async {
+                    Log.d("tonyoTest", "list size is ${it.size}")
+                }.async {
+                    label
+                }
+            }
+            .async {
+                Log.d("tonyoTest", "label is $it")
+            }
+            .post {
+                Log.d("tonyoTest", "got a log int $it")
+            }
+            .flatMap {
+                service.getSampleJson()
+            }
+            .async {
+                for (testJsonData in it) {
+                    Log.d("dispatchTest", "data is $testJsonData")
+                }
+            }
+            .start()
     }
 
     private fun runTestService() {
