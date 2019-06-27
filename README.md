@@ -1,4 +1,6 @@
 [ ![Download](https://api.bintray.com/packages/tonyofrancis/maven/dispatch/images/download.svg?version=1.4.9) ](https://bintray.com/tonyofrancis/maven/dispatch/1.4.9/link)
+[![Build Status](https://travis-ci.org/tonyofrancis/Dispatcher.svg?branch=v1)](https://travis-ci.org/tonyofrancis/Dispatcher)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/tonyofrancis/Fetch/blob/master/LICENSE)
 # DispatchQueue: A simple work scheduler for Java, Kotlin and Android
 
 DispatchQueue is a simple and flexible work scheduler that schedulers work on a background or main thread in the form of a dispatch queue.
