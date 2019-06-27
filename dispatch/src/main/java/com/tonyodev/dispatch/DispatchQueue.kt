@@ -359,6 +359,21 @@ interface DispatchQueue<R> {
         }
 
         /**
+         * Creates a new timer dispatch queue. A new handler thread is created to start the timer dispatch queue.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * Values less than 1 indicates that there are no delays.
+         * @return new dispatch queue.
+         * */
+        fun createTimerDispatchQueue(timeUnit: TimeUnit, delay: Long): DispatchQueue<Void?> {
+            return createNewDispatchQueue(
+                delayInMillis = timeUnit.toMillis(delay),
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.NEW)
+            )
+        }
+
+        /**
          * Creates a new timer dispatch queue.
          * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
          * Values less than 1 indicates that there are no delays.
@@ -371,6 +386,24 @@ interface DispatchQueue<R> {
             startThreadHandlerIfNotActive(backgroundHandler)
             return createNewDispatchQueue(
                 delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false)
+            )
+        }
+
+        /**
+         * Creates a new timer dispatch queue.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * @param backgroundHandler the background handler used for the timer task.
+         * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+         * @return new dispatch queue.
+         * */
+        fun createTimerDispatchQueue(timeUnit: TimeUnit, delay: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
+            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
+            return createNewDispatchQueue(
+                delayInMillis = timeUnit.toMillis(delay),
                 isIntervalDispatchQueue = false,
                 threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false)
             )
@@ -394,6 +427,23 @@ interface DispatchQueue<R> {
         }
 
         /**
+         * Creates a new timer dispatch queue.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * @param threadType the thread type.
+         * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
+         * @return new dispatch queue.
+         * */
+        fun createTimerDispatchQueue(timeUnit: TimeUnit, delay: Long, threadType: ThreadType): DispatchQueue<Void?> {
+            throwIfUsesMainThreadForBackgroundWork(threadType)
+            return createNewDispatchQueue(
+                delayInMillis = timeUnit.toMillis(delay),
+                isIntervalDispatchQueue = false,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(threadType)
+            )
+        }
+
+        /**
          * Creates a new interval dispatch queue that fires every x time. A new handler thread is created to start the interval dispatch.
          * @param delayInMillis the delay in milliseconds before the handler runs the worker.
          * Values less than 1 indicates that there are no delays.
@@ -402,6 +452,20 @@ interface DispatchQueue<R> {
         fun createIntervalDispatchQueue(delayInMillis: Long): DispatchQueue<Void?> {
             return createNewDispatchQueue(
                 delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = true,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.NEW)
+            )
+        }
+
+        /**
+         * Creates a new interval dispatch queue that fires every x time. A new handler thread is created to start the interval dispatch.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * @return new dispatch queue.
+         * */
+        fun createIntervalDispatchQueue(timeUnit: TimeUnit, delay: Long): DispatchQueue<Void?> {
+            return createNewDispatchQueue(
+                delayInMillis = timeUnit.toMillis(delay),
                 isIntervalDispatchQueue = true,
                 threadHandlerInfo = Threader.getHandlerThreadInfo(ThreadType.NEW)
             )
@@ -427,6 +491,24 @@ interface DispatchQueue<R> {
 
         /**
          * Creates a new interval dispatch queue that fires every x time.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * @param backgroundHandler the background handler used for the timer task. If null, a new backgroundHandler is created.
+         * @throws IllegalArgumentException if the backgroundHandler passed in uses the main thread to do background work.
+         * @return new dispatch queue.
+         * */
+        fun createIntervalDispatchQueue(timeUnit: TimeUnit, delay: Long, backgroundHandler: ThreadHandler): DispatchQueue<Void?> {
+            throwIfUsesMainThreadForBackgroundWork(backgroundHandler)
+            startThreadHandlerIfNotActive(backgroundHandler)
+            return createNewDispatchQueue(
+                delayInMillis = timeUnit.toMillis(delay),
+                isIntervalDispatchQueue = true,
+                threadHandlerInfo = Threader.ThreadHandlerInfo(backgroundHandler, false)
+            )
+        }
+
+        /**
+         * Creates a new interval dispatch queue that fires every x time.
          * @param delayInMillis the delay in milliseconds before the backgroundHandler runs the worker.
          * Values less than 1 indicates that there are no delays.
          * @param threadType the thread type.
@@ -437,6 +519,23 @@ interface DispatchQueue<R> {
             throwIfUsesMainThreadForBackgroundWork(threadType)
             return createNewDispatchQueue(
                 delayInMillis = delayInMillis,
+                isIntervalDispatchQueue = true,
+                threadHandlerInfo = Threader.getHandlerThreadInfo(threadType)
+            )
+        }
+
+        /**
+         * Creates a new interval dispatch queue that fires every x time.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * @param threadType the thread type.
+         * @throws IllegalArgumentException if the passed in ThreadType is MAIN.
+         * @return new dispatch queue.
+         * */
+        fun createIntervalDispatchQueue(timeUnit: TimeUnit, delay: Long, threadType: ThreadType): DispatchQueue<Void?> {
+            throwIfUsesMainThreadForBackgroundWork(threadType)
+            return createNewDispatchQueue(
+                delayInMillis = timeUnit.toMillis(delay),
                 isIntervalDispatchQueue = true,
                 threadHandlerInfo = Threader.getHandlerThreadInfo(threadType)
             )
@@ -544,6 +643,16 @@ interface DispatchQueue<R> {
         }
 
         /**
+         * Executes the function on the default background thread.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * @param func the function to execute.
+         * */
+        fun async(timeUnit: TimeUnit, delay: Long, func: () -> Unit) {
+            DispatchQueue.background.async(timeUnit.toMillis(delay)) { func.invoke() }.start()
+        }
+
+        /**
          * Executes the function on the main thread.
          * @param func the function to execute.
          * */
@@ -558,6 +667,16 @@ interface DispatchQueue<R> {
          * */
         fun post(delayInMillis: Long, func: () -> Unit) {
             DispatchQueue.background.post(delayInMillis) { func.invoke() }.start()
+        }
+
+        /**
+         * Executes the function on the main thread.
+         * @param timeUnit the delay time unit
+         * @param delay the delay time that corresponds to the time unit
+         * @param func the function to execute.
+         * */
+        fun post(timeUnit: TimeUnit, delay: Long, func: () -> Unit) {
+            DispatchQueue.background.post(timeUnit.toMillis(delay)) { func.invoke() }.start()
         }
 
     }
