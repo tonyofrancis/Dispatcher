@@ -536,8 +536,6 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     private fun cloneQueue(newDispatchQueueInfo: DispatchQueueInfo, queueList: MutableList<DispatchQueueImpl<*, *>>): DispatchQueueImpl<*, *> {
-        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
-        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val threadHandlerInfo = if (threadHandlerInfo.closeThreadHandler) newDispatchQueueInfo.threadHandlerInfo else threadHandlerInfo
         val newDispatchQueue = DispatchQueueImpl(
             blockLabel = blockLabel,
@@ -558,8 +556,6 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
                 newDispatchQueue.addSource(source.cloneQueue(newDispatchQueueInfo, queueList), false)
             }
         }
-        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
-        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         queueList.add(newDispatchQueue)
         return newDispatchQueue
     }
