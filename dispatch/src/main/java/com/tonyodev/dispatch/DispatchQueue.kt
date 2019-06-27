@@ -104,6 +104,12 @@ interface DispatchQueue<R> {
      * */
     fun <U> async(timeUnit: TimeUnit, delay: Long, func: (R) -> U): DispatchQueue<U>
 
+    /**
+     * Merges a copy of the dispatchQueue returned by the func(function) and returns the results.
+     * @param func the function. This function returns a dispatch queue that will be copied and merged.
+     * @throws IllegalStateException if the dispatch queue was already (cancelled or started) or the passed in dispatch queues were (cancelled or started).
+     * @return a dispatch queue with the result.
+     * */
     fun <U> flatMap(func:(R) -> DispatchQueue<U>): DispatchQueue<U>
 
     /**
