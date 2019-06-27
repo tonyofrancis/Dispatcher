@@ -116,6 +116,7 @@ interface DispatchQueue<R> {
      * Merges a copy of all the dispatchQueue returned by the func(function) collection and returns the result as a collection.
      * @param func the function. This function returns a collection of dispatch queues that will be copied and merged.
      * @throws IllegalStateException if the dispatch queue was already (cancelled or started) or the passed in dispatch queues were (cancelled or started).
+     * @throws IllegalArgumentException if the passed in collection is empty.
      * @return a dispatch queue with the collection result.
      * */
     fun flatMapCollection(func:(R) -> Collection<DispatchQueue<Any?>>): DispatchQueue<Collection<Any?>>
@@ -190,13 +191,13 @@ interface DispatchQueue<R> {
     fun<U, T> zip(dispatchQueue: DispatchQueue<U>, dispatchQueue2: DispatchQueue<T>): DispatchQueue<Triple<R, U, T>>
 
     /**
-     * Combines this dispatchQueue with the passed in list of dispatchQueues by cloning them into this dispatchQueue's queue. Returns a list result.
-     * @param list a list of dispatchQueue to zip inside this queue.
+     * Combines this dispatchQueue with the passed in collection of dispatchQueues by cloning them into this dispatchQueue's queue. Returns a collection with the results.
+     * @param collection a collection of dispatchQueue to zip inside this queue.
      * @throws IllegalStateException if the dispatch queue was already (cancelled or started) or the passed in dispatch queue was (cancelled or started).
-     * @throws IllegalArgumentException if the passed in list is empty.
-     * @return dispatchQueue queue with result list. The first item in the list is the result of this dispatch queue. Results from of the passed in list starts at index 1.
+     * @throws IllegalArgumentException if the passed in collection is empty.
+     * @return dispatchQueue queue with result collection. The first item in the collection is the result of this dispatch queue. Results from of the passed in list starts at index 1.
      * */
-    fun zip(list: List<DispatchQueue<Any?>>): DispatchQueue<List<Any?>>
+    fun zip(collection: Collection<DispatchQueue<Any?>>): DispatchQueue<Collection<Any?>>
 
     /**
      * Sets the dispatch queue object blockLabel. Use this blockLabel to identify where errors occur in the dispatch queue.

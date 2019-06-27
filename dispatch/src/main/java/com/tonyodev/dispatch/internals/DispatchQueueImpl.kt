@@ -388,14 +388,14 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return newDispatchQueue
     }
 
-    override fun zip(list: List<DispatchQueue<Any?>>): DispatchQueue<List<Any?>> {
-        throwIllegalArgumentExceptionIfCollectionEmpty(list)
+    override fun zip(collection: Collection<DispatchQueue<Any?>>): DispatchQueue<Collection<Any?>> {
+        throwIllegalArgumentExceptionIfCollectionEmpty(collection)
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val dataList = mutableListOf<Any?>()
         var source: DispatchQueueImpl<*, *>
         var queue: DispatchQueueImpl<*, *>
-        for (dispatchQueue in list) {
+        for (dispatchQueue in collection) {
             source = (dispatchQueue as DispatchQueueImpl<*, *>).cloneTo(newDispatchQueueInfo = dispatchQueueInfo)
             queue = DispatchQueueImpl<Any?, Unit>(
                 blockLabel = getNewDispatchId(),
@@ -406,7 +406,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
             queue.addSource(source)
             dispatchQueueInfo.enqueue(queue)
         }
-        val newDispatchQueue = DispatchQueueImpl<R, List<Any?>>(
+        val newDispatchQueue = DispatchQueueImpl<R, Collection<Any?>>(
             blockLabel = getNewDispatchId(),
             delayInMillis = 0,
             worker = {
