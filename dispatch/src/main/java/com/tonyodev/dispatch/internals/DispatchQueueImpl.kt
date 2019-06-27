@@ -515,18 +515,17 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         val newDispatchQueue = DispatchQueueImpl<U, U>(
             blockLabel = getNewDispatchId(),
             delayInMillis = 0,
-            worker = {
-                it
-            },
+            worker = { it },
             dispatchQueueInfo = dispatchQueueInfo,
             threadHandlerInfo = threadHandlerInfo)
         var queue: DispatchQueue<Unit>? = null
         queue = async(func).async { flatMapDispatchQueue ->
             val cloneQueueList = mutableListOf<DispatchQueueImpl<*, *>>()
-            (flatMapDispatchQueue as DispatchQueueImpl<*, *>).getCloneQueue(dispatchQueueInfo, cloneQueueList)
+            (flatMapDispatchQueue as DispatchQueueImpl<*, *>).cloneQueue(dispatchQueueInfo, cloneQueueList)
+            cloneQueueList.zipWithNext { first, second -> first.next = second }
             if (!isCancelled) {
-                (queue as DispatchQueueImpl<*, *>).next = cloneQueueList.first()
                 newDispatchQueue.addSource((cloneQueueList.last()), false)
+                (queue as DispatchQueueImpl<*, *>).next = cloneQueueList.first()
                 cloneQueueList.last().next = newDispatchQueue
             }
         }
@@ -536,7 +535,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         return newDispatchQueue
     }
 
-    private fun getCloneQueue(newDispatchQueueInfo: DispatchQueueInfo, queueList: MutableList<DispatchQueueImpl<*, *>>): DispatchQueueImpl<*, *> {
+    private fun cloneQueue(newDispatchQueueInfo: DispatchQueueInfo, queueList: MutableList<DispatchQueueImpl<*, *>>): DispatchQueueImpl<*, *> {
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val threadHandlerInfo = if (threadHandlerInfo.closeThreadHandler) newDispatchQueueInfo.threadHandlerInfo else threadHandlerInfo
@@ -556,10 +555,9 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         for (dispatchSource in dispatchSources) {
             source = dispatchSource
             if (source != null) {
-                newDispatchQueue.addSource(source.getCloneQueue(newDispatchQueueInfo, queueList))
+                newDispatchQueue.addSource(source.cloneQueue(newDispatchQueueInfo, queueList), false)
             }
         }
-
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         queueList.add(newDispatchQueue)
