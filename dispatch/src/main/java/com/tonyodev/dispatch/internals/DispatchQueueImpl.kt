@@ -389,7 +389,7 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
     }
 
     override fun zip(list: List<DispatchQueue<Any?>>): DispatchQueue<List<Any?>> {
-        throwIllegalArgumentExceptionIfListEmpty(list)
+        throwIllegalArgumentExceptionIfCollectionEmpty(list)
         throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
         throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
         val dataList = mutableListOf<Any?>()
@@ -522,6 +522,46 @@ internal class DispatchQueueImpl<T, R>(override var blockLabel: String,
         queue = async(func).async { flatMapDispatchQueue ->
             val cloneQueueList = mutableListOf<DispatchQueueImpl<*, *>>()
             (flatMapDispatchQueue as DispatchQueueImpl<*, *>).cloneQueue(dispatchQueueInfo, cloneQueueList)
+            cloneQueueList.zipWithNext { first, second -> first.next = second }
+            if (!isCancelled) {
+                newDispatchQueue.addSource((cloneQueueList.last()), false)
+                (queue as DispatchQueueImpl<*, *>).next = cloneQueueList.first()
+                cloneQueueList.last().next = newDispatchQueue
+            }
+        }
+        dispatchQueueInfo.enqueue(newDispatchQueue)
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        return newDispatchQueue
+    }
+
+    override fun flatMapCollection(func: (R) -> Collection<DispatchQueue<Any?>>): DispatchQueue<Collection<Any?>> {
+        throwIllegalStateExceptionIfStarted(dispatchQueueInfo)
+        throwIllegalStateExceptionIfCancelled(dispatchQueueInfo)
+        val dataList = mutableListOf<Any?>()
+        val newDispatchQueue = DispatchQueueImpl<Any?, Collection<Any?>>(
+            blockLabel = getNewDispatchId(),
+            delayInMillis = 0,
+            worker = {
+                dataList
+            },
+            dispatchQueueInfo = dispatchQueueInfo,
+            threadHandlerInfo = threadHandlerInfo)
+        var queue: DispatchQueue<Unit>? = null
+        queue = async(func).async { queueCollection ->
+            throwIllegalArgumentExceptionIfCollectionEmpty(queueCollection)
+            val cloneQueueList = mutableListOf<DispatchQueueImpl<*, *>>()
+            for (flatMapDispatchQueue in queueCollection) {
+                (flatMapDispatchQueue as DispatchQueueImpl<*, *>).cloneQueue(dispatchQueueInfo, cloneQueueList)
+                val resultDispatchQueue = DispatchQueueImpl<Any?, Unit>(
+                    blockLabel = getNewDispatchId(),
+                    delayInMillis = 0,
+                    worker = { dataList.add(it) },
+                    dispatchQueueInfo = dispatchQueueInfo,
+                    threadHandlerInfo = threadHandlerInfo)
+                resultDispatchQueue.addSource(cloneQueueList.last(), false)
+                cloneQueueList.add(resultDispatchQueue)
+            }
             cloneQueueList.zipWithNext { first, second -> first.next = second }
             if (!isCancelled) {
                 newDispatchQueue.addSource((cloneQueueList.last()), false)
