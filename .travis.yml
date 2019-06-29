@@ -42,9 +42,6 @@ before_install:
 script:
     - ./gradlew clean assemble
     - ./gradlew test
-    - ./gradlew :dispatch:connectedAndroidTest -PdisablePreDex
-    - ./gradlew :dispatchretrofit:connectedAndroidTest -PdisablePreDex
-    - ./gradlew :dispatchandroid:connectedAndroidTest -PdisablePreDex
     - ./gradlew assembleAndroidTest
 
 
