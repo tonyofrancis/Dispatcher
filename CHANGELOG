@@ -1,3 +1,6 @@
+Version 1.4.10
+- Android init method renamed to initAndroidDispatchQueues()
+
 Version 1.4.9
 - Added new FlatMap methods
 - Memory and cpu performance improvements

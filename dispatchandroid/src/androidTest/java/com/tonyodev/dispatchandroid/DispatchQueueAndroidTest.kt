@@ -21,7 +21,7 @@ class DispatchQueueAndroidTest {
 
     @Test
     fun testInit() {
-        init()
+        initAndroidDispatchQueues()
         assert(DispatchQueue.globalSettings.logger is AndroidLogger)
         assert(DispatchQueue.globalSettings.threadHandlerFactory is AndroidThreadHandlerFactory)
     }
