@@ -399,7 +399,7 @@ class App: Application() {
 
     override fun onCreate() {
         super.onCreate()
-        init() // Java DispatchQueueAndroid.init()
+        initAndroidDispatchQueues() // Java DispatchQueueAndroid.initAndroidDispatchQueues()
     }
 
 }
