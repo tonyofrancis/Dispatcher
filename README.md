@@ -393,7 +393,7 @@ implementation "com.tonyodev.dispatch:dispatch-retrofit2-adapter:1.4.9"
 
 Android users also have to initialize the AndroidDispatchQueues on application launch.
 ```java
-import com.tonyodev.dispatchandroid.init
+import com.tonyodev.dispatchandroid.initAndroidDispatchQueues
 
 class App: Application() {
 
